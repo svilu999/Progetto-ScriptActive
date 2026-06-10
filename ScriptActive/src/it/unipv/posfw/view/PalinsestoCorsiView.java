@@ -4,8 +4,9 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
-import it.unipv.posfw.controller.GestoreCorsi;
-import it.unipv.posfw.dao.CorsoDAOImpl; // Nota: Qui usiamo il DAO per leggere i dati
+
+import it.unipv.posfw.dao.CorsoDAO;
+import it.unipv.posfw.dao.CorsoDAOMySQL;
 import it.unipv.posfw.domain.Corso;
 
 public class PalinsestoCorsiView extends JFrame {
@@ -17,12 +18,12 @@ public class PalinsestoCorsiView extends JFrame {
     public PalinsestoCorsiView() {
         setTitle("ScriptActive - Palinsesto Completo (UC3)");
         setSize(700, 450);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // Chiude solo questa finestra
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); 
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(10, 10));
 
-        // 1. Creazione della Tabella
-        String[] colonne = {"ID Corso", "Nome", "Data e Ora", "Trainer", "Stato"};
+        // 1. Creazione della Tabella (Ho aggiunto la colonna "Posti")
+        String[] colonne = {"ID Corso", "Nome", "Data e Ora", "Trainer", "Posti", "Stato"};
         modelloTabella = new DefaultTableModel(colonne, 0);
         tabellaCorsi = new JTable(modelloTabella);
         tabellaCorsi.setFillsViewportHeight(true);
@@ -48,22 +49,27 @@ public class PalinsestoCorsiView extends JFrame {
     }
 
     public void caricaDati() {
-        // Puliamo la tabella
+        // Puliamo la tabella prima di ricaricare
         modelloTabella.setRowCount(0);
 
-        // CHIAMATA MVC CORRETTA: Chiediamo i dati al Controller (Singleton)
-        List<Corso> lista = GestoreCorsi.getInstance().getElencoCorsi();
+        // Bypassiamo il GestoreCorsi per non rompere il codice dei compagni
+        // e usiamo direttamente il nostro VERO motore MySQL!
+        CorsoDAO databaseCorsi = new CorsoDAOMySQL();
+        List<Corso> lista = databaseCorsi.getPalinsesto();
 
         for (Corso c : lista) {
+            // Uniamo nome e cognome ereditati dalla classe Utente
+            String nomeCompletoTrainer = c.getTrainerAssegnato().getNome() + " " + c.getTrainerAssegnato().getCognome();
+
             Object[] riga = {
                 c.getIdCorso(),
                 c.getNome(),
                 c.getDataOra().toString().replace("T", " "), 
-                c.getTrainerAssegnato().getIdTrainer(),
+                nomeCompletoTrainer, // <-- Ora stamperà "Luigi Bianchi" !
+                "N/D", // <-- Sostituisci con c.getPostiDisponibili() appena il collega aggiunge il getter
                 c.getStato()
             };
             modelloTabella.addRow(riga);
         }
     }
-     
 }

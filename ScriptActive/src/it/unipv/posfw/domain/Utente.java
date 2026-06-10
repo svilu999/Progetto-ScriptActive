@@ -20,4 +20,12 @@ public abstract class Utente {
     public String getEmail() {
         return email;
     }
+ // Dentro la classe Utente
+    public String getNome() {
+        return this.nome;
+    }
+
+    public String getCognome() {
+        return this.cognome;
+    }
 }

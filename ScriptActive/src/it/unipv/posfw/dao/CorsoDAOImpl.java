@@ -32,4 +32,10 @@ public class CorsoDAOImpl implements CorsoDAO {
     public List<Corso> findAll() {
         return new ArrayList<>(databaseMock.values());
     }
+
+    @Override
+    public List<Corso> getPalinsesto() {
+        // Essendo un mock finto, restituiamo semplicemente tutti i corsi che ha in pancia
+        return findAll();
+    }
 }

@@ -8,4 +8,7 @@ public interface CorsoDAO {
     void delete(String idCorso);
     Corso findById(String idCorso);
     List<Corso> findAll();
+    
+    // Il metodo per il tuo UC3: non stampa, ma restituisce la lista
+    List<Corso> getPalinsesto();
 }
