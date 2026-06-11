@@ -95,4 +95,11 @@ public class Corso implements Subject {
     public String getNome() {
         return nome;
     }
+    public int getCapienzaMassima() {
+        return capienzaMassima;
+    }
+
+    public int getPostiDisponibili() {
+        return postiDisponibili;
+    }
 }
