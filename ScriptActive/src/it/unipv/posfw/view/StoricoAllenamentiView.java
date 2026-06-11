@@ -1,8 +1,13 @@
 package it.unipv.posfw.view;
 
-package provaview;
 
 import javax.swing.*;
+
+import it.unipv.posfw.controller.StoricoAllenamenti;
+import it.unipv.posfw.domain.Cliente;
+import it.unipv.posfw.domain.DatiForm;
+import it.unipv.posfw.domain.SessioneAllenamento;
+
 import java.awt.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -10,8 +15,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class StoricoAllenamentiForm extends JFrame {
-    private StoricoAllenamentiController controller;
+public class StoricoAllenamentiView extends JFrame {
+    private StoricoAllenamenti controller;
     
     // Componenti UI Swing
     private JPanel panelForm;
@@ -39,7 +44,7 @@ public class StoricoAllenamentiForm extends JFrame {
         inizializzaComponenti();
     }
 
-    public void setController(StoricoAllenamentiController controller) {
+    public void setController(StoricoAllenamenti controller) {
         this.controller = controller;
     }
 
