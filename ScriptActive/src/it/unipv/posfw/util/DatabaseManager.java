@@ -3,32 +3,47 @@ package it.unipv.posfw.util;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Properties;
 
+/**
+ * Gestore centralizzato della connessione al database.
+ *
+ *
+ * questo DatabaseManager NON mantiene una singola Connection aperta.
+ *
+ * Ogni chiamata a getConnection() crea una nuova connessione valida.
+ * In questo modo i DAO possono usare correttamente il try-with-resources:
+ *
+ * try (Connection conn = DatabaseManager.getInstance().getConnection()) {
+ *     ...
+ * }
+ *
+ * Alla fine del try la connessione viene chiusa, ma alla chiamata successiva
+ * ne viene aperta una nuova. Così si evita l'errore:
+ * "No operations allowed after connection closed".
+ */
 public class DatabaseManager {
+
     private static DatabaseManager instance;
-    private Connection connection;
+
+    private final Properties prop = new Properties();
 
     private DatabaseManager() {
-        Properties prop = new Properties();
-        // Nota il "/" all'inizio: cerca il file nella radice di src
         try (InputStream input = getClass().getResourceAsStream("/db.properties")) {
+
             if (input == null) {
-                System.out.println("Errore: File db.properties non trovato nella cartella src!");
-                return;
+                throw new IllegalStateException("File db.properties non trovato nella cartella src.");
             }
+
             prop.load(input);
-            
+
             Class.forName("com.mysql.cj.jdbc.Driver");
-            this.connection = DriverManager.getConnection(
-                prop.getProperty("db.url"), 
-                prop.getProperty("db.user"), 
-                prop.getProperty("db.password")
-            );
-            System.out.println("Connessione DB stabilita!");
+
+            System.out.println("Configurazione DB caricata correttamente.");
+
         } catch (Exception e) {
-            System.err.println("Errore durante la connessione al DB:");
-            e.printStackTrace();
+            throw new RuntimeException("Errore durante il caricamento della configurazione DB.", e);
         }
     }
 
@@ -39,7 +54,19 @@ public class DatabaseManager {
         return instance;
     }
 
+    /**
+     * Restituisce una nuova connessione ogni volta.
+     * Non riutilizza connessioni già chiuse.
+     */
     public Connection getConnection() {
-        return connection;
+        try {
+            return DriverManager.getConnection(
+                    prop.getProperty("db.url"),
+                    prop.getProperty("db.user"),
+                    prop.getProperty("db.password")
+            );
+        } catch (SQLException e) {
+            throw new RuntimeException("Errore durante l'apertura della connessione al DB.", e);
+        }
     }
 }
