@@ -1,12 +1,14 @@
 package it.unipv.posfw.view;
 
-
 import javax.swing.*;
 
 import it.unipv.posfw.controller.StoricoAllenamenti;
 import it.unipv.posfw.domain.Cliente;
 import it.unipv.posfw.domain.DatiForm;
 import it.unipv.posfw.domain.SessioneAllenamento;
+
+// IMPORTIAMO LE NOSTRE ECCEZIONI PERSONALIZZATE
+import it.unipv.posfw.exceptions.*;
 
 import java.awt.*;
 import java.text.ParseException;
@@ -21,9 +23,9 @@ public class StoricoAllenamentiView extends JFrame {
     // Componenti UI Swing
     private JPanel panelForm;
     private JTextField txtData, txtNomeEsercizio, txtCarichi, txtRipetizioni;
-    private JButton btnAggiungiEsercizio; // NUOVO
-    private JButton btnSalvaSessione;     // NUOVO
-    private JTextArea txtAnteprimaBozza;  // NUOVO: Mostra gli esercizi prima di salvare
+    private JButton btnAggiungiEsercizio; 
+    private JButton btnSalvaSessione;     
+    private JTextArea txtAnteprimaBozza;  
     
     private JPanel panelStoricoContainer; 
     private JButton btnSimulaAccesso; 
@@ -34,10 +36,10 @@ public class StoricoAllenamentiView extends JFrame {
     private List<DatiForm> eserciziInBozza;
 
     public StoricoAllenamentiView() {
-        eserciziInBozza = new ArrayList<>(); // Inizializza la lista
+        eserciziInBozza = new ArrayList<>(); 
         
         setTitle("I Miei Allenamenti");
-        setSize(550, 750); // Un po' più alta per contenere l'anteprima
+        setSize(550, 750); 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout(10, 10));
 
@@ -89,15 +91,12 @@ public class StoricoAllenamentiView extends JFrame {
         JScrollPane scrollBozza = new JScrollPane(txtAnteprimaBozza);
 
         // Bottone per salvare l'intera sessione
-     // Bottone per salvare l'intera sessione
-     // Bottone per salvare l'intera sessione
         btnSalvaSessione = new JButton("Salva Sessione Completa");
-        btnSalvaSessione.setBackground(new Color(60, 179, 113)); // Verde per risaltare
+        btnSalvaSessione.setBackground(new Color(60, 179, 113)); 
         btnSalvaSessione.setForeground(Color.WHITE);
         btnSalvaSessione.setFocusPainted(false);
         btnSalvaSessione.setOpaque(true);
         btnSalvaSessione.setBorderPainted(false); 
-        // ---------------------------
         
         btnSalvaSessione.addActionListener(e -> clickSalvaSessioneCompleta());
 
@@ -120,6 +119,8 @@ public class StoricoAllenamentiView extends JFrame {
         scrollPane.setPreferredSize(new Dimension(500, 300));
         add(scrollPane, BorderLayout.SOUTH);
 
+        // MODIFICA: All'avvio nascondiamo totalmente il form finché non viene fatto l'accesso
+        panelForm.setVisible(false);
         impostaStatoForm(false);
     }
 
@@ -129,11 +130,14 @@ public class StoricoAllenamentiView extends JFrame {
 
     public void clickAccediStorico(Cliente cliente) {
         if (controller != null && cliente != null) {
-            controller.gestisciAccessoSezione(cliente);
+            try {
+                controller.gestisciAccessoSezione(cliente);
+            } catch (UtenteNonPremiumException e) {
+                mostraBloccoUpgradePremium();
+            }
         }
     }
 
-    // 1. Metodo per mettere in bozza un esercizio
     private void clickAggiungiEsercizio() {
         try {
             String nomeEsercizio = txtNomeEsercizio.getText();
@@ -148,10 +152,8 @@ public class StoricoAllenamentiView extends JFrame {
             DatiForm nuovoEsercizio = new DatiForm(nomeEsercizio, carichi, ripetizioni);
             eserciziInBozza.add(nuovoEsercizio);
             
-            // Aggiorna l'anteprima
             aggiornaAnteprimaBozza();
             
-            // Pulisci i campi per il prossimo esercizio (lascio la data intatta)
             txtNomeEsercizio.setText("");
             txtCarichi.setText("");
             txtRipetizioni.setText("");
@@ -162,26 +164,20 @@ public class StoricoAllenamentiView extends JFrame {
         }
     }
 
-    // 2. Metodo per inviare tutta la lista al DB
     private void clickSalvaSessioneCompleta() {
-        if (eserciziInBozza.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Aggiungi almeno un esercizio prima di salvare la sessione!", "Attenzione", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
         try {
             Date data = new SimpleDateFormat("dd/MM/yyyy").parse(txtData.getText());
             
-            // Invia al controller la data e tutta la lista di esercizi
             controller.salvaSessioneCompleta(data, eserciziInBozza, utenteCorrente);
             
-            // Se va a buon fine, svuota la bozza
             eserciziInBozza.clear();
             aggiornaAnteprimaBozza();
             JOptionPane.showMessageDialog(this, "Sessione di allenamento salvata con successo!", "Successo", JOptionPane.INFORMATION_MESSAGE);
 
         } catch (ParseException ex) {
             JOptionPane.showMessageDialog(this, "Errore nel formato della data (usa dd/MM/yyyy).", "Errore Data", JOptionPane.ERROR_MESSAGE);
+        } catch (SchedaVuotaException | DatiAllenamentoNonValidiException | SalvataggioFallitoException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Errore di Convalida", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -196,17 +192,29 @@ public class StoricoAllenamentiView extends JFrame {
     }
 
     // ==========================================
-    // METODI RICHIAMATI DAL CONTROLLER
+    // METODI RICHIAMATI DAL CONTROLLER (AGGIORNATI)
     // ==========================================
 
     public void mostraBloccoUpgradePremium() {
+        // MODIFICA CRUCIALE: Nasconde completamente la sezione di inserimento dati
+        panelForm.setVisible(false); 
         impostaStatoForm(false);
-        mostraMessaggioNelContainer("Devi essere un utente Premium per vedere il tuo storico.");
+        mostraMessaggioNelContainer("Accesso Negato: Devi essere un utente Premium per inserire o visualizzare gli allenamenti.");
+        
+        // Forza l'aggiornamento grafico immediato del layout della finestra
+        this.revalidate();
+        this.repaint();
     }
 
     public void mostraModuloInserimento() {
+        // MODIFICA CRUCIALE: Rende visibile la sezione solo se l'utente è premium
+        panelForm.setVisible(true); 
         impostaStatoForm(true);
-        mostraMessaggioNelContainer("Modulo sbloccato. Inserisci la tua prima sessione.");
+        mostraMessaggioNelContainer("Modulo sbloccato. Inserisci la tua sessione di allenamento.");
+        
+        // Forza l'aggiornamento grafico immediato del layout della finestra
+        this.revalidate();
+        this.repaint();
     }
 
     public void mostraStorico(List<SessioneAllenamento> storico) {
@@ -238,10 +246,15 @@ public class StoricoAllenamentiView extends JFrame {
                 JButton btnElimina = new JButton("Elimina");
                 btnElimina.setForeground(Color.RED);
                 btnElimina.setFocusPainted(false);
+                
                 btnElimina.addActionListener(e -> {
                     int conferma = JOptionPane.showConfirmDialog(this, "Vuoi eliminare questa sessione?", "Conferma", JOptionPane.YES_NO_OPTION);
                     if (conferma == JOptionPane.YES_OPTION) {
-                        controller.eliminaSessioneSelezionata(sessione, utenteCorrente);
+                        try {
+                            controller.eliminaSessioneSelezionata(sessione, utenteCorrente);
+                        } catch (SalvataggioFallitoException ex) {
+                            JOptionPane.showMessageDialog(this, ex.getMessage(), "Errore", JOptionPane.ERROR_MESSAGE);
+                        }
                     }
                 });
 
