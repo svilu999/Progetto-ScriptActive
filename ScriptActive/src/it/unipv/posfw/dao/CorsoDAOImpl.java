@@ -38,4 +38,10 @@ public class CorsoDAOImpl implements CorsoDAO {
         // Essendo un mock finto, restituiamo semplicemente tutti i corsi che ha in pancia
         return findAll();
     }
+    
+    @Override
+    public void updatePostiDisponibili(it.unipv.posfw.domain.Corso c) {
+        // Metodo vuoto inserito per compatibilità con l'interfaccia. 
+        // L'update reale viene fatto su DB da CorsoDAOMySQL.
+    }
 }

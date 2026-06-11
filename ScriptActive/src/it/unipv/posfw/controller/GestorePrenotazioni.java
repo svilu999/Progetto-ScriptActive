@@ -1,13 +1,13 @@
 package it.unipv.posfw.controller;
 
+import it.unipv.posfw.dao.CorsoDAO;
+import it.unipv.posfw.dao.PrenotazioneDAO;
+import it.unipv.posfw.database.CorsoDAOMySQL;
+import it.unipv.posfw.database.PrenotazioneDAOMySQL;
 import it.unipv.posfw.domain.Cliente;
 import it.unipv.posfw.domain.Corso;
 import it.unipv.posfw.exceptions.CorsoAlCompletoException;
 import it.unipv.posfw.exceptions.PrenotazioneGiaEffettuataException;
-import it.unipv.posfw.dao.PrenotazioneDAO;
-import it.unipv.posfw.dao.CorsoDAO;
-import it.unipv.posfw.database.PrenotazioneDAOMySQL;
-import it.unipv.posfw.database.CorsoDAOMySQL;
 
 public class GestorePrenotazioni {
 

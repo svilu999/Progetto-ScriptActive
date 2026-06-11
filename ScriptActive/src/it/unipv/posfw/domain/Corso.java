@@ -99,6 +99,10 @@ public class Corso implements Subject {
         return capienzaMassima;
     }
 
+    public void setPostiDisponibili(int postiDisponibili) {
+        this.postiDisponibili = postiDisponibili;
+    }
+    
     public int getPostiDisponibili() {
         return postiDisponibili;
     }

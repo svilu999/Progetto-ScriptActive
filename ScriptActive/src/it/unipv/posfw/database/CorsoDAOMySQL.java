@@ -1,4 +1,4 @@
-package it.unipv.posfw.dao;
+package it.unipv.posfw.database;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -7,7 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import it.unipv.posfw.database.DatabaseConnection;
+import it.unipv.posfw.dao.CorsoDAO;
 import it.unipv.posfw.domain.Corso;
 import it.unipv.posfw.domain.PersonalTrainer;
 
@@ -39,9 +39,9 @@ public class CorsoDAOMySQL implements CorsoDAO {
     public List<Corso> getPalinsesto() {
         List<Corso> listaCorsi = new ArrayList<>();
         
-        // 1. SELECT allargata per prendere anche ID e Capienza
-        String query = "SELECT c.ID_Corso, c.Nome AS NomeCorso, c.DataOra, c.CapienzaMassima, c.PostiDisponibili, " +
-                "s.NomeSede, u.Nome AS NomeTrainer, u.Cognome AS CognomeTrainer, u.Email AS EmailTrainer " + // <-- ECCOLA QUI
+        // 1. SELECT CORRETTA: Ho aggiunto c.ID_Trainer subito dopo c.ID_Corso!
+        String query = "SELECT c.ID_Corso, c.ID_Trainer, c.Nome AS NomeCorso, c.DataOra, c.CapienzaMassima, c.PostiDisponibili, " +
+                "s.NomeSede, u.Nome AS NomeTrainer, u.Cognome AS CognomeTrainer, u.Email AS EmailTrainer " + 
                 "FROM Corso c " +
                 "JOIN Sede s ON c.ID_Sede = s.ID_Sede " +
                 "JOIN PersonalTrainer pt ON c.ID_Trainer = pt.ID_Trainer " +
@@ -49,7 +49,7 @@ public class CorsoDAOMySQL implements CorsoDAO {
                 "WHERE c.Stato = 'Pianificato' " +
                 "ORDER BY c.DataOra ASC";
 
-        Connection conn = DatabaseConnection.getConnection();
+        Connection conn = it.unipv.posfw.util.DatabaseManager.getInstance().getConnection();
 
         try {
             PreparedStatement pstmt = conn.prepareStatement(query);
@@ -62,27 +62,54 @@ public class CorsoDAOMySQL implements CorsoDAO {
                 java.time.LocalDateTime dataOra = rs.getTimestamp("DataOra").toLocalDateTime();
                 int capienza = rs.getInt("CapienzaMassima");
                 
-                // 2. Estraiamo i dati del Trainer necessari per il suo costruttore
-                String idTrainer = String.valueOf(rs.getInt("ID_Trainer")); // O la colonna corretta dell'ID del trainer
+                // Mettiamo da parte i posti veri estratti dal DB
+                int postiVeri = rs.getInt("PostiDisponibili");
+                
+                // 2. Estraiamo i dati del Trainer (ORA FUNZIONA!)
+                String idTrainer = String.valueOf(rs.getInt("ID_Trainer")); 
                 String nomeTrainer = rs.getString("NomeTrainer");
                 String cognomeTrainer = rs.getString("CognomeTrainer");
                 String emailTrainer = rs.getString("EmailTrainer");
 
-                // 3. Istanziamo il PersonalTrainer sfruttando il suo VERO costruttore
+                // 3. Istanziamo il PersonalTrainer
                 PersonalTrainer trainer = new PersonalTrainer(nomeTrainer, cognomeTrainer, emailTrainer, idTrainer);
-                // 4. Creiamo il Corso passandogli il trainer appena configurato
+                
+                // 4. Creiamo il Corso
                 Corso corso = new Corso(idCorso, nomeCorso, dataOra, capienza, trainer);
                 
-                // Aggiungiamo l'oggetto alla lista per la tua GUI
+                // 5. Inseriamo i posti disponibili reali prima di mandarlo all'interfaccia
+                corso.setPostiDisponibili(postiVeri); 
+                
                 listaCorsi.add(corso);
             }
             rs.close();
             pstmt.close();
 
         } catch (SQLException e) {
+            System.err.println("Errore durante getPalinsesto: " + e.getMessage());
             e.printStackTrace();
         }
 
         return listaCorsi;
+    }
+    
+    @Override
+    public void updatePostiDisponibili(Corso c) {
+        String query = "UPDATE Corso SET postiDisponibili = ? WHERE ID_Corso = ?";
+        Connection conn = it.unipv.posfw.util.DatabaseManager.getInstance().getConnection();
+        
+        try (java.sql.PreparedStatement pstmt = conn.prepareStatement(query)) {
+            
+            pstmt.setInt(1, c.getPostiDisponibili());
+            pstmt.setString(2, c.getIdCorso());
+            
+            int righeModificate = pstmt.executeUpdate();
+            if (righeModificate == 0) {
+                System.err.println("Attenzione: Nessun corso aggiornato nel DB. L'ID esiste?");
+            }
+            
+        } catch (java.sql.SQLException e) {
+            System.err.println("Errore DAO (updatePostiDisponibili): " + e.getMessage());
+        }
     }
 }
