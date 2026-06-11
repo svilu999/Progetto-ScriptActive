@@ -11,4 +11,7 @@ public interface CorsoDAO {
     
     // Il metodo per il tuo UC3: non stampa, ma restituisce la lista
     List<Corso> getPalinsesto();
+    
+    // NUOVO METODO AGGIUNTO PER IL TUO UC2:
+    void updatePostiDisponibili(Corso c);
 }

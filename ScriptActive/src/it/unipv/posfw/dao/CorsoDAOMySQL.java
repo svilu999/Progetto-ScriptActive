@@ -120,6 +120,33 @@ public class CorsoDAOMySQL implements CorsoDAO {
         return eseguiLista(sql);
     }
 
+    @Override
+    public void updatePostiDisponibili(Corso corso) {
+        /*
+         * Metodo richiesto da CorsoDAO per UC3.
+         * Aggiorna solo i posti disponibili, senza modificare trainer,
+         * stato, data o altri dati del corso.
+         */
+        String sql = """
+            UPDATE corso
+            SET posti_disponibili = ?
+            WHERE id_corso = ?
+        """;
+
+        try (
+            Connection conn = DatabaseManager.getInstance().getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+            stmt.setInt(1, corso.getPostiDisponibili());
+            stmt.setString(2, corso.getIdCorso());
+
+            stmt.executeUpdate();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Errore durante l'aggiornamento dei posti disponibili del corso su MySQL.", e);
+        }
+    }
+
     private List<Corso> eseguiLista(String sql) {
         List<Corso> listaCorsi = new ArrayList<>();
 
@@ -174,6 +201,7 @@ public class CorsoDAOMySQL implements CorsoDAO {
                     rs.getString("email_trainer"),
                     idTrainer
             );
+
             trainer.setSpecializzazione(rs.getString("specializzazione"));
             trainer.setStatoContratto(rs.getString("stato_contratto"));
             trainer.setAttivo(rs.getBoolean("trainer_attivo"));
