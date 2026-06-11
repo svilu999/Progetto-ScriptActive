@@ -1,88 +1,195 @@
 package it.unipv.posfw.dao;
 
+import it.unipv.posfw.domain.Corso;
+import it.unipv.posfw.domain.PersonalTrainer;
+import it.unipv.posfw.domain.StatoCorso;
+import it.unipv.posfw.util.DatabaseManager;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-
-import it.unipv.posfw.database.DatabaseConnection;
-import it.unipv.posfw.domain.Corso;
-import it.unipv.posfw.domain.PersonalTrainer;
 
 public class CorsoDAOMySQL implements CorsoDAO {
 
     @Override
     public void insert(Corso c) {
-        // TODO Auto-generated method stub
+        String sql = """
+            INSERT INTO corso (
+                id_corso,
+                nome,
+                stato,
+                data_ora,
+                posti_disponibili,
+                capienza_massima,
+                id_trainer_assegnato
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+                nome = VALUES(nome),
+                stato = VALUES(stato),
+                data_ora = VALUES(data_ora),
+                posti_disponibili = VALUES(posti_disponibili),
+                capienza_massima = VALUES(capienza_massima),
+                id_trainer_assegnato = VALUES(id_trainer_assegnato)
+        """;
+
+        try (
+            Connection conn = DatabaseManager.getInstance().getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+            stmt.setString(1, c.getIdCorso());
+            stmt.setString(2, c.getNome());
+            stmt.setString(3, c.getStato().name());
+            stmt.setTimestamp(4, java.sql.Timestamp.valueOf(c.getDataOra()));
+            stmt.setInt(5, c.getPostiDisponibili());
+            stmt.setInt(6, c.getCapienzaMassima());
+
+            if (c.getTrainerAssegnato() == null) {
+                stmt.setNull(7, java.sql.Types.VARCHAR);
+            } else {
+                stmt.setString(7, c.getTrainerAssegnato().getIdTrainer());
+            }
+
+            stmt.executeUpdate();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Errore durante il salvataggio del corso su MySQL.", e);
+        }
     }
 
     @Override
     public void delete(String idCorso) {
-        // TODO Auto-generated method stub
+        /*
+         * Cancellazione logica: coerente con UC3/UC5.
+         * Il record resta nel database, ma non appare più come corso attivo.
+         */
+        String sql = """
+            UPDATE corso
+            SET stato = 'CANCELLATO'
+            WHERE id_corso = ?
+        """;
+
+        try (
+            Connection conn = DatabaseManager.getInstance().getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+            stmt.setString(1, idCorso);
+            stmt.executeUpdate();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Errore durante l'annullamento logico del corso su MySQL.", e);
+        }
     }
 
     @Override
     public Corso findById(String idCorso) {
-        // TODO Auto-generated method stub
-        return null;
+        String sql = queryBase() + " WHERE c.id_corso = ?";
+
+        try (
+            Connection conn = DatabaseManager.getInstance().getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+            stmt.setString(1, idCorso);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return creaCorsoDaResultSet(rs);
+                }
+            }
+
+            return null;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Errore durante la ricerca del corso su MySQL.", e);
+        }
     }
 
     @Override
     public List<Corso> findAll() {
-        // TODO Auto-generated method stub
-        return new ArrayList<>();
+        String sql = queryBase() + " ORDER BY c.data_ora ASC";
+        return eseguiLista(sql);
     }
 
     @Override
     public List<Corso> getPalinsesto() {
+        String sql = queryBase()
+                + " WHERE c.stato = 'ATTIVO' AND c.data_ora >= NOW()"
+                + " ORDER BY c.data_ora ASC";
+        return eseguiLista(sql);
+    }
+
+    private List<Corso> eseguiLista(String sql) {
         List<Corso> listaCorsi = new ArrayList<>();
-        
-        // 1. SELECT allargata per prendere anche ID e Capienza
-        String query = "SELECT c.ID_Corso, c.Nome AS NomeCorso, c.DataOra, c.CapienzaMassima, c.PostiDisponibili, " +
-                "s.NomeSede, u.Nome AS NomeTrainer, u.Cognome AS CognomeTrainer, u.Email AS EmailTrainer " + // <-- ECCOLA QUI
-                "FROM Corso c " +
-                "JOIN Sede s ON c.ID_Sede = s.ID_Sede " +
-                "JOIN PersonalTrainer pt ON c.ID_Trainer = pt.ID_Trainer " +
-                "JOIN Utente u ON pt.ID_Trainer = u.ID_Utente " +
-                "WHERE c.Stato = 'Pianificato' " +
-                "ORDER BY c.DataOra ASC";
 
-        Connection conn = DatabaseConnection.getConnection();
-
-        try {
-            PreparedStatement pstmt = conn.prepareStatement(query);
-            ResultSet rs = pstmt.executeQuery();
-
+        try (
+            Connection conn = DatabaseManager.getInstance().getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery()
+        ) {
             while (rs.next()) {
-                // 1. Estraiamo i dati del Corso
-                String idCorso = String.valueOf(rs.getInt("ID_Corso"));
-                String nomeCorso = rs.getString("NomeCorso");
-                java.time.LocalDateTime dataOra = rs.getTimestamp("DataOra").toLocalDateTime();
-                int capienza = rs.getInt("CapienzaMassima");
-                
-                // 2. Estraiamo i dati del Trainer necessari per il suo costruttore
-                String idTrainer = String.valueOf(rs.getInt("ID_Trainer")); // O la colonna corretta dell'ID del trainer
-                String nomeTrainer = rs.getString("NomeTrainer");
-                String cognomeTrainer = rs.getString("CognomeTrainer");
-                String emailTrainer = rs.getString("EmailTrainer");
-
-                // 3. Istanziamo il PersonalTrainer sfruttando il suo VERO costruttore
-                PersonalTrainer trainer = new PersonalTrainer(nomeTrainer, cognomeTrainer, emailTrainer, idTrainer);
-                // 4. Creiamo il Corso passandogli il trainer appena configurato
-                Corso corso = new Corso(idCorso, nomeCorso, dataOra, capienza, trainer);
-                
-                // Aggiungiamo l'oggetto alla lista per la tua GUI
-                listaCorsi.add(corso);
+                listaCorsi.add(creaCorsoDaResultSet(rs));
             }
-            rs.close();
-            pstmt.close();
 
-        } catch (SQLException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            throw new RuntimeException("Errore durante la lettura del palinsesto corsi da MySQL.", e);
         }
 
         return listaCorsi;
+    }
+
+    private String queryBase() {
+        return """
+            SELECT
+                c.id_corso,
+                c.nome AS nome_corso,
+                c.stato,
+                c.data_ora,
+                c.posti_disponibili,
+                c.capienza_massima,
+                pt.id_trainer,
+                pt.specializzazione,
+                pt.stato_contratto,
+                pt.attivo AS trainer_attivo,
+                u.nome AS nome_trainer,
+                u.cognome AS cognome_trainer,
+                u.email AS email_trainer
+            FROM corso c
+            LEFT JOIN personal_trainer pt
+                ON c.id_trainer_assegnato = pt.id_trainer
+            LEFT JOIN utente u
+                ON pt.id_utente = u.id_utente
+        """;
+    }
+
+    private Corso creaCorsoDaResultSet(ResultSet rs) throws Exception {
+        PersonalTrainer trainer = null;
+
+        String idTrainer = rs.getString("id_trainer");
+        if (idTrainer != null) {
+            trainer = new PersonalTrainer(
+                    rs.getString("nome_trainer"),
+                    rs.getString("cognome_trainer"),
+                    rs.getString("email_trainer"),
+                    idTrainer
+            );
+            trainer.setSpecializzazione(rs.getString("specializzazione"));
+            trainer.setStatoContratto(rs.getString("stato_contratto"));
+            trainer.setAttivo(rs.getBoolean("trainer_attivo"));
+        }
+
+        Corso corso = new Corso(
+                rs.getString("id_corso"),
+                rs.getString("nome_corso"),
+                rs.getTimestamp("data_ora").toLocalDateTime(),
+                rs.getInt("capienza_massima"),
+                trainer
+        );
+
+        corso.setPostiDisponibili(rs.getInt("posti_disponibili"));
+        corso.setStato(StatoCorso.valueOf(rs.getString("stato")));
+
+        return corso;
     }
 }
