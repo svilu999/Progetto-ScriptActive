@@ -1,12 +1,18 @@
 package it.unipv.posfw.controller;
 
 import java.util.List;
+import it.unipv.posfw.domain.Cliente;
+import it.unipv.posfw.domain.DatiForm;
+import it.unipv.posfw.domain.SessioneAllenamento;
+import it.unipv.posfw.dao.SessioneDAO;
+import it.unipv.posfw.view.StoricoAllenamentiView;
 
 public class StoricoAllenamenti {
-    private StoricoAllenamentiForm view;
+    private StoricoAllenamentiView view;
     private SessioneDAO dao;
 
-    public StoricoAllenamentiController(StoricoAllenamentiForm view, SessioneDAO dao) {
+    // Costruttore corretto (stesso nome della classe e riferimenti esatti alla View)
+    public StoricoAllenamenti(StoricoAllenamentiView view, SessioneDAO dao) {
         this.view = view;
         this.dao = dao;
     }
@@ -20,17 +26,13 @@ public class StoricoAllenamenti {
         }
     }
 
-    // NUOVO METODO: Salva un'intera sessione con N esercizi
     public void salvaSessioneCompleta(java.util.Date data, List<DatiForm> esercizi, Cliente cliente) {
-        // 1. Crea la sessione padre
         SessioneAllenamento nuovaSessione = new SessioneAllenamento(data, cliente.getIdCliente());
         
-        // 2. Aggiunge tutti gli esercizi figli
         for (DatiForm esercizio : esercizi) {
             nuovaSessione.aggiungiEsercizio(esercizio);
         }
 
-        // 3. Salva la sessione completa nel DB
         boolean isSalvato = dao.salvaSessione(nuovaSessione);
 
         if (isSalvato) {

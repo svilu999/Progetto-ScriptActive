@@ -11,21 +11,21 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import provaview.SessioneDAO;
-
+import it.unipv.posfw.domain.SessioneAllenamento;
+import it.unipv.posfw.domain.DatiForm;
 
 public class SessioneDAOSQL implements SessioneDAO {
 
-    // DATI DI CONNESSIONE AL TUO DATABASE MYSQL
+    // DATI DI CONNESSIONE
     private static final String URL = "jdbc:mysql://localhost:3306/scriptactive_db";
     private static final String USER = "root";
-    private static final String PASS = "Enomis23*"; // <-- Ricordati di inserire la tua vera password!
+    private static final String PASS = "Enomis23*";
 
     public SessioneDAOSQL() {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
         } catch (ClassNotFoundException e) {
-            System.err.println("Driver MySQL non trovato! Assicurati di aver aggiunto il JAR al Build Path.");
+            System.err.println("Driver MySQL non trovato! Assicurati di aver aggiunto il JAR.");
         }
     }
 
@@ -35,22 +35,20 @@ public class SessioneDAOSQL implements SessioneDAO {
 
     @Override
     public boolean salvaSessione(SessioneAllenamento sessione) {
-        // Le query aggiornate con i veri nomi delle tue tabelle e colonne
-        String sqlSessione = "INSERT INTO SessioneAllenamento (Data, ID_Cliente) VALUES (?, ?)";
+        // SOLUZIONE: Uso una subquery per inserire l'ID_Utente numerico partendo dal CodiceFiscale (Stringa)
+        String sqlSessione = "INSERT INTO SessioneAllenamento (Data, ID_Cliente) VALUES (?, (SELECT ID_Utente FROM Utente WHERE CodiceFiscale = ?))";
         String sqlEsercizio = "INSERT INTO EsercizioRegistrato (GruppoMuscolare, Macchinario, Serie, Ripetizioni, Carico, ID_Sessione) VALUES (?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = getConnection()) {
-            conn.setAutoCommit(false); // Inizio transazione
+            conn.setAutoCommit(false); 
 
             try (PreparedStatement pstmtSess = conn.prepareStatement(sqlSessione, Statement.RETURN_GENERATED_KEYS)) {
                 
-                // 1. Salviamo la Sessione Padre
                 pstmtSess.setDate(1, new java.sql.Date(sessione.getData().getTime()));
-                // Converte l'ID da String ("001") a Integer per rispettare il tuo DB
-                pstmtSess.setInt(2, Integer.parseInt(sessione.getIdCliente())); 
+                // Ora possiamo passare direttamente la stringa senza che vada in crash
+                pstmtSess.setString(2, sessione.getIdCliente()); 
                 pstmtSess.executeUpdate();
 
-                // Recuperiamo l'ID generato dal database (AUTO_INCREMENT)
                 int idSessioneGenerato = -1;
                 try (ResultSet generatedKeys = pstmtSess.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
@@ -60,15 +58,14 @@ public class SessioneDAOSQL implements SessioneDAO {
                     }
                 }
 
-                // 2. Salviamo gli Esercizi Figli
                 try (PreparedStatement pstmtEsercizio = conn.prepareStatement(sqlEsercizio)) {
                     for (DatiForm esercizio : sessione.getEsercizi()) {
-                        pstmtEsercizio.setString(1, "Generico"); // Default: aggiungerlo alla UI in futuro
-                        pstmtEsercizio.setString(2, esercizio.getNomeEsercizio()); // Salvato in 'Macchinario'
-                        pstmtEsercizio.setInt(3, 1); // Default Serie a 1
+                        pstmtEsercizio.setString(1, "Generico"); 
+                        pstmtEsercizio.setString(2, esercizio.getNomeEsercizio()); 
+                        pstmtEsercizio.setInt(3, 1); 
                         pstmtEsercizio.setInt(4, esercizio.getRipetizioni());
                         pstmtEsercizio.setDouble(5, esercizio.getCarichi());
-                        pstmtEsercizio.setInt(6, idSessioneGenerato); // Collegamento Foreign Key
+                        pstmtEsercizio.setInt(6, idSessioneGenerato); 
                         pstmtEsercizio.addBatch(); 
                     }
                     pstmtEsercizio.executeBatch(); 
@@ -77,9 +74,9 @@ public class SessioneDAOSQL implements SessioneDAO {
                 conn.commit(); 
                 return true;
 
-            } catch (SQLException | NumberFormatException ex) {
+            } catch (SQLException ex) {
                 conn.rollback(); 
-                System.err.println("Errore durante il salvataggio o conversione ID Cliente: " + ex.getMessage());
+                System.err.println("Errore durante il salvataggio della sessione: " + ex.getMessage());
                 return false;
             }
         } catch (SQLException e) {
@@ -92,29 +89,28 @@ public class SessioneDAOSQL implements SessioneDAO {
     public List<SessioneAllenamento> getStorico(String idCliente) {
         Map<Integer, SessioneAllenamento> mappaSessioni = new LinkedHashMap<>();
 
-        // JOIN aggiornata sul tuo nuovo schema
-        String sql = "SELECT s.ID_Sessione, s.Data, s.ID_Cliente, e.Macchinario, e.Carico, e.Ripetizioni " +
+        // SOLUZIONE: Join con Utente per poter filtrare direttamente per CodiceFiscale
+        String sql = "SELECT s.ID_Sessione, s.Data, u.CodiceFiscale, e.Macchinario, e.Carico, e.Ripetizioni " +
                      "FROM SessioneAllenamento s " +
+                     "JOIN Utente u ON s.ID_Cliente = u.ID_Utente " +
                      "LEFT JOIN EsercizioRegistrato e ON s.ID_Sessione = e.ID_Sessione " +
-                     "WHERE s.ID_Cliente = ? ORDER BY s.Data DESC, s.ID_Sessione DESC";
+                     "WHERE u.CodiceFiscale = ? ORDER BY s.Data DESC, s.ID_Sessione DESC";
 
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            // Converte in numero l'ID che arriva dalla View
-            pstmt.setInt(1, Integer.parseInt(idCliente));
+            pstmt.setString(1, idCliente); // Passiamo il Codice Fiscale in formato stringa
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                     int idSess = rs.getInt("ID_Sessione");
 
                     if (!mappaSessioni.containsKey(idSess)) {
-                        SessioneAllenamento sess = new SessioneAllenamento(rs.getDate("Data"), String.valueOf(rs.getInt("ID_Cliente")));
+                        SessioneAllenamento sess = new SessioneAllenamento(rs.getDate("Data"), rs.getString("CodiceFiscale"));
                         sess.setIdSessione(idSess); 
                         mappaSessioni.put(idSess, sess);
                     }
 
-                    // Attenzione: ora il nome esercizio lo leggiamo dal campo 'Macchinario'
                     String macchinario = rs.getString("Macchinario");
                     if (macchinario != null) { 
                         DatiForm esercizio = new DatiForm(macchinario, rs.getDouble("Carico"), rs.getInt("Ripetizioni"));
@@ -122,7 +118,7 @@ public class SessioneDAOSQL implements SessioneDAO {
                     }
                 }
             }
-        } catch (SQLException | NumberFormatException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
@@ -131,16 +127,13 @@ public class SessioneDAOSQL implements SessioneDAO {
 
     @Override
     public boolean eliminaSessioneSpecifica(SessioneAllenamento sessione) {
-        // Grazie al ON DELETE CASCADE della tua Foreign Key, cancellando la Sessione spariscono anche gli esercizi!
         String sql = "DELETE FROM SessioneAllenamento WHERE ID_Sessione = ?";
 
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, sessione.getIdSessione());
-            int righeCancellate = pstmt.executeUpdate();
-            
-            return righeCancellate > 0;
+            return pstmt.executeUpdate() > 0;
 
         } catch (SQLException e) {
             e.printStackTrace();
