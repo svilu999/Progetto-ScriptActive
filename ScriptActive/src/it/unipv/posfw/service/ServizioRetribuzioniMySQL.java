@@ -9,56 +9,60 @@ import java.sql.ResultSet;
 /**
  * Implementazione MySQL del servizio per il calcolo delle retribuzioni.
  *
- * Questa classe interroga direttamente il database e calcola il totale mensile
- * delle retribuzioni dei Personal Trainer attivi.
+ * Versione allineata allo schema comune scriptactive_db.
  *
- * Regole applicate:
- * - FISSA_MENSILE:
- *   usa il valore stipendio_mensile presente nel contratto attivo.
+ * I dati retributivi sono salvati direttamente nella tabella PersonalTrainer:
+ * - TipoRetribuzione
+ * - StipendioMensile
+ * - CompensoPerLezione
  *
- * - A_LEZIONE:
- *   conta i corsi COMPLETO del mese corrente e li moltiplica
- *   per compenso_per_lezione.
- *
- * GestorePersonale non deve contenere query SQL.
- * Per questo motivo il calcolo viene delegato a questo servizio.
+ * Non viene usata la vecchia tabella contratto_personale.
  */
 public class ServizioRetribuzioniMySQL implements ServizioRetribuzioni {
 
     @Override
     public double calcolaTotaleRetribuzioniMensili() {
 
+        /*
+         * Regole:
+         *
+         * FISSA_MENSILE:
+         * usa direttamente PersonalTrainer.StipendioMensile.
+         *
+         * A_LEZIONE:
+         * conta i corsi completati nel mese corrente e moltiplica
+         * per PersonalTrainer.CompensoPerLezione.
+         *
+         * Sono considerati solo i PT attivi e con contratto ATTIVO.
+         */
         String sql = """
-            SELECT 
+            SELECT
                 COALESCE(SUM(costo_mensile), 0) AS totale_retribuzioni
             FROM (
-                SELECT 
-                    cp.id_trainer,
+                SELECT
+                    pt.ID_Trainer,
                     CASE
-                        WHEN cp.tipo_retribuzione = 'FISSA_MENSILE'
-                            THEN cp.stipendio_mensile
+                        WHEN pt.TipoRetribuzione = 'FISSA_MENSILE'
+                            THEN pt.StipendioMensile
 
-                        WHEN cp.tipo_retribuzione = 'A_LEZIONE'
-                            THEN COUNT(c.id_corso) * cp.compenso_per_lezione
+                        WHEN pt.TipoRetribuzione = 'A_LEZIONE'
+                            THEN COUNT(c.ID_Corso) * COALESCE(pt.CompensoPerLezione, 0)
 
                         ELSE 0
                     END AS costo_mensile
-                FROM contratto_personale cp
-                JOIN personal_trainer pt
-                    ON cp.id_trainer = pt.id_trainer
-                LEFT JOIN corso c
-                    ON cp.id_trainer = c.id_trainer_assegnato
-                   AND c.stato = 'COMPLETO'
-                   AND MONTH(c.data_ora) = MONTH(CURRENT_DATE)
-                   AND YEAR(c.data_ora) = YEAR(CURRENT_DATE)
-                WHERE cp.stato = 'ATTIVO'
-                  AND pt.stato_contratto = 'ATTIVO'
-                  AND pt.attivo = TRUE
-                GROUP BY 
-                    cp.id_trainer,
-                    cp.tipo_retribuzione,
-                    cp.stipendio_mensile,
-                    cp.compenso_per_lezione
+                FROM PersonalTrainer pt
+                LEFT JOIN Corso c
+                    ON pt.ID_Trainer = c.ID_Trainer
+                   AND c.Stato = 'Completato'
+                   AND MONTH(c.DataOra) = MONTH(CURRENT_DATE)
+                   AND YEAR(c.DataOra) = YEAR(CURRENT_DATE)
+                WHERE pt.StatoContratto = 'ATTIVO'
+                  AND pt.Attivo = TRUE
+                GROUP BY
+                    pt.ID_Trainer,
+                    pt.TipoRetribuzione,
+                    pt.StipendioMensile,
+                    pt.CompensoPerLezione
             ) AS costi
         """;
 

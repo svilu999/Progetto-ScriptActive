@@ -1,4 +1,5 @@
 DROP DATABASE IF EXISTS scriptactive_db;
+
 -- ==============================================================================
 -- Creazione del Database
 -- ==============================================================================
@@ -6,7 +7,7 @@ CREATE DATABASE IF NOT EXISTS scriptactive_db;
 USE scriptactive_db;
 
 -- ==============================================================================
--- 1. TABELLE INDIPENDENTI (Padri)
+-- 1. TABELLE INDIPENDENTI
 -- ==============================================================================
 
 CREATE TABLE Sede (
@@ -39,7 +40,18 @@ CREATE TABLE PersonalTrainer (
     ID_Trainer INT PRIMARY KEY,
     Specializzazione VARCHAR(100),
     TipoContratto VARCHAR(50),
-    ID_Direttore INT NOT NULL, -- Relazione: Direttore Gestisce PersonalTrainer
+
+    -- ==========================================================================
+    --  Gestione Contratti del Personale
+    -- ==========================================================================
+    StatoContratto VARCHAR(50) NOT NULL DEFAULT 'ATTIVO',
+    Attivo BOOLEAN NOT NULL DEFAULT TRUE,
+    TipoRetribuzione VARCHAR(50) NOT NULL DEFAULT 'FISSA_MENSILE',
+    StipendioMensile DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    CompensoPerLezione DECIMAL(10,2) NULL,
+
+    ID_Direttore INT NOT NULL,
+
     FOREIGN KEY (ID_Trainer) REFERENCES Utente(ID_Utente) ON DELETE CASCADE,
     FOREIGN KEY (ID_Direttore) REFERENCES Direttore(ID_Direttore) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
@@ -50,15 +62,16 @@ CREATE TABLE Cliente (
 ) ENGINE=InnoDB;
 
 -- ==============================================================================
--- 3. TABELLE DIPENDENTI (Relazioni 1:N e 1:1)
+-- 3. TABELLE DIPENDENTI
 -- ==============================================================================
 
 CREATE TABLE SpesaFissa (
     ID_Spesa INT AUTO_INCREMENT PRIMARY KEY,
     Descrizione VARCHAR(255) NOT NULL,
-    Importo DECIMAL(10, 2) NOT NULL,
+    Importo DECIMAL(10,2) NOT NULL,
     Data DATE NOT NULL,
-    ID_Sede INT NOT NULL, -- Relazione: Sede Sostiene SpesaFissa
+    ID_Sede INT NOT NULL,
+
     FOREIGN KEY (ID_Sede) REFERENCES Sede(ID_Sede) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
@@ -69,9 +82,11 @@ CREATE TABLE Corso (
     CapienzaMassima INT NOT NULL CHECK (CapienzaMassima > 0),
     PostiDisponibili INT NOT NULL CHECK (PostiDisponibili >= 0),
     Stato ENUM('Pianificato', 'InCorso', 'Completato', 'Annullato') DEFAULT 'Pianificato',
-    ID_Sede INT NOT NULL,      -- Relazione: Sede Ospita Corso
-    ID_Trainer INT NOT NULL,   -- Relazione: PersonalTrainer Insegna Corso
-    ID_Direttore INT NOT NULL, -- Relazione: Direttore Pianifica Corso
+
+    ID_Sede INT NOT NULL,
+    ID_Trainer INT NOT NULL,
+    ID_Direttore INT NOT NULL,
+
     FOREIGN KEY (ID_Sede) REFERENCES Sede(ID_Sede) ON DELETE CASCADE,
     FOREIGN KEY (ID_Trainer) REFERENCES PersonalTrainer(ID_Trainer) ON DELETE RESTRICT,
     FOREIGN KEY (ID_Direttore) REFERENCES Direttore(ID_Direttore) ON DELETE RESTRICT
@@ -84,16 +99,18 @@ CREATE TABLE Abbonamento (
     DataScadenza DATE NOT NULL,
     RinnovoAutomatico BOOLEAN DEFAULT FALSE,
     IBAN VARCHAR(34),
-    ID_Cliente INT UNIQUE NOT NULL, -- UNIQUE garantisce la relazione (0,1) Cliente-Abbonamento
+    ID_Cliente INT UNIQUE NOT NULL,
+
     FOREIGN KEY (ID_Cliente) REFERENCES Cliente(ID_Cliente) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 CREATE TABLE Pagamento (
     ID_Pagamento INT AUTO_INCREMENT PRIMARY KEY,
-    Importo DECIMAL(10, 2) NOT NULL CHECK (Importo > 0),
+    Importo DECIMAL(10,2) NOT NULL CHECK (Importo > 0),
     DataTransazione DATETIME NOT NULL,
     Esito ENUM('Successo', 'Fallito', 'InElaborazione') NOT NULL,
-    ID_Abbonamento INT NOT NULL, -- Relazione: Abbonamento Genera Pagamento
+    ID_Abbonamento INT NOT NULL,
+
     FOREIGN KEY (ID_Abbonamento) REFERENCES Abbonamento(ID_Abbonamento) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
@@ -101,8 +118,9 @@ CREATE TABLE Prenotazione (
     ID_Prenotazione INT AUTO_INCREMENT PRIMARY KEY,
     DataCreazione DATETIME DEFAULT CURRENT_TIMESTAMP,
     Stato ENUM('Confermata', 'Annullata', 'InListaAttesa') DEFAULT 'Confermata',
-    ID_Cliente INT NOT NULL, -- Relazione: Cliente Effettua Prenotazione
-    ID_Corso INT NOT NULL,   -- Relazione: Corso Riceve Prenotazione
+    ID_Cliente INT NOT NULL,
+    ID_Corso INT NOT NULL,
+
     FOREIGN KEY (ID_Cliente) REFERENCES Cliente(ID_Cliente) ON DELETE CASCADE,
     FOREIGN KEY (ID_Corso) REFERENCES Corso(ID_Corso) ON DELETE CASCADE
 ) ENGINE=InnoDB;
@@ -110,7 +128,8 @@ CREATE TABLE Prenotazione (
 CREATE TABLE SessioneAllenamento (
     ID_Sessione INT AUTO_INCREMENT PRIMARY KEY,
     Data DATE NOT NULL,
-    ID_Cliente INT NOT NULL, -- Relazione: Cliente Esegue Sessione
+    ID_Cliente INT NOT NULL,
+
     FOREIGN KEY (ID_Cliente) REFERENCES Cliente(ID_Cliente) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
@@ -120,7 +139,8 @@ CREATE TABLE EsercizioRegistrato (
     Macchinario VARCHAR(100),
     Serie INT NOT NULL CHECK (Serie > 0),
     Ripetizioni INT NOT NULL CHECK (Ripetizioni > 0),
-    Carico DECIMAL(5, 2) NOT NULL CHECK (Carico >= 0),
-    ID_Sessione INT NOT NULL, -- Relazione: Sessione Contiene Esercizio
+    Carico DECIMAL(5,2) NOT NULL CHECK (Carico >= 0),
+    ID_Sessione INT NOT NULL,
+
     FOREIGN KEY (ID_Sessione) REFERENCES SessioneAllenamento(ID_Sessione) ON DELETE CASCADE
 ) ENGINE=InnoDB;

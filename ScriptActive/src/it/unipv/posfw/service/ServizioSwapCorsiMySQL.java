@@ -11,19 +11,25 @@ public class ServizioSwapCorsiMySQL implements ServizioSwapCorsi {
 
     @Override
     public boolean haCorsiAttiviOFuturi(String idTrainer) {
+        Integer idTrainerNumerico = estraiIdNumerico(idTrainer);
+
+        if (idTrainerNumerico == null) {
+            return false;
+        }
+
         String sql = """
             SELECT COUNT(*) AS totale
-            FROM corso
-            WHERE id_trainer_assegnato = ?
-              AND stato = 'ATTIVO'
-              AND data_ora >= NOW()
+            FROM Corso
+            WHERE ID_Trainer = ?
+              AND Stato IN ('Pianificato', 'InCorso')
+              AND DataOra >= NOW()
         """;
 
         try (
             Connection conn = DatabaseManager.getInstance().getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)
         ) {
-            stmt.setString(1, idTrainer);
+            stmt.setInt(1, idTrainerNumerico);
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -40,19 +46,25 @@ public class ServizioSwapCorsiMySQL implements ServizioSwapCorsi {
 
     @Override
     public boolean haCorsiImminenti(String idTrainer) {
+        Integer idTrainerNumerico = estraiIdNumerico(idTrainer);
+
+        if (idTrainerNumerico == null) {
+            return false;
+        }
+
         String sql = """
             SELECT COUNT(*) AS totale
-            FROM corso
-            WHERE id_trainer_assegnato = ?
-              AND stato = 'ATTIVO'
-              AND data_ora BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 24 HOUR)
+            FROM Corso
+            WHERE ID_Trainer = ?
+              AND Stato IN ('Pianificato', 'InCorso')
+              AND DataOra BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 24 HOUR)
         """;
 
         try (
             Connection conn = DatabaseManager.getInstance().getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)
         ) {
-            stmt.setString(1, idTrainer);
+            stmt.setInt(1, idTrainerNumerico);
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -71,23 +83,39 @@ public class ServizioSwapCorsiMySQL implements ServizioSwapCorsi {
     public int sostituisciTrainerNeiCorsi(String idTrainerDaSostituire, String idTrainerSostituto)
             throws SostitutoNonValidoException {
 
+        Integer idVecchioTrainer = estraiIdNumerico(idTrainerDaSostituire);
+        Integer idNuovoTrainer = estraiIdNumerico(idTrainerSostituto);
+
+        if (idVecchioTrainer == null || idNuovoTrainer == null) {
+            throw new SostitutoNonValidoException("ID trainer non valido.");
+        }
+
+        if (idVecchioTrainer.equals(idNuovoTrainer)) {
+            throw new SostitutoNonValidoException("Il sostituto non può coincidere con il PT da sostituire.");
+        }
+
+        /*
+         * Swap UC5:
+         * i corsi NON vengono cancellati.
+         * Viene aggiornato solo ID_Trainer nella tabella Corso.
+         */
         String sqlSwap = """
-            UPDATE corso
-            SET id_trainer_assegnato = ?
-            WHERE id_trainer_assegnato = ?
-              AND stato = 'ATTIVO'
-              AND data_ora >= NOW()
+            UPDATE Corso
+            SET ID_Trainer = ?
+            WHERE ID_Trainer = ?
+              AND Stato IN ('Pianificato', 'InCorso')
+              AND DataOra >= NOW()
         """;
 
         try (Connection conn = DatabaseManager.getInstance().getConnection()) {
             conn.setAutoCommit(false);
 
             try {
-                if (!esisteTrainerAttivo(conn, idTrainerSostituto)) {
+                if (!esisteTrainerAttivo(conn, idNuovoTrainer)) {
                     throw new SostitutoNonValidoException("Il sostituto non esiste o non è attivo.");
                 }
 
-                if (sostitutoHaSovrapposizioni(conn, idTrainerDaSostituire, idTrainerSostituto)) {
+                if (sostitutoHaSovrapposizioni(conn, idVecchioTrainer, idNuovoTrainer)) {
                     throw new SostitutoNonValidoException(
                             "OPERAZIONE ANNULLATA: il sostituto ha già un corso assegnato nello stesso orario."
                     );
@@ -96,8 +124,8 @@ public class ServizioSwapCorsiMySQL implements ServizioSwapCorsi {
                 int righeAggiornate;
 
                 try (PreparedStatement stmt = conn.prepareStatement(sqlSwap)) {
-                    stmt.setString(1, idTrainerSostituto);
-                    stmt.setString(2, idTrainerDaSostituire);
+                    stmt.setInt(1, idNuovoTrainer);
+                    stmt.setInt(2, idVecchioTrainer);
 
                     righeAggiornate = stmt.executeUpdate();
                 }
@@ -122,17 +150,17 @@ public class ServizioSwapCorsiMySQL implements ServizioSwapCorsi {
         }
     }
 
-    private boolean esisteTrainerAttivo(Connection conn, String idTrainer) throws Exception {
+    private boolean esisteTrainerAttivo(Connection conn, int idTrainer) throws Exception {
         String sql = """
             SELECT COUNT(*) AS totale
-            FROM personal_trainer
-            WHERE id_trainer = ?
-              AND stato_contratto = 'ATTIVO'
-              AND attivo = TRUE
+            FROM PersonalTrainer
+            WHERE ID_Trainer = ?
+              AND StatoContratto = 'ATTIVO'
+              AND Attivo = TRUE
         """;
 
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, idTrainer);
+            stmt.setInt(1, idTrainer);
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -146,24 +174,28 @@ public class ServizioSwapCorsiMySQL implements ServizioSwapCorsi {
 
     private boolean sostitutoHaSovrapposizioni(
             Connection conn,
-            String idTrainerDaSostituire,
-            String idTrainerSostituto) throws Exception {
+            int idTrainerDaSostituire,
+            int idTrainerSostituto) throws Exception {
 
+        /*
+         * Controlla se il sostituto ha già un corso nello stesso orario
+         * di uno dei corsi futuri/attivi del PT da sostituire.
+         */
         String sql = """
             SELECT COUNT(*) AS totale
-            FROM corso corsoDaRiassegnare
-            JOIN corso corsoDelSostituto
-                ON corsoDaRiassegnare.data_ora = corsoDelSostituto.data_ora
-            WHERE corsoDaRiassegnare.id_trainer_assegnato = ?
-              AND corsoDelSostituto.id_trainer_assegnato = ?
-              AND corsoDaRiassegnare.stato = 'ATTIVO'
-              AND corsoDelSostituto.stato = 'ATTIVO'
-              AND corsoDaRiassegnare.data_ora >= NOW()
+            FROM Corso corsoDaRiassegnare
+            JOIN Corso corsoDelSostituto
+                ON corsoDaRiassegnare.DataOra = corsoDelSostituto.DataOra
+            WHERE corsoDaRiassegnare.ID_Trainer = ?
+              AND corsoDelSostituto.ID_Trainer = ?
+              AND corsoDaRiassegnare.Stato IN ('Pianificato', 'InCorso')
+              AND corsoDelSostituto.Stato IN ('Pianificato', 'InCorso')
+              AND corsoDaRiassegnare.DataOra >= NOW()
         """;
 
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, idTrainerDaSostituire);
-            stmt.setString(2, idTrainerSostituto);
+            stmt.setInt(1, idTrainerDaSostituire);
+            stmt.setInt(2, idTrainerSostituto);
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -173,5 +205,19 @@ public class ServizioSwapCorsiMySQL implements ServizioSwapCorsi {
         }
 
         return false;
+    }
+
+    private Integer estraiIdNumerico(String id) {
+        if (id == null || id.isBlank()) {
+            return null;
+        }
+
+        String soloNumeri = id.replaceAll("[^0-9]", "");
+
+        if (soloNumeri.isBlank()) {
+            return null;
+        }
+
+        return Integer.parseInt(soloNumeri);
     }
 }

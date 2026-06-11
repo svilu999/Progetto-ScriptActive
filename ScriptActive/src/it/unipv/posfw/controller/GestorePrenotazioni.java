@@ -1,8 +1,8 @@
 package it.unipv.posfw.controller;
 
 import it.unipv.posfw.dao.CorsoDAO;
+import it.unipv.posfw.dao.CorsoDAOMySQL;
 import it.unipv.posfw.dao.PrenotazioneDAO;
-import it.unipv.posfw.database.CorsoDAOMySQL;
 import it.unipv.posfw.database.PrenotazioneDAOMySQL;
 import it.unipv.posfw.domain.Cliente;
 import it.unipv.posfw.domain.Corso;
@@ -15,7 +15,13 @@ public class GestorePrenotazioni {
     private CorsoDAO corsoDAO;
 
     public GestorePrenotazioni() {
-        // Inizializziamo le classi concrete che parlano con MySQL
+        /*
+         * PrenotazioneDAOMySQL resta nel package database,
+         * perché per ora stiamo correggendo solo il DAO dei corsi.
+         *
+         * CorsoDAOMySQL invece ora viene importato dal package dao:
+         * it.unipv.posfw.dao.CorsoDAOMySQL
+         */
         this.prenotazioneDAO = new PrenotazioneDAOMySQL();
         this.corsoDAO = new CorsoDAOMySQL();
     }
@@ -23,42 +29,77 @@ public class GestorePrenotazioni {
     /**
      * Tenta di prenotare un corso per un cliente.
      */
-    public void prenotaCorso(Cliente cliente, Corso corso) throws CorsoAlCompletoException, PrenotazioneGiaEffettuataException {
-        
-        // 1. Controllo di Dominio: Il corso è già pieno?
+    public void prenotaCorso(Cliente cliente, Corso corso)
+            throws CorsoAlCompletoException, PrenotazioneGiaEffettuataException {
+
+        /*
+         * Controllo di dominio:
+         * verifica se il corso ha ancora posti disponibili.
+         */
         if (corso.alCompleto()) {
-            throw new CorsoAlCompletoException("Spiacenti, il corso " + corso.getNome() + " ha raggiunto la capienza massima.");
+            throw new CorsoAlCompletoException(
+                    "Spiacenti, il corso " + corso.getNome() + " ha raggiunto la capienza massima."
+            );
         }
 
-        // 2. Controllo DAO: Il cliente è già iscritto a questo specifico corso?
+        /*
+         * Controllo DAO:
+         * verifica se il cliente ha già prenotato questo corso.
+         */
         if (prenotazioneDAO.esistePrenotazione(cliente.getIdCliente(), corso.getIdCorso())) {
             throw new PrenotazioneGiaEffettuataException("Sei già prenotato a questo corso!");
         }
 
-        // 3. Modifica nel Dominio e Pattern Observer
+        /*
+         * Modifica nel dominio.
+         * decrementaPosti aggiorna l'oggetto Corso in memoria.
+         */
         corso.decrementaPosti();
-        corso.attach(cliente); 
 
-        // 4. Salvataggio su Database (Persistenza)
+        /*
+         * Pattern Observer:
+         * il cliente viene collegato al corso per ricevere eventuali notifiche.
+         */
+        corso.attach(cliente);
+
+        /*
+         * Persistenza:
+         * salva la prenotazione e aggiorna i posti disponibili nel database.
+         */
         prenotazioneDAO.inserisciPrenotazione(cliente.getIdCliente(), corso.getIdCorso());
-        corsoDAO.updatePostiDisponibili(corso); // Aggiorna i posti su MySQL
-        
-        System.out.println("Prenotazione effettuata con successo! Posti rimanenti: " + corso.getPostiDisponibili()); 
+        corsoDAO.updatePostiDisponibili(corso);
+
+        System.out.println(
+                "Prenotazione effettuata con successo! Posti rimanenti: " + corso.getPostiDisponibili()
+        );
     }
 
     /**
      * Annulla una prenotazione esistente.
      */
     public void annullaPrenotazione(Cliente cliente, Corso corso) {
-        
-        // 1. Modifica nel Dominio e Pattern Observer
+
+        /*
+         * Modifica nel dominio:
+         * libera un posto nel corso.
+         */
         corso.incrementaPosti();
+
+        /*
+         * Pattern Observer:
+         * il cliente viene scollegato dal corso.
+         */
         corso.detach(cliente);
 
-        // 2. Aggiornamento su Database (Persistenza)
+        /*
+         * Persistenza:
+         * elimina la prenotazione e aggiorna i posti disponibili nel database.
+         */
         prenotazioneDAO.eliminaPrenotazione(cliente.getIdCliente(), corso.getIdCorso());
-        corsoDAO.updatePostiDisponibili(corso); // Aggiorna i posti su MySQL
+        corsoDAO.updatePostiDisponibili(corso);
 
-        System.out.println("Prenotazione annullata con successo. Posti rimanenti: " + corso.getPostiDisponibili());
+        System.out.println(
+                "Prenotazione annullata con successo. Posti rimanenti: " + corso.getPostiDisponibili()
+        );
     }
 }

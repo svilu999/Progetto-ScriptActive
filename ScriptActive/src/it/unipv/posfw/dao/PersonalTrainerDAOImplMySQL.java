@@ -7,7 +7,6 @@ import it.unipv.posfw.strategy.StrategiaRetribuzione;
 import it.unipv.posfw.util.DatabaseManager;
 
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -18,115 +17,83 @@ public class PersonalTrainerDAOImplMySQL implements PersonalTrainerDAO {
 
     @Override
     public void salva(PersonalTrainer pt) {
-        String sqlUtente = """
-            INSERT INTO utente (nome, cognome, email, password, ruolo, attivo)
-            VALUES (?, ?, ?, ?, 'PERSONAL_TRAINER', ?)
-            ON DUPLICATE KEY UPDATE
-                id_utente = LAST_INSERT_ID(id_utente),
-                nome = VALUES(nome),
-                cognome = VALUES(cognome),
-                ruolo = VALUES(ruolo),
-                attivo = VALUES(attivo)
-        """;
-
-        String sqlPT = """
-            INSERT INTO personal_trainer (
-                id_trainer,
-                id_utente,
-                specializzazione,
-                stato_contratto,
-                stipendio_mensile,
-                attivo
-            )
-            VALUES (?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-                specializzazione = VALUES(specializzazione),
-                stato_contratto = VALUES(stato_contratto),
-                stipendio_mensile = VALUES(stipendio_mensile),
-                attivo = VALUES(attivo)
-        """;
-
-        String sqlContratto = """
-            INSERT INTO contratto_personale (
-                id_trainer,
-                data_inizio,
-                data_fine,
-                stipendio_mensile,
-                stato,
-                tipo_retribuzione,
-                compenso_per_lezione
-            )
-            VALUES (?, CURRENT_DATE, NULL, ?, 'ATTIVO', ?, ?)
-            ON DUPLICATE KEY UPDATE
-                stipendio_mensile = VALUES(stipendio_mensile),
-                stato = VALUES(stato),
-                tipo_retribuzione = VALUES(tipo_retribuzione),
-                compenso_per_lezione = VALUES(compenso_per_lezione)
-        """;
+        /*
+         * DAO aggiornato per lo schema comune:
+         *
+         * Utente:
+         * - ID_Utente
+         * - CodiceFiscale
+         * - Nome
+         * - Cognome
+         * - Email
+         * - PasswordHash
+         * - Ruolo
+         * - Stato
+         *
+         * PersonalTrainer:
+         * - ID_Trainer
+         * - Specializzazione
+         * - TipoContratto
+         * - StatoContratto
+         * - Attivo
+         * - TipoRetribuzione
+         * - StipendioMensile
+         * - CompensoPerLezione
+         * - ID_Direttore
+         *
+         * Non viene più usata la tabella contratto_personale.
+         */
 
         try (Connection conn = DatabaseManager.getInstance().getConnection()) {
             conn.setAutoCommit(false);
 
-            int idUtente;
+            int idUtente = salvaOAggiornaUtente(conn, pt);
+            int idDirettore = recuperaOCreaDirettorePredefinito(conn);
 
-            try (PreparedStatement stmtUtente = conn.prepareStatement(sqlUtente, Statement.RETURN_GENERATED_KEYS)) {
-                stmtUtente.setString(1, pt.getNome());
-                stmtUtente.setString(2, pt.getCognome());
-                stmtUtente.setString(3, pt.getEmail());
-                stmtUtente.setString(4, "1234");
-                stmtUtente.setBoolean(5, pt.isAttivo());
+            DatiRetribuzione datiRetribuzione = calcolaDatiRetribuzione(pt);
 
-                stmtUtente.executeUpdate();
+            String sqlPT = """
+                INSERT INTO PersonalTrainer (
+                    ID_Trainer,
+                    Specializzazione,
+                    TipoContratto,
+                    StatoContratto,
+                    Attivo,
+                    TipoRetribuzione,
+                    StipendioMensile,
+                    CompensoPerLezione,
+                    ID_Direttore
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE
+                    Specializzazione = VALUES(Specializzazione),
+                    TipoContratto = VALUES(TipoContratto),
+                    StatoContratto = VALUES(StatoContratto),
+                    Attivo = VALUES(Attivo),
+                    TipoRetribuzione = VALUES(TipoRetribuzione),
+                    StipendioMensile = VALUES(StipendioMensile),
+                    CompensoPerLezione = VALUES(CompensoPerLezione),
+                    ID_Direttore = VALUES(ID_Direttore)
+            """;
 
-                try (ResultSet rs = stmtUtente.getGeneratedKeys()) {
-                    if (!rs.next()) {
-                        throw new RuntimeException("Impossibile recuperare id_utente.");
-                    }
-                    idUtente = rs.getInt(1);
-                }
-            }
+            try (PreparedStatement stmt = conn.prepareStatement(sqlPT)) {
+                stmt.setInt(1, idUtente);
+                stmt.setString(2, pt.getSpecializzazione());
+                stmt.setString(3, datiRetribuzione.tipoContratto);
+                stmt.setString(4, normalizzaStatoContratto(pt.getStatoContratto()));
+                stmt.setBoolean(5, pt.isAttivo());
+                stmt.setString(6, datiRetribuzione.tipoRetribuzione);
+                stmt.setDouble(7, datiRetribuzione.stipendioMensile);
 
-            double stipendioMensile = 0.00;
-            Double compensoPerLezione = null;
-            String tipoRetribuzione = "FISSA_MENSILE";
-
-            if (pt.getStrategia() != null) {
-                String tipo = pt.getStrategia().getTipoContratto();
-
-                if ("Fisso".equalsIgnoreCase(tipo)) {
-                    tipoRetribuzione = "FISSA_MENSILE";
-                    stipendioMensile = pt.getStrategia().calcolaStipendio(0);
-                    compensoPerLezione = null;
+                if (datiRetribuzione.compensoPerLezione == null) {
+                    stmt.setNull(8, java.sql.Types.DECIMAL);
                 } else {
-                    tipoRetribuzione = "A_LEZIONE";
-                    stipendioMensile = 0.00;
-                    compensoPerLezione = pt.getStrategia().calcolaStipendio(1);
-                }
-            }
-
-            try (PreparedStatement stmtPT = conn.prepareStatement(sqlPT)) {
-                stmtPT.setString(1, pt.getIdTrainer());
-                stmtPT.setInt(2, idUtente);
-                stmtPT.setString(3, pt.getSpecializzazione());
-                stmtPT.setString(4, pt.getStatoContratto());
-                stmtPT.setDouble(5, stipendioMensile);
-                stmtPT.setBoolean(6, pt.isAttivo());
-
-                stmtPT.executeUpdate();
-            }
-
-            try (PreparedStatement stmtContratto = conn.prepareStatement(sqlContratto)) {
-                stmtContratto.setString(1, pt.getIdTrainer());
-                stmtContratto.setDouble(2, stipendioMensile);
-                stmtContratto.setString(3, tipoRetribuzione);
-
-                if (compensoPerLezione == null) {
-                    stmtContratto.setNull(4, java.sql.Types.DECIMAL);
-                } else {
-                    stmtContratto.setDouble(4, compensoPerLezione);
+                    stmt.setDouble(8, datiRetribuzione.compensoPerLezione);
                 }
 
-                stmtContratto.executeUpdate();
+                stmt.setInt(9, idDirettore);
+
+                stmt.executeUpdate();
             }
 
             conn.commit();
@@ -138,31 +105,36 @@ public class PersonalTrainerDAOImplMySQL implements PersonalTrainerDAO {
 
     @Override
     public PersonalTrainer trovaPerId(String idPT) {
+        Integer idTrainer = estraiIdNumerico(idPT);
+
+        if (idTrainer == null) {
+            return null;
+        }
+
         String sql = """
             SELECT
-                pt.id_trainer,
-                u.nome,
-                u.cognome,
-                u.email,
-                pt.specializzazione,
-                pt.stato_contratto,
-                pt.attivo,
-                cp.tipo_retribuzione,
-                cp.stipendio_mensile,
-                cp.compenso_per_lezione
-            FROM personal_trainer pt
-            JOIN utente u ON pt.id_utente = u.id_utente
-            LEFT JOIN contratto_personale cp
-                ON pt.id_trainer = cp.id_trainer
-               AND cp.stato = 'ATTIVO'
-            WHERE pt.id_trainer = ?
+                pt.ID_Trainer,
+                u.Nome,
+                u.Cognome,
+                u.Email,
+                pt.Specializzazione,
+                pt.TipoContratto,
+                pt.StatoContratto,
+                pt.Attivo,
+                pt.TipoRetribuzione,
+                pt.StipendioMensile,
+                pt.CompensoPerLezione
+            FROM PersonalTrainer pt
+            JOIN Utente u
+                ON pt.ID_Trainer = u.ID_Utente
+            WHERE pt.ID_Trainer = ?
         """;
 
         try (
             Connection conn = DatabaseManager.getInstance().getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)
         ) {
-            stmt.setString(1, idPT);
+            stmt.setInt(1, idTrainer);
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -179,27 +151,33 @@ public class PersonalTrainerDAOImplMySQL implements PersonalTrainerDAO {
 
     @Override
     public void aggiorna(PersonalTrainer pt) {
+        Integer idTrainer = estraiIdNumerico(pt.getIdTrainer());
+
+        if (idTrainer == null) {
+            throw new IllegalArgumentException("ID Personal Trainer non valido: " + pt.getIdTrainer());
+        }
+
+        DatiRetribuzione datiRetribuzione = calcolaDatiRetribuzione(pt);
+
         String sqlPT = """
-            UPDATE personal_trainer
-            SET specializzazione = ?,
-                stato_contratto = ?,
-                attivo = ?
-            WHERE id_trainer = ?
+            UPDATE PersonalTrainer
+            SET Specializzazione = ?,
+                TipoContratto = ?,
+                StatoContratto = ?,
+                Attivo = ?,
+                TipoRetribuzione = ?,
+                StipendioMensile = ?,
+                CompensoPerLezione = ?
+            WHERE ID_Trainer = ?
         """;
 
         String sqlUtente = """
-            UPDATE utente u
-            JOIN personal_trainer pt ON u.id_utente = pt.id_utente
-            SET u.attivo = ?
-            WHERE pt.id_trainer = ?
-        """;
-
-        String sqlChiudiContratto = """
-            UPDATE contratto_personale
-            SET stato = 'TERMINATO',
-                data_fine = CURRENT_DATE
-            WHERE id_trainer = ?
-              AND stato = 'ATTIVO'
+            UPDATE Utente
+            SET Nome = ?,
+                Cognome = ?,
+                Email = ?,
+                Stato = ?
+            WHERE ID_Utente = ?
         """;
 
         try (Connection conn = DatabaseManager.getInstance().getConnection()) {
@@ -207,23 +185,31 @@ public class PersonalTrainerDAOImplMySQL implements PersonalTrainerDAO {
 
             try (PreparedStatement stmt = conn.prepareStatement(sqlPT)) {
                 stmt.setString(1, pt.getSpecializzazione());
-                stmt.setString(2, pt.getStatoContratto());
-                stmt.setBoolean(3, pt.isAttivo());
-                stmt.setString(4, pt.getIdTrainer());
+                stmt.setString(2, datiRetribuzione.tipoContratto);
+                stmt.setString(3, normalizzaStatoContratto(pt.getStatoContratto()));
+                stmt.setBoolean(4, pt.isAttivo());
+                stmt.setString(5, datiRetribuzione.tipoRetribuzione);
+                stmt.setDouble(6, datiRetribuzione.stipendioMensile);
+
+                if (datiRetribuzione.compensoPerLezione == null) {
+                    stmt.setNull(7, java.sql.Types.DECIMAL);
+                } else {
+                    stmt.setDouble(7, datiRetribuzione.compensoPerLezione);
+                }
+
+                stmt.setInt(8, idTrainer);
+
                 stmt.executeUpdate();
             }
 
             try (PreparedStatement stmt = conn.prepareStatement(sqlUtente)) {
-                stmt.setBoolean(1, pt.isAttivo());
-                stmt.setString(2, pt.getIdTrainer());
-                stmt.executeUpdate();
-            }
+                stmt.setString(1, pt.getNome());
+                stmt.setString(2, pt.getCognome());
+                stmt.setString(3, pt.getEmail());
+                stmt.setString(4, pt.isAttivo() ? "Attivo" : "Inattivo");
+                stmt.setInt(5, idTrainer);
 
-            if (!pt.isAttivo() || "LICENZIATO".equalsIgnoreCase(pt.getStatoContratto())) {
-                try (PreparedStatement stmt = conn.prepareStatement(sqlChiudiContratto)) {
-                    stmt.setString(1, pt.getIdTrainer());
-                    stmt.executeUpdate();
-                }
+                stmt.executeUpdate();
             }
 
             conn.commit();
@@ -235,12 +221,47 @@ public class PersonalTrainerDAOImplMySQL implements PersonalTrainerDAO {
 
     @Override
     public void elimina(String idPT) {
-        PersonalTrainer pt = trovaPerId(idPT);
+        /*
+         * Soft delete coerente con UC5:
+         * il PT non viene eliminato fisicamente dal database.
+         * Viene marcato come LICENZIATO e non attivo.
+         */
+        Integer idTrainer = estraiIdNumerico(idPT);
 
-        if (pt != null) {
-            pt.setStatoContratto("LICENZIATO");
-            pt.setAttivo(false);
-            aggiorna(pt);
+        if (idTrainer == null) {
+            throw new IllegalArgumentException("ID Personal Trainer non valido: " + idPT);
+        }
+
+        String sqlPT = """
+            UPDATE PersonalTrainer
+            SET StatoContratto = 'LICENZIATO',
+                Attivo = FALSE
+            WHERE ID_Trainer = ?
+        """;
+
+        String sqlUtente = """
+            UPDATE Utente
+            SET Stato = 'Inattivo'
+            WHERE ID_Utente = ?
+        """;
+
+        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
+            conn.setAutoCommit(false);
+
+            try (PreparedStatement stmt = conn.prepareStatement(sqlPT)) {
+                stmt.setInt(1, idTrainer);
+                stmt.executeUpdate();
+            }
+
+            try (PreparedStatement stmt = conn.prepareStatement(sqlUtente)) {
+                stmt.setInt(1, idTrainer);
+                stmt.executeUpdate();
+            }
+
+            conn.commit();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Errore durante la disattivazione del Personal Trainer su MySQL.", e);
         }
     }
 
@@ -250,22 +271,21 @@ public class PersonalTrainerDAOImplMySQL implements PersonalTrainerDAO {
 
         String sql = """
             SELECT
-                pt.id_trainer,
-                u.nome,
-                u.cognome,
-                u.email,
-                pt.specializzazione,
-                pt.stato_contratto,
-                pt.attivo,
-                cp.tipo_retribuzione,
-                cp.stipendio_mensile,
-                cp.compenso_per_lezione
-            FROM personal_trainer pt
-            JOIN utente u ON pt.id_utente = u.id_utente
-            LEFT JOIN contratto_personale cp
-                ON pt.id_trainer = cp.id_trainer
-               AND cp.stato = 'ATTIVO'
-            ORDER BY pt.id_trainer
+                pt.ID_Trainer,
+                u.Nome,
+                u.Cognome,
+                u.Email,
+                pt.Specializzazione,
+                pt.TipoContratto,
+                pt.StatoContratto,
+                pt.Attivo,
+                pt.TipoRetribuzione,
+                pt.StipendioMensile,
+                pt.CompensoPerLezione
+            FROM PersonalTrainer pt
+            JOIN Utente u
+                ON pt.ID_Trainer = u.ID_Utente
+            ORDER BY pt.ID_Trainer
         """;
 
         try (
@@ -284,31 +304,285 @@ public class PersonalTrainerDAOImplMySQL implements PersonalTrainerDAO {
         return lista;
     }
 
+    private int salvaOAggiornaUtente(Connection conn, PersonalTrainer pt) throws Exception {
+        /*
+         * Siccome nello schema comune ID_Trainer coincide con ID_Utente,
+         * prima salviamo l'utente e poi usiamo lo stesso ID per PersonalTrainer.
+         */
+
+        Integer idEsistenteDaEmail = trovaIdUtenteDaEmail(conn, pt.getEmail());
+
+        if (idEsistenteDaEmail != null) {
+            aggiornaUtente(conn, idEsistenteDaEmail, pt);
+            return idEsistenteDaEmail;
+        }
+
+        String sqlUtente = """
+            INSERT INTO Utente (
+                CodiceFiscale,
+                Nome,
+                Cognome,
+                Email,
+                PasswordHash,
+                Ruolo,
+                Stato
+            )
+            VALUES (?, ?, ?, ?, ?, 'PersonalTrainer', ?)
+        """;
+
+        try (PreparedStatement stmt = conn.prepareStatement(sqlUtente, Statement.RETURN_GENERATED_KEYS)) {
+            stmt.setString(1, generaCodiceFiscaleTecnico(pt));
+            stmt.setString(2, pt.getNome());
+            stmt.setString(3, pt.getCognome());
+            stmt.setString(4, pt.getEmail());
+            stmt.setString(5, "1234");
+            stmt.setString(6, pt.isAttivo() ? "Attivo" : "Inattivo");
+
+            stmt.executeUpdate();
+
+            try (ResultSet rs = stmt.getGeneratedKeys()) {
+                if (!rs.next()) {
+                    throw new RuntimeException("Impossibile recuperare ID_Utente dopo inserimento.");
+                }
+
+                return rs.getInt(1);
+            }
+        }
+    }
+
+    private void aggiornaUtente(Connection conn, int idUtente, PersonalTrainer pt) throws Exception {
+        String sql = """
+            UPDATE Utente
+            SET Nome = ?,
+                Cognome = ?,
+                Email = ?,
+                Ruolo = 'PersonalTrainer',
+                Stato = ?
+            WHERE ID_Utente = ?
+        """;
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, pt.getNome());
+            stmt.setString(2, pt.getCognome());
+            stmt.setString(3, pt.getEmail());
+            stmt.setString(4, pt.isAttivo() ? "Attivo" : "Inattivo");
+            stmt.setInt(5, idUtente);
+
+            stmt.executeUpdate();
+        }
+    }
+
+    private Integer trovaIdUtenteDaEmail(Connection conn, String email) throws Exception {
+        if (email == null || email.isBlank()) {
+            return null;
+        }
+
+        String sql = "SELECT ID_Utente FROM Utente WHERE Email = ?";
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, email);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("ID_Utente");
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private int recuperaOCreaDirettorePredefinito(Connection conn) throws Exception {
+        /*
+         * Serve perché nello schema comune PersonalTrainer richiede ID_Direttore.
+         * Se esiste già un direttore, usa quello.
+         * Se non esiste, crea un direttore tecnico di sistema.
+         */
+        String selectDirettore = """
+            SELECT ID_Direttore
+            FROM Direttore
+            ORDER BY ID_Direttore
+            LIMIT 1
+        """;
+
+        try (
+            PreparedStatement stmt = conn.prepareStatement(selectDirettore);
+            ResultSet rs = stmt.executeQuery()
+        ) {
+            if (rs.next()) {
+                return rs.getInt("ID_Direttore");
+            }
+        }
+
+        Integer idUtenteDirettore = trovaIdUtenteDaEmail(conn, "direttore.sistema@scriptactive.local");
+
+        if (idUtenteDirettore == null) {
+            String insertUtente = """
+                INSERT INTO Utente (
+                    CodiceFiscale,
+                    Nome,
+                    Cognome,
+                    Email,
+                    PasswordHash,
+                    Ruolo,
+                    Stato
+                )
+                VALUES (
+                    'DIR0000000000001',
+                    'Direttore',
+                    'Sistema',
+                    'direttore.sistema@scriptactive.local',
+                    '1234',
+                    'Direttore',
+                    'Attivo'
+                )
+            """;
+
+            try (PreparedStatement stmt = conn.prepareStatement(insertUtente, Statement.RETURN_GENERATED_KEYS)) {
+                stmt.executeUpdate();
+
+                try (ResultSet rs = stmt.getGeneratedKeys()) {
+                    if (!rs.next()) {
+                        throw new RuntimeException("Impossibile creare l'utente direttore predefinito.");
+                    }
+
+                    idUtenteDirettore = rs.getInt(1);
+                }
+            }
+        }
+
+        String insertDirettore = """
+            INSERT INTO Direttore (
+                ID_Direttore,
+                CodiceAutorizzazione
+            )
+            VALUES (?, 'DIR-SISTEMA')
+            ON DUPLICATE KEY UPDATE
+                CodiceAutorizzazione = VALUES(CodiceAutorizzazione)
+        """;
+
+        try (PreparedStatement stmt = conn.prepareStatement(insertDirettore)) {
+            stmt.setInt(1, idUtenteDirettore);
+            stmt.executeUpdate();
+        }
+
+        return idUtenteDirettore;
+    }
+
     private PersonalTrainer creaPersonalTrainerDaResultSet(ResultSet rs) throws Exception {
-        String tipoRetribuzione = rs.getString("tipo_retribuzione");
+        String tipoRetribuzione = rs.getString("TipoRetribuzione");
 
         StrategiaRetribuzione strategia;
 
         if ("A_LEZIONE".equalsIgnoreCase(tipoRetribuzione)) {
-            double compenso = rs.getDouble("compenso_per_lezione");
+            double compenso = rs.getDouble("CompensoPerLezione");
             strategia = new RetribuzioneProvvigione(compenso);
         } else {
-            double stipendio = rs.getDouble("stipendio_mensile");
+            double stipendio = rs.getDouble("StipendioMensile");
             strategia = new RetribuzioneFissa(stipendio);
         }
 
         PersonalTrainer pt = new PersonalTrainer(
-            rs.getString("nome"),
-            rs.getString("cognome"),
-            rs.getString("email"),
-            rs.getString("id_trainer"),
-            rs.getString("specializzazione"),
-            strategia
+                rs.getString("Nome"),
+                rs.getString("Cognome"),
+                rs.getString("Email"),
+                String.valueOf(rs.getInt("ID_Trainer")),
+                rs.getString("Specializzazione"),
+                strategia
         );
 
-        pt.setStatoContratto(rs.getString("stato_contratto"));
-        pt.setAttivo(rs.getBoolean("attivo"));
+        pt.setStatoContratto(rs.getString("StatoContratto"));
+        pt.setAttivo(rs.getBoolean("Attivo"));
 
         return pt;
+    }
+
+    private DatiRetribuzione calcolaDatiRetribuzione(PersonalTrainer pt) {
+        double stipendioMensile = 0.00;
+        Double compensoPerLezione = null;
+        String tipoRetribuzione = "FISSA_MENSILE";
+        String tipoContratto = "Fisso";
+
+        if (pt.getStrategia() != null) {
+            String tipo = pt.getStrategia().getTipoContratto();
+
+            if ("Fisso".equalsIgnoreCase(tipo)) {
+                tipoRetribuzione = "FISSA_MENSILE";
+                tipoContratto = "Fisso";
+                stipendioMensile = pt.getStrategia().calcolaStipendio(0);
+                compensoPerLezione = null;
+            } else {
+                tipoRetribuzione = "A_LEZIONE";
+                tipoContratto = "Provvigione";
+                stipendioMensile = 0.00;
+                compensoPerLezione = pt.getStrategia().calcolaStipendio(1);
+            }
+        }
+
+        return new DatiRetribuzione(
+                tipoContratto,
+                tipoRetribuzione,
+                stipendioMensile,
+                compensoPerLezione
+        );
+    }
+
+    private String normalizzaStatoContratto(String statoContratto) {
+        if (statoContratto == null || statoContratto.isBlank()) {
+            return "ATTIVO";
+        }
+
+        return statoContratto;
+    }
+
+    private Integer estraiIdNumerico(String id) {
+        if (id == null || id.isBlank()) {
+            return null;
+        }
+
+        String soloNumeri = id.replaceAll("[^0-9]", "");
+
+        if (soloNumeri.isBlank()) {
+            return null;
+        }
+
+        return Integer.parseInt(soloNumeri);
+    }
+
+    private String generaCodiceFiscaleTecnico(PersonalTrainer pt) {
+        /*
+         * Lo schema richiede CodiceFiscale NOT NULL e UNIQUE.
+         * La view UC5 non gestisce il codice fiscale, quindi generiamo
+         * un codice tecnico stabile partendo dall'email.
+         */
+        String base = pt.getEmail();
+
+        if (base == null || base.isBlank()) {
+            base = pt.getNome() + "." + pt.getCognome() + "." + System.nanoTime();
+        }
+
+        long hash = Math.abs((long) base.hashCode());
+        String numeri = String.format("%014d", hash % 100000000000000L);
+
+        return "PT" + numeri;
+    }
+
+    private static class DatiRetribuzione {
+        private final String tipoContratto;
+        private final String tipoRetribuzione;
+        private final double stipendioMensile;
+        private final Double compensoPerLezione;
+
+        private DatiRetribuzione(
+                String tipoContratto,
+                String tipoRetribuzione,
+                double stipendioMensile,
+                Double compensoPerLezione
+        ) {
+            this.tipoContratto = tipoContratto;
+            this.tipoRetribuzione = tipoRetribuzione;
+            this.stipendioMensile = stipendioMensile;
+            this.compensoPerLezione = compensoPerLezione;
+        }
     }
 }
