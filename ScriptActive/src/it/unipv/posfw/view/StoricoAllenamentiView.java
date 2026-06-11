@@ -33,7 +33,7 @@ public class StoricoAllenamentiView extends JFrame {
     // LISTA TEMPORANEA: Mantiene gli esercizi della sessione corrente prima del salvataggio finale
     private List<DatiForm> eserciziInBozza;
 
-    public StoricoAllenamentiForm() {
+    public StoricoAllenamentiView() {
         eserciziInBozza = new ArrayList<>(); // Inizializza la lista
         
         setTitle("I Miei Allenamenti");

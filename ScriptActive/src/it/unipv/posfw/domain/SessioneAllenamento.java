@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import provaview.DatiForm;
+
 
 public class SessioneAllenamento {
     private int idSessione; // Serve per collegarsi all'ID di MySQL

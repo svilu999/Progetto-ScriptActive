@@ -1,8 +1,9 @@
 package it.unipv.posfw.dao;
 
-import java.util.List;
 
-import provaview.SessioneAllenamento;
+
+import java.util.List;
+import it.unipv.posfw.domain.SessioneAllenamento;
 
 public interface SessioneDAO {
     boolean salvaSessione(SessioneAllenamento sessione);
