@@ -23,13 +23,13 @@ public class GestoreCorsi implements ServizioSwapCorsi {
     // --- DIPENDENZE (DEPENDENCY INVERSION) ---
     private CorsoDAO corsoDAO;
 
+ // Spostati nella sezione del costruttore privato
     private GestoreCorsi() {
         /*
-         * UC3 usa il DAO attraverso l'interfaccia.
-         * Di default resta il mock in memoria di Lorenzo, così i test UC3 non
-         * dipendono dal database. Per MySQL rimane disponibile CorsoDAOMySQL.
+         * Raccordo UC3/MySQL: Disattiviamo il mock in memoria
+         * e colleghiamo l'intera applicazione al database reale.
          */
-        this.corsoDAO = new CorsoDAOImpl();
+        this.corsoDAO = new it.unipv.posfw.dao.CorsoDAOMySQL();
     }
 
     public static synchronized GestoreCorsi getInstance() {
@@ -43,6 +43,12 @@ public class GestoreCorsi implements ServizioSwapCorsi {
     // UC3 - organizzazione del palinsesto corsi
     // =========================================================
 
+    // RISPETTARE IL PATTERN MVC:
+    public synchronized List<Corso> getPalinsestoCorsi() {
+        // Il controller delega al DAO MySQL l'estrazione filtrata del palinsesto
+        return corsoDAO.getPalinsesto();
+    }
+    
     public synchronized void organizzaNuovoCorso(String nome, LocalDateTime orario, int capienza, String idPT)
             throws TrainerNonValidoException, SovrapposizioneOrarioException {
 
