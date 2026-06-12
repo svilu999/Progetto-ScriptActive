@@ -9,9 +9,9 @@ public class TestConnessione {
         Connection conn = db.getConnection();
 
         if (conn != null) {
-            System.out.println("✅ Successo! Connessione al database stabilita.");
+            System.out.println(" Connessione al database stabilita.");
         } else {
-            System.out.println("❌ Errore: Connessione fallita. Controlla db.properties.");
+            System.out.println("Errore: Connessione fallita. Controlla db.properties.");
         }
     }
 }

@@ -6,6 +6,10 @@ public abstract class Utente {
     protected String cognome;
     protected String email;
     protected String passwordHash;
+    private int id;
+
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 
     public Utente(String nome, String cognome, String email) {
         this.nome = nome;

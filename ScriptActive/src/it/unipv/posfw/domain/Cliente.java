@@ -37,12 +37,17 @@ public class Cliente extends Utente implements Observer {
         return this.codiceFiscale;
     }
 
-    // --- GETTER E SETTER AGGIUNTIVI (Consigliati) ---
+    // --- GETTER E SETTER AGGIUNTIVI ---
     public TipoAbbonamento getAbbonamento() {
         return abbonamento;
     }
 
     public void setAbbonamento(TipoAbbonamento abbonamento) {
         this.abbonamento = abbonamento;
+    }
+
+    // ECCO IL METODO AGGIUNTO PER RISOLVERE L'ERRORE!
+    public TipoAbbonamento getTipoAbbonamento() {
+        return this.abbonamento;
     }
 }
