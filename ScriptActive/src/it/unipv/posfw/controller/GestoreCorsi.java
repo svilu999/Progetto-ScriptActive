@@ -1,7 +1,6 @@
 package it.unipv.posfw.controller;
 
 import it.unipv.posfw.dao.CorsoDAO;
-import it.unipv.posfw.dao.CorsoDAOImpl;
 import it.unipv.posfw.domain.Corso;
 import it.unipv.posfw.domain.PersonalTrainer;
 import it.unipv.posfw.domain.StatoCorso;
