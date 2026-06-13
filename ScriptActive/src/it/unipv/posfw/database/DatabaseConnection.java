@@ -2,37 +2,37 @@ package it.unipv.posfw.database;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.util.Properties;
+import java.io.InputStream;
 
 public class DatabaseConnection {
-    
-    // Parametri di configurazione
-    private static final String URL = "jdbc:mysql://localhost:3306/scriptactive_db";
-    private static final String USER = "root";
-    private static final String PASSWORD = "0000"; 
-
-    // Variabile che memorizza l'unica connessione attiva
     private static Connection connection = null;
 
-    // Metodo pubblico per ottenere la connessione
     public static Connection getConnection() {
         if (connection == null) {
             try {
-                // Instauriamo la connessione fisica col server
-                connection = DriverManager.getConnection(URL, USER, PASSWORD);
-                System.out.println("VITTORIA! Connessione al database stabilita con successo.");
-            } catch (SQLException e) {
-                System.out.println("ERRORE: Impossibile connettersi al database.");
+                // Leggiamo il file db.properties
+                Properties prop = new Properties();
+                InputStream input = DatabaseConnection.class.getClassLoader().getResourceAsStream("db.properties");
+                
+                if (input == null) {
+                    System.out.println("ERRORE: File db.properties non trovato!");
+                    return null;
+                }
+                prop.load(input);
+
+                // Carichiamo le impostazioni dal file
+                String url = prop.getProperty("db.url");
+                String user = prop.getProperty("db.user");
+                String pass = prop.getProperty("db.password");
+
+                connection = DriverManager.getConnection(url, user, pass);
+                System.out.println("VITTORIA! Connessione stabilita tramite db.properties.");
+            } catch (Exception e) {
+                System.out.println("ERRORE: Impossibile connettersi.");
                 e.printStackTrace();
             }
         }
         return connection;
-    }
- // Test veloce per verificare la connessione
-    public static void main(String[] args) {
-        Connection testConn = DatabaseConnection.getConnection();
-        if (testConn != null) {
-            System.out.println("Tutto pronto, Ingegnere! Puoi iniziare a mandare query.");
-        }
     }
 }
