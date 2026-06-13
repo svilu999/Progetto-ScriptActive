@@ -17,7 +17,7 @@ public class DashboardDirettoreView extends JFrame {
 
     public DashboardDirettoreView() {
         // 1. Impostazioni base della finestra
-        setTitle("ScriptActive - Dashboard Direttore (UC3)");
+        setTitle("ScriptActive - Dashboard Direttore");
         setSize(520, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null); // Centra la finestra lo schermo
