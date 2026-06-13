@@ -5,6 +5,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
+import it.unipv.posfw.controller.GestoreCorsi;
 import it.unipv.posfw.controller.GestorePrenotazioni;
 import it.unipv.posfw.dao.CorsoDAO;
 import it.unipv.posfw.dao.CorsoDAOMySQL;
@@ -84,8 +85,7 @@ public class PalinsestoCorsiView extends JFrame {
     public void caricaDati() {
         modelloTabella.setRowCount(0);
 
-        CorsoDAO databaseCorsi = new CorsoDAOMySQL();
-        corsiAttuali = databaseCorsi.getPalinsesto();
+        corsiAttuali = GestoreCorsi.getInstance().getPalinsestoCorsi(); // MVC PURO
 
         for (Corso c : corsiAttuali) {
             String nomeCompletoTrainer = "Nessun trainer";

@@ -41,9 +41,7 @@ CREATE TABLE PersonalTrainer (
     Specializzazione VARCHAR(100),
     TipoContratto VARCHAR(50),
 
-    -- ==========================================================================
     -- Gestione Contratti del Personale
-    -- ==========================================================================
     StatoContratto VARCHAR(50) NOT NULL DEFAULT 'ATTIVO',
     Attivo BOOLEAN NOT NULL DEFAULT TRUE,
     TipoRetribuzione VARCHAR(50) NOT NULL DEFAULT 'FISSA_MENSILE',
@@ -58,7 +56,7 @@ CREATE TABLE PersonalTrainer (
 
 CREATE TABLE Cliente (
     ID_Cliente INT PRIMARY KEY,
-    ID_Sede INT NOT NULL, -- <--- Sede scelta dal cliente in fase di registrazione
+    ID_Sede INT NOT NULL, 
     
     FOREIGN KEY (ID_Cliente) REFERENCES Utente(ID_Utente) ON DELETE CASCADE,
     FOREIGN KEY (ID_Sede) REFERENCES Sede(ID_Sede) ON DELETE RESTRICT
@@ -97,8 +95,8 @@ CREATE TABLE Corso (
 
 CREATE TABLE Abbonamento (
     ID_Abbonamento INT AUTO_INCREMENT PRIMARY KEY,
-    Tipo VARCHAR(50) NOT NULL,    -- <--- Allineato al Java: conterrà 'BASE' o 'PREMIUM'
-    Livello VARCHAR(50),          -- <--- Allineato al Java: conterrà 'MENSILE', 'SEMESTRALE' o 'ANNUALE'
+    Tipo VARCHAR(50) NOT NULL,    
+    Livello VARCHAR(50),          
     DataScadenza DATE NOT NULL,
     RinnovoAutomatico BOOLEAN DEFAULT FALSE,
     IBAN VARCHAR(34),
@@ -151,47 +149,41 @@ CREATE TABLE EsercizioRegistrato (
 -- ==============================================================================
 -- 4. POPOLAMENTO: INSERIMENTO SEDI 
 -- ==============================================================================
-INSERT INTO Sede (NomeSede) VALUES
-('Palestra Centrale Milano'),
-('Palestra Roma Nord');
+INSERT INTO Sede (ID_Sede, NomeSede) VALUES
+(1, 'Palestra Centrale Milano'),
+(2, 'Palestra Roma Nord');
 
 -- ==============================================================================
 -- 5. POPOLAMENTO: INSERIMENTO UTENTI (Tabella Padre)
 -- ==============================================================================
--- NOTA PER IL TEST LOGIN: ID generati automaticamente (1=Anna, 2=Marco, 3=Mario, 4=Lorenzo)
--- La password valida per il form di login sarà 'hash_finto_per_ora'
-INSERT INTO Utente (CodiceFiscale, Nome, Cognome, Email, PasswordHash, Ruolo, Stato) VALUES
-('DRTXYZ70M01F205A', 'Anna', 'Bianchi', 'direttore@scriptactive.it', 'hash_finto_per_ora', 'Direttore', 'Attivo'),
-('PTRXYZ80M01F205B', 'Marco', 'Verdi', 'trainer@scriptactive.it', 'hash_finto_per_ora', 'PersonalTrainer', 'Attivo'),
-('RSSMRA80A01H501Z', 'Mario', 'Rossi', 'mario.rossi@email.it', 'hash_finto_per_ora', 'Cliente', 'Attivo'),
-('VRNLRN99M21F205W', 'Lorenzo', 'Varano', 'lorenzo@studenti.unipv.it', 'hash_finto_per_ora', 'Cliente', 'Attivo');
+-- Ho forzato gli ID_Utente così non cambieranno mai durante i test
+INSERT INTO Utente (ID_Utente, CodiceFiscale, Nome, Cognome, Email, PasswordHash, Ruolo, Stato) VALUES
+(1, 'DRTXYZ70M01F205A', 'Anna', 'Bianchi', 'direttore@scriptactive.it', '1234', 'Direttore', 'Attivo'),
+(2, 'PTRXYZ80M01F205B', 'Marco', 'Verdi', 'trainer@scriptactive.it', '1234', 'PersonalTrainer', 'Attivo'),
+(3, 'RSSMRA80A01H501Z', 'Mario', 'Rossi', 'mario.rossi@email.it', '1234', 'Cliente', 'Attivo'),
+(4, 'VRNLRN99M21F205W', 'Lorenzo', 'Varano', 'lorenzo@studenti.unipv.it', '1234', 'Cliente', 'Attivo'),
+(10, 'TRNLUIGI80A01F2X', 'Luigi', 'Potenza', 'luigi.potenza@scriptactive.it', '1234', 'PersonalTrainer', 'Attivo'); -- IL TUO TRAINER DI TEST
 
 -- ==============================================================================
 -- 6. POPOLAMENTO: INSERIMENTO GERARCHIA UTENTI (Tabelle Figlie)
 -- ==============================================================================
+INSERT INTO Direttore (ID_Direttore, CodiceAutorizzazione) VALUES (1, 'DIR-001');
 
--- Direttore (Anna Bianchi, ID_Utente = 1)
-INSERT INTO Direttore (ID_Direttore, CodiceAutorizzazione)
-VALUES (1, 'DIR-001');
-
--- Personal Trainer (Marco Verdi, ID_Utente = 2, ID_Direttore = 1)
 INSERT INTO PersonalTrainer (ID_Trainer, Specializzazione, TipoContratto, StatoContratto, Attivo, TipoRetribuzione, StipendioMensile, ID_Direttore)
-VALUES (2, 'Pesistica e Forza', 'Indeterminato', 'ATTIVO', TRUE, 'FISSA_MENSILE', 1500.00, 1);
-
--- Clienti (Mario Rossi, ID_Utente = 3 abbinato a Milano [Sede 1], Lorenzo Varano, ID_Utente = 4 abbinato a Roma [Sede 2])
-INSERT INTO Cliente (ID_Cliente, ID_Sede)
 VALUES 
+(2, 'Pesistica e Forza', 'Indeterminato', 'ATTIVO', TRUE, 'FISSA_MENSILE', 1500.00, 1),
+(10, 'Pilates e Zumba', 'Part-Time', 'ATTIVO', TRUE, 'ORARIA', 0.00, 1);
+
+INSERT INTO Cliente (ID_Cliente, ID_Sede) VALUES 
 (3, 1), 
 (4, 2);
 
 -- ==============================================================================
--- 7. POPOLAMENTO: INSERIMENTO ABBONAMENTI (Sincronizzato con Enum Java)
+-- 7. POPOLAMENTO: INSERIMENTO ABBONAMENTI 
 -- ==============================================================================
--- Mario (ID_Cliente = 3) -> Fascia PREMIUM, durata ANNUALE
 INSERT INTO Abbonamento (Tipo, Livello, DataScadenza, RinnovoAutomatico, ID_Cliente)
 VALUES ('PREMIUM', 'ANNUALE', '2026-12-31', TRUE, 3);
 
--- Lorenzo (ID_Cliente = 4) -> Fascia BASE, durata MENSILE
 INSERT INTO Abbonamento (Tipo, Livello, DataScadenza, RinnovoAutomatico, ID_Cliente)
 VALUES ('BASE', 'MENSILE', '2026-07-31', FALSE, 4);
 
@@ -204,13 +196,10 @@ VALUES
 ('Corso di Pilates', '2026-07-02 10:00:00', 20, 20, 'Pianificato', 2, 2, 1);
 
 -- ==============================================================================
--- 9. POPOLAMENTO: INSERIMENTO STORICO ALLENAMENTI (Per testare la StoricoAllenamentiView)
+-- 9. POPOLAMENTO: STORICO ALLENAMENTI 
 -- ==============================================================================
--- Creiamo una sessione per Mario Rossi (ID_Cliente = 3)
-INSERT INTO SessioneAllenamento (Data, ID_Cliente)
-VALUES ('2026-06-10', 3);
+INSERT INTO SessioneAllenamento (ID_Sessione, Data, ID_Cliente) VALUES (1, '2026-06-10', 3);
 
--- Inseriamo gli esercizi collegati a quella sessione (ID_Sessione = 1)
 INSERT INTO EsercizioRegistrato (GruppoMuscolare, Macchinario, Serie, Ripetizioni, Carico, ID_Sessione)
 VALUES
 ('Petto', 'Panca Piana', 4, 10, 60.00, 1),
