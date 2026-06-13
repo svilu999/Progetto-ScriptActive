@@ -27,7 +27,7 @@ public class DatabaseConnection {
                 String pass = prop.getProperty("db.password");
 
                 connection = DriverManager.getConnection(url, user, pass);
-                System.out.println("VITTORIA! Connessione stabilita tramite db.properties.");
+                System.out.println(" Connessione stabilita tramite db.properties.");
             } catch (Exception e) {
                 System.out.println("ERRORE: Impossibile connettersi.");
                 e.printStackTrace();

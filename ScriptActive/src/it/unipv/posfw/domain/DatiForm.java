@@ -16,3 +16,4 @@ public class DatiForm {
     public double getCarichi() { return carichi; }
     public int getRipetizioni() { return ripetizioni; }
 }
+ 
