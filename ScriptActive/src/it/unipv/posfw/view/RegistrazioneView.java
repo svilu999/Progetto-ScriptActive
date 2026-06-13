@@ -1,12 +1,31 @@
 package it.unipv.posfw.view;
 
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import java.awt.*;
+import java.awt.CardLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
+
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JCheckBox; // IMPORT AGGIUNTO PER LA SPUNTA
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JTextField;
+import javax.swing.border.EmptyBorder;
 
 // Imports del Controller
 import it.unipv.posfw.controller.GestoreRegistrazione;
+import it.unipv.posfw.database.SedeDAOMySQL;
 // Imports del Domain
 import it.unipv.posfw.domain.LivelloAbbonamento;
 import it.unipv.posfw.domain.Sede;
@@ -23,12 +42,13 @@ public class RegistrazioneView extends JFrame {
     private JPasswordField txtPassword;
 
     // Scelte (Step 2)
-    private JComboBox<String> comboSede;
+    private JComboBox<Sede> comboSede;
     private JComboBox<TipoAbbonamento> comboTipo;
     private JComboBox<LivelloAbbonamento> comboLivello;
 
     // Pagamento (Step 3)
     private JTextField txtIBAN;
+    private JCheckBox chkRinnovo; // VARIABILE AGGIUNTA
     
     // Dimensioni standard per input e pulsanti
     private final Dimension fieldSize = new Dimension(280, 35);
@@ -58,7 +78,7 @@ public class RegistrazioneView extends JFrame {
         add(mainPanel);
     }
 
-    // --- STEP 1: DATI ANAGRAFICI (MODIFICATO CON BLOCCO VALIDAZIONE) ---
+    // --- STEP 1: DATI ANAGRAFICI ---
     private JPanel creaStep1() {
         JPanel p = creaBasePanel("1. Crea il tuo Account ScriptActive!");
         
@@ -70,11 +90,9 @@ public class RegistrazioneView extends JFrame {
 
         JButton btnNext = creaBlueButton("AVANTI");
         
-        // LOGICA DI BLOCCO INSERITA QUI
         btnNext.addActionListener(e -> {
             String password = new String(txtPassword.getPassword());
             
-            // 1. Controllo se qualche campo è vuoto
             if (txtNome.getText().trim().isEmpty() ||
                 txtCognome.getText().trim().isEmpty() ||
                 txtCF.getText().trim().isEmpty() ||
@@ -82,16 +100,14 @@ public class RegistrazioneView extends JFrame {
                 password.trim().isEmpty()) {
                 
                 JOptionPane.showMessageDialog(this, "Tutti i campi sono obbligatori per poter procedere.", "Dati Mancanti", JOptionPane.WARNING_MESSAGE);
-                return; // INTERROMPE L'ESECUZIONE: l'utente non va al prossimo step!
+                return; 
             }
             
-            // 2. Controllo lunghezza password (coerente con le regole del GestoreRegistrazione)
             if (password.length() < 6) {
                 JOptionPane.showMessageDialog(this, "La password deve contenere almeno 6 caratteri.", "Password Debole", JOptionPane.WARNING_MESSAGE);
-                return; // INTERROMPE L'ESECUZIONE
+                return; 
             }
             
-            // Se i controlli passano, allora mostra lo Step 2
             cardLayout.show(mainPanel, "STEP2");
         });
         
@@ -108,13 +124,22 @@ public class RegistrazioneView extends JFrame {
         JLabel lblSede = new JLabel("Sede di Riferimento");
         lblSede.setAlignmentX(Component.CENTER_ALIGNMENT);
         p.add(lblSede);
-        String[] sediDisponibili = {"Sede Centrale Milano", "Sede Roma Sud", "Sede Torino Centro", "Sede Napoli Vomero"};
-        comboSede = new JComboBox<>(sediDisponibili);
-        configuresComponenteFixed(comboSede);
-        p.add(comboSede);
+
+        comboSede = new JComboBox<>(); 
+
+        SedeDAOMySQL sedeDao = new SedeDAOMySQL();
+        java.util.List<Sede> listaSedi = sedeDao.getTutteLeSedi();
+
+        for (Sede s : listaSedi) {
+            comboSede.addItem(s);
+        }
+        
+        configuresComponenteFixed(comboSede); 
+        p.add(comboSede); 
+        
         p.add(Box.createVerticalStrut(20));
 
-        JLabel lblTipo = new JLabel("Durata Abbonamento");
+        JLabel lblTipo = new JLabel("Piano Abbonamento");
         lblTipo.setAlignmentX(Component.CENTER_ALIGNMENT);
         p.add(lblTipo);
         comboTipo = new JComboBox<>(TipoAbbonamento.values());
@@ -122,7 +147,7 @@ public class RegistrazioneView extends JFrame {
         p.add(comboTipo);
         p.add(Box.createVerticalStrut(20));
 
-        JLabel lblLivello = new JLabel("Livello Account");
+        JLabel lblLivello = new JLabel("Durata Abbonamento");
         lblLivello.setAlignmentX(Component.CENTER_ALIGNMENT);
         p.add(lblLivello);
         comboLivello = new JComboBox<>(LivelloAbbonamento.values());
@@ -138,11 +163,19 @@ public class RegistrazioneView extends JFrame {
         return p;
     }
 
-    // --- STEP 3: PAGAMENTO ---
+    // --- STEP 3: PAGAMENTO (AGGIORNATO CON SPUNTA RINNOVO) ---
     private JPanel creaStep3() {
         JPanel p = creaBasePanel("3. Concludi Iscrizione");
 
         aggiungiLabelEInput(p, "IBAN per l'addebito", txtIBAN = new JTextField());
+
+        // --- INSERIMENTO CHECKBOX RINNOVO ---
+        chkRinnovo = new JCheckBox("Attiva il rinnovo automatico alla scadenza");
+        chkRinnovo.setBackground(Color.WHITE);
+        chkRinnovo.setFocusPainted(false);
+        chkRinnovo.setAlignmentX(Component.CENTER_ALIGNMENT);
+        p.add(chkRinnovo);
+        p.add(Box.createVerticalStrut(20));
 
         JButton btnConfirm = creaBlueButton("PAGA E ATTIVA ORA");
         btnConfirm.addActionListener(this::handleFinalRegistration);
@@ -164,24 +197,26 @@ public class RegistrazioneView extends JFrame {
     // --- LOGICA DI SALVATAGGIO ---
     private void handleFinalRegistration(ActionEvent e) {
         try {
-            // Controllo validità formale dell'IBAN
             String ibanInserito = txtIBAN.getText().trim();
             if (ibanInserito.isEmpty() || ibanInserito.length() < 15 || !ibanInserito.toUpperCase().startsWith("IT")) {
                 JOptionPane.showMessageDialog(this, 
                     "L'IBAN inserito non è nel formato valido.\nDeve iniziare con 'IT' ed avere almeno 15 caratteri.", 
                     "IBAN Non Valido", 
                     JOptionPane.WARNING_MESSAGE);
-                return; // Blocca immediatamente l'esecuzione
+                return; 
             }
 
-            String nomeSedeScelta = (String) comboSede.getSelectedItem();
-            Sede sedeSelezionata = new Sede("S01", nomeSedeScelta); 
+            Sede sedeSelezionata = (Sede) comboSede.getSelectedItem(); 
+            boolean rinnovoScelto = chkRinnovo.isSelected(); // LETTURA DELLA SPUNTA
+            System.out.println("[DEBUG VIEW] La spunta nell'interfaccia vale: " + rinnovoScelto);
             
             gestore.registraNuovoCliente(
                     txtNome.getText(), txtCognome.getText(), txtEmail.getText(),
                     new String(txtPassword.getPassword()), txtCF.getText(),
                     sedeSelezionata, (TipoAbbonamento)comboTipo.getSelectedItem(),
-                    (LivelloAbbonamento)comboLivello.getSelectedItem(), txtIBAN.getText()
+                    (LivelloAbbonamento)comboLivello.getSelectedItem(), 
+                    rinnovoScelto, // PASSATO AL CONTROLLER
+                    txtIBAN.getText()
             );
 
             JOptionPane.showMessageDialog(this, "Iscrizione completata! Benvenuto in palestra.", "Successo", JOptionPane.INFORMATION_MESSAGE);
@@ -258,5 +293,16 @@ public class RegistrazioneView extends JFrame {
 
     public void mostraModuloRegistrazione() {
         this.setVisible(true);
+    }
+    
+    public static void main(String[] args) {
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            try {
+                RegistrazioneView view = new RegistrazioneView();
+                view.mostraModuloRegistrazione(); 
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 }

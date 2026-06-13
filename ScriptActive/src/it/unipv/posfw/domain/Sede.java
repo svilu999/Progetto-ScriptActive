@@ -2,25 +2,24 @@ package it.unipv.posfw.domain;
 
 public class Sede {
     
-    private String idSede;
+    private int idSede; // Cambiato da String a int
     private String nomeSede;
 
+    // Costruttore vuoto
     public Sede() {
     }
 
-   
-    public Sede(String idSede, String nomeSede) {
+    // Costruttore con parametri
+    public Sede(int idSede, String nomeSede) { // Aggiornato anche qui
         this.idSede = idSede;       
         this.nomeSede = nomeSede;   
     }
 
-
-    
-    public String getIdSede() {
+    public int getIdSede() {
         return idSede;
     }
 
-    public void setIdSede(String idSede) {
+    public void setIdSede(int idSede) {
         this.idSede = idSede;
     }
 
@@ -31,4 +30,9 @@ public class Sede {
     public void setNomeSede(String nomeSede) {
         this.nomeSede = nomeSede;
     }
+
+    @Override
+    public String toString() {
+        return this.nomeSede; 
+    }  
 }

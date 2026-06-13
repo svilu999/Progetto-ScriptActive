@@ -33,15 +33,15 @@ public class GestoreRegistrazione {
         return istanza;
     }
 
+    // Qui c'è il booleano corretto!
     public void registraNuovoCliente(String nome, String cognome, String email, String password, 
                                      String codiceFiscale, Sede sedeScelta, 
                                      TipoAbbonamento tipo, LivelloAbbonamento livello, 
-                                     String iban) 
+                                     boolean rinnovoAutomatico, String iban) 
                                      throws UtenteGiaEsistenteException, DatiRegistrazioneNonValidiException, PagamentoFallitoException {
         
         System.out.println("\n--- AVVIO PROCESSO DI REGISTRAZIONE ---");
 
-        // 1. Controllo validità campi testuali
         if (nome == null || nome.trim().isEmpty() ||
             cognome == null || cognome.trim().isEmpty() ||
             email == null || email.trim().isEmpty() ||
@@ -58,21 +58,15 @@ public class GestoreRegistrazione {
         if (password.length() < 6) {
             throw new DatiRegistrazioneNonValidiException("Errore: La password deve contenere almeno 6 caratteri.");
         }
-        System.out.println("Campi compilati correttamente.");
 
-        // 2. Controllo duplicati nel database
         Cliente clienteEsistente = clienteDAO.getClienteByCF(codiceFiscale);
         if (clienteEsistente != null) {
             throw new UtenteGiaEsistenteException("Errore: Esiste già un profilo associato a questo Codice Fiscale.");
         }
-        System.out.println("Il codice fiscale è nuovo. Nessun duplicato.");
 
-        // 3. Creazione Cliente in memoria (CODICE PULITO, VIA IL TRUCCO!)
         Cliente nuovoCliente = new Cliente(nome, cognome, email, codiceFiscale, sedeScelta, tipo);
         nuovoCliente.setPassword(password);
-        System.out.println("Istanza Cliente temporanea creata in memoria.");
 
-        // 4. Calcolo dell'importo dell'abbonamento (LOGICA CORRETTA SULLE ENUM)
         double importo = 0.0;
         if (livello == LivelloAbbonamento.MENSILE) importo = 50.0;
         else if (livello == LivelloAbbonamento.SEMESTRALE) importo = 250.0;
@@ -82,19 +76,15 @@ public class GestoreRegistrazione {
             importo += 15.0; 
         }
 
-        // 5. Elaborazione del Pagamento
         GestorePagamenti banca = GestorePagamenti.getIstanza();
         banca.elaboraPagamento(iban, importo); 
-        System.out.println("[OK] Transazione bancaria completata con successo.");
 
-        // ---> INIZIO CODICE INSERITO: Creazione ricevuta di pagamento <---
         Pagamento ricevuta = new Pagamento(importo, "SUCCESS", iban);
-        System.out.println("Ricevuta di pagamento creata per l'importo di €" + importo);
-        // ---> FINE CODICE INSERITO <---
 
-        // 6. Creazione e configurazione dell'Abbonamento
-        // Allineato al costruttore: (String, LivelloAbbonamento, TipoAbbonamento, boolean, String)
-        Abbonamento nuovoAbbonamento = new Abbonamento(codiceFiscale, livello, tipo, true, iban);
+        // ECCO LA STAMPA DI DEBUG INSERITA CORRETTAMENTE!
+        System.out.println("[DEBUG GESTORE] Il parametro arrivato al gestore vale: " + rinnovoAutomatico);
+
+        Abbonamento nuovoAbbonamento = new Abbonamento(codiceFiscale, livello, tipo, rinnovoAutomatico, iban);
         
         Calendar cal = Calendar.getInstance();
         if (livello == LivelloAbbonamento.MENSILE) cal.add(Calendar.MONTH, 1);
@@ -104,10 +94,8 @@ public class GestoreRegistrazione {
         nuovoAbbonamento.setDataScadenza(cal.getTime());
         nuovoCliente.setAbbonamentoAttivo(nuovoAbbonamento);
         
-        // 7. Salvataggio su Database (eseguito SOLO se il pagamento non ha lanciato eccezioni)
         clienteDAO.inserisciCliente(nuovoCliente);
         
         System.out.println("[SUCCESS] Abbonamento attivato e Utente salvato nel database!");
-        System.out.println("Procedura di iscrizione terminata correttamente. Reindirizzamento alla View di Login.");
     }
 }
