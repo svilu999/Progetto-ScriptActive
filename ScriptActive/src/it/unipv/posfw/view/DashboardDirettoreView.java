@@ -10,7 +10,7 @@ import it.unipv.posfw.controller.GestoreCorsi;
 
 public class DashboardDirettoreView extends JFrame {
 
-    // Componenti della finestra
+    // Componenti della finestra dichiarati a livello globale
     private JTextField txtNomeCorso, txtDataOra, txtCapienza, txtIdPT, txtIdAnnulla;
     private JButton btnOrganizza, btnAnnulla, btnVediPalinsesto, btnGestionePersonale;
     private JTextArea areaLog;
@@ -18,14 +18,14 @@ public class DashboardDirettoreView extends JFrame {
     public DashboardDirettoreView() {
         // 1. Impostazioni base della finestra
         setTitle("ScriptActive - Dashboard Direttore");
-        setSize(520, 600);
+        setSize(550, 650); 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null); // Centra la finestra lo schermo
+        setLocationRelativeTo(null); 
         setLayout(new BorderLayout(10, 10));
 
-        // 2. Pannello Input (Griglia ottimizzata 5x2 per ospitare i due bottoni principali)
-        JPanel pnlInput = new JPanel(new GridLayout(5, 2, 5, 5));
-        pnlInput.setBorder(BorderFactory.createTitledBorder("Organizza Nuovo Corso"));
+        // --- ZONA NORD: Creazione Corso ---
+        JPanel pnlInput = new JPanel(new GridLayout(5, 2, 5, 10)); 
+        pnlInput.setBorder(BorderFactory.createTitledBorder("1. Organizza Nuovo Corso"));
 
         pnlInput.add(new JLabel(" Nome Corso:"));
         txtNomeCorso = new JTextField();
@@ -43,37 +43,54 @@ public class DashboardDirettoreView extends JFrame {
         txtIdPT = new JTextField();
         pnlInput.add(txtIdPT);
 
-        // Riga dei bottoni affiancati
         btnOrganizza = new JButton("Pubblica Corso");
-        btnVediPalinsesto = new JButton("Visualizza Palinsesto"); // Il nostro tocco di classe
+        btnVediPalinsesto = new JButton("Visualizza Palinsesto"); 
         pnlInput.add(btnOrganizza);
         pnlInput.add(btnVediPalinsesto);
 
-        // 3. Pannello Annullamento
-        JPanel pnlAnnulla = new JPanel(new FlowLayout());
-        pnlAnnulla.setBorder(BorderFactory.createTitledBorder("Annulla Corso"));
-        pnlAnnulla.add(new JLabel("ID Corso:"));
-        txtIdAnnulla = new JTextField(10);
-        btnAnnulla = new JButton("Annulla");
-        btnGestionePersonale = new JButton("Gestione Personale");
+        // --- ZONA CENTRO: Contenitore per Annullamento e Navigazione ---
+        JPanel pnlCentro = new JPanel();
+        pnlCentro.setLayout(new BoxLayout(pnlCentro, BoxLayout.Y_AXIS));
+        pnlCentro.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+
+        // Sotto-pannello 2.1: Annullamento
+        JPanel pnlAnnulla = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 15));
+        pnlAnnulla.setBorder(BorderFactory.createTitledBorder("2. Gestione Corsi Esistenti"));
+        pnlAnnulla.add(new JLabel("ID Corso da annullare:"));
+        txtIdAnnulla = new JTextField(12);
+        btnAnnulla = new JButton("Annulla Corso");
+        btnAnnulla.setForeground(Color.RED); 
+        
         pnlAnnulla.add(txtIdAnnulla);
         pnlAnnulla.add(btnAnnulla);
-        pnlAnnulla.add(btnGestionePersonale);
 
-        // 4. Area Log/Console verde stile Matrix
+        // Sotto-pannello 2.2: Navigazione Esterna
+        JPanel pnlNavigazione = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
+        pnlNavigazione.setBorder(BorderFactory.createTitledBorder("3. Integrazioni Sistema"));
+        
+        // CORREZIONE APPLICATA QUI: Rimosso "JButton" all'inizio per evitare lo shadowing
+        btnGestionePersonale = new JButton("Apri Modulo Gestione Personale (UC5)");
+        pnlNavigazione.add(btnGestionePersonale);
+
+        // Aggiungiamo i due sotto-pannelli al contenitore centrale
+        pnlCentro.add(pnlAnnulla);
+        pnlCentro.add(Box.createRigidArea(new Dimension(0, 10))); 
+        pnlCentro.add(pnlNavigazione);
+
+        // --- ZONA SUD: Area Log Matrix ---
         areaLog = new JTextArea();
         areaLog.setEditable(false);
         areaLog.setBackground(Color.BLACK);
         areaLog.setForeground(Color.GREEN);
         JScrollPane scroll = new JScrollPane(areaLog);
+        scroll.setPreferredSize(new Dimension(550, 180));
 
-        // Aggiunta pannelli al frame principale
+        // Aggiunta pannelli principali al frame
         add(pnlInput, BorderLayout.NORTH);
-        add(pnlAnnulla, BorderLayout.CENTER);
+        add(pnlCentro, BorderLayout.CENTER);
         add(scroll, BorderLayout.SOUTH);
-        scroll.setPreferredSize(new Dimension(520, 200));
 
-        // 5. Configurazione dei Listener per i click
+        // Configurazione dei Listener per i click
         configuraEventi();
     }
 
@@ -118,11 +135,10 @@ public class DashboardDirettoreView extends JFrame {
             }
         });
 
-        // Click sul bottone VISUALIZZA PALINSESTO (Il collegamento tra le due viste)
+        // Click sul bottone VISUALIZZA PALINSESTO
         btnVediPalinsesto.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // Istanziamo la seconda finestra e la rendiamo visibile
                 PalinsestoCorsiView finestraPalinsesto = new PalinsestoCorsiView();
                 finestraPalinsesto.setVisible(true);
                 areaLog.append("[VIEW] Apertura finestra Palinsesto Corsi.\n");
