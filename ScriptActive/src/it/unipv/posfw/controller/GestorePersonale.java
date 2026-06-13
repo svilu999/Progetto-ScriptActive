@@ -93,16 +93,18 @@ public class GestorePersonale {
             String specializzazione,
             StrategiaRetribuzione contratto) throws TrainerGiaAssuntoException {
 
-        if (trainerDAO.trovaPerId(idPT) != null) {
+        String idTecnico = normalizzaIdAssunzione(idPT);
+
+        if (!"AUTO".equalsIgnoreCase(idTecnico) && trainerDAO.trovaPerId(idTecnico) != null) {
             throw new TrainerGiaAssuntoException(
-                    "OPERAZIONE ANNULLATA: il PT con ID " + idPT + " è già registrato.");
+                    "OPERAZIONE ANNULLATA: il PT con ID " + idTecnico + " è già registrato.");
         }
 
         PersonalTrainer nuovoTrainer = new PersonalTrainer(
                 nome,
                 cognome,
                 email,
-                idPT,
+                idTecnico,
                 specializzazione,
                 contratto
         );
@@ -218,6 +220,14 @@ public class GestorePersonale {
 
         System.out.println("[UC5] Totale retribuzioni mensili PT attivi: €" + totale);
         return totale;
+    }
+
+    private String normalizzaIdAssunzione(String idPT) {
+        if (idPT == null || idPT.trim().isEmpty()) {
+            return "AUTO";
+        }
+
+        return idPT.trim();
     }
 
     private String normalizzaIdObbligatorio(String id, String nomeCampo) throws SostitutoNonValidoException {

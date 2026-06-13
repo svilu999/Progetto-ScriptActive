@@ -407,6 +407,10 @@ public class GestionePersonaleView extends JFrame {
         txtCognome = creaCampoTesto();
         txtEmail = creaCampoTesto();
         txtIdTrainer = creaCampoTesto();
+        txtIdTrainer.setText("Generato automaticamente");
+        txtIdTrainer.setEditable(false);
+        txtIdTrainer.setBackground(new Color(238, 238, 240));
+
         txtSpecializzazione = creaCampoTesto();
         txtImportoRetribuzione = creaCampoTesto();
 
@@ -683,13 +687,13 @@ public class GestionePersonaleView extends JFrame {
             String nome = txtNome.getText().trim();
             String cognome = txtCognome.getText().trim();
             String email = txtEmail.getText().trim();
-            String idTrainer = txtIdTrainer.getText().trim();
+            String idTrainer = "AUTO";
             String specializzazione = txtSpecializzazione.getText().trim();
             String tipoRetribuzione = (String) comboTipoRetribuzione.getSelectedItem();
             String importoTesto = txtImportoRetribuzione.getText().trim();
 
             if (nome.isEmpty() || cognome.isEmpty() || email.isEmpty()
-                    || idTrainer.isEmpty() || specializzazione.isEmpty()
+                    || specializzazione.isEmpty()
                     || importoTesto.isEmpty()) {
 
                 mostraErrore("Compila tutti i campi prima di assumere il PT.");
@@ -729,7 +733,7 @@ public class GestionePersonaleView extends JFrame {
 
             pulisciCampiAssunzione();
             caricaPersonalTrainer();
-            aggiornaStato("PT assunto correttamente: " + idTrainer);
+            aggiornaStato("PT assunto correttamente: " + nome + " " + cognome);
 
         } catch (NumberFormatException e) {
             mostraErrore("L'importo della retribuzione deve essere un numero. Esempio: 1400 oppure 25");
@@ -885,7 +889,7 @@ public class GestionePersonaleView extends JFrame {
         txtNome.setText("");
         txtCognome.setText("");
         txtEmail.setText("");
-        txtIdTrainer.setText("");
+        txtIdTrainer.setText("Generato automaticamente");
         txtSpecializzazione.setText("");
         txtImportoRetribuzione.setText("");
         comboTipoRetribuzione.setSelectedIndex(0);
