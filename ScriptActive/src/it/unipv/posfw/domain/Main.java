@@ -25,8 +25,8 @@ public class Main {
             RegistrazioneView registrazioneView = new RegistrazioneView();
             
             // Facciamo apparire il tuo modulo a step sullo schermo
-            registrazioneView.mostraModuloRegistrazione();
-            
+           // registrazioneView.mostraModuloRegistrazione();
+
         });
     }
 }

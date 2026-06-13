@@ -1,5 +1,7 @@
 package it.unipv.posfw.controller;
 
+import javax.swing.JOptionPane; 
+
 import it.unipv.posfw.database.UtenteDAO;
 import it.unipv.posfw.dao.SessioneDAO;
 import it.unipv.posfw.dao.SessioneDAOSQL;
@@ -10,12 +12,12 @@ import it.unipv.posfw.domain.Direttore;
 import it.unipv.posfw.domain.PersonalTrainer;
 import it.unipv.posfw.domain.Utente;
 
-// Importiamo le View
+// Importiamo le View e i Controller
 import it.unipv.posfw.view.LoginView;
+import it.unipv.posfw.controller.GestoreCorsi;
 import it.unipv.posfw.view.StoricoAllenamentiView;
 import it.unipv.posfw.view.DashboardDirettoreView; 
-
-// ATTENZIONE: Se la classe del Trainer si chiama diversamente, cambia questo import!
+import it.unipv.posfw.view.DashboardClienteView; 
 import it.unipv.posfw.view.PalinsestoCorsiView; 
 
 public class LoginController {
@@ -51,34 +53,56 @@ public class LoginController {
         // =========================================================
         
         if (utenteLoggato instanceof Cliente) {
-            // --- AREA RISERVATA CLIENTE ---
-            StoricoAllenamentiView clienteView = new StoricoAllenamentiView();
-            SessioneDAO sessioneDAO = new SessioneDAOSQL();
-            StoricoAllenamenti clienteController = new StoricoAllenamenti(clienteView, sessioneDAO);
+            // --- AREA RISERVATA CLIENTE (ATTERRAGGIO SULLA DASHBOARD) ---
+            Cliente clienteLoggato = (Cliente) utenteLoggato;
             
-            clienteView.setController(clienteController);
-            clienteView.setUtenteCorrente((Cliente) utenteLoggato); 
+            DashboardClienteView dashboardView = new DashboardClienteView();
+            dashboardView.impostaDatiCliente(clienteLoggato);
+            dashboardView.setVisible(true);
             
-            clienteView.setVisible(true);
-            clienteView.clickAccediStorico((Cliente) utenteLoggato);
+            // Bottone "LA MIA AREA PREMIUM"
+            dashboardView.btnAreaPremium.addActionListener(e -> {
+                dashboardView.dispose();
+                
+                StoricoAllenamentiView premiumView = new StoricoAllenamentiView();
+                SessioneDAO sessioneDAO = new SessioneDAOSQL();
+                StoricoAllenamenti clienteController = new StoricoAllenamenti(premiumView, sessioneDAO);
+                
+                premiumView.setController(clienteController);
+                premiumView.setUtenteCorrente(clienteLoggato); 
+                premiumView.setVisible(true);
+                premiumView.clickAccediStorico(clienteLoggato);
+            });
+            
+            // Bottone "VAI AL PALINSESTO CORSI" (Apre la View dei tuoi compagni!)
+            dashboardView.btnPrenotaCorsi.addActionListener(e -> {
+                dashboardView.dispose();
+                PalinsestoCorsiView corsiView = new PalinsestoCorsiView();
+                
+                // Opzionale: se la view dei corsi ha bisogno del controller
+                GestoreCorsi controllerCorsi = GestoreCorsi.getInstance();
+                // corsiView.setController(controllerCorsi); // Scommenta se i tuoi compagni hanno creato questo metodo
+                
+                corsiView.setVisible(true);
+            });
             
         } else if (utenteLoggato instanceof Direttore) {
             // --- AREA RISERVATA DIRETTORE ---
             DashboardDirettoreView direttoreView = new DashboardDirettoreView();
-            
-            // SE HAI UN CONTROLLER PER IL DIRETTORE, ISTANZIALO QUI IN FUTURO
-            
             direttoreView.setVisible(true);
             
         } else if (utenteLoggato instanceof PersonalTrainer) {
             // --- AREA RISERVATA PERSONAL TRAINER ---
             
-            // Crea la finestra del Trainer
             PalinsestoCorsiView trainerView = new PalinsestoCorsiView();
             
-            // SE I TUOI COMPAGNI HANNO CREATO IL CONTROLLER, ISTANZIALO QUI IN FUTURO
+            // ECCO L'ISTANZIAZIONE DEL CONTROLLER SINGLETON DEI TUOI COLLEGHI:
+            GestoreCorsi controllerCorsi = GestoreCorsi.getInstance();
             
-            // Rende visibile la finestra
+            // Assicurati che la PalinsestoCorsiView abbia questo metodo!
+            // se ti dà errore rosso, commentalo temporaneamente con //
+            // trainerView.setController(controllerCorsi); 
+            
             trainerView.setVisible(true);
             
             System.out.println("Accesso effettuato come Personal Trainer: " + utenteLoggato.getNome());
