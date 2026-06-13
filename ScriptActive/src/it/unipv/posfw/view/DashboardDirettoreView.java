@@ -128,6 +128,16 @@ public class DashboardDirettoreView extends JFrame {
                 areaLog.append("[VIEW] Apertura finestra Palinsesto Corsi.\n");
             }
         });
+
+        // Click sul bottone GESTIONE PERSONALE
+        btnGestionePersonale.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                GestionePersonaleView finestraPersonale = new GestionePersonaleView();
+                finestraPersonale.setVisible(true);
+                areaLog.append("[VIEW] Apertura finestra Gestione Personale - UC5.\n");
+            }
+        });
     }
 
     public static void main(String[] args) {
