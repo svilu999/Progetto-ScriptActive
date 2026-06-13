@@ -12,7 +12,7 @@ public class DashboardDirettoreView extends JFrame {
 
     // Componenti della finestra
     private JTextField txtNomeCorso, txtDataOra, txtCapienza, txtIdPT, txtIdAnnulla;
-    private JButton btnOrganizza, btnAnnulla, btnVediPalinsesto; // Aggiunto btnVediPalinsesto
+    private JButton btnOrganizza, btnAnnulla, btnVediPalinsesto, btnGestionePersonale;
     private JTextArea areaLog;
 
     public DashboardDirettoreView() {
@@ -32,7 +32,7 @@ public class DashboardDirettoreView extends JFrame {
         pnlInput.add(txtNomeCorso);
 
         pnlInput.add(new JLabel(" Data/Ora (dd/MM/yyyy HH:mm):"));
-        txtDataOra = new JTextField("01/06/2026 18:00");
+        txtDataOra = new JTextField("01/07/2026 18:00");
         pnlInput.add(txtDataOra);
 
         pnlInput.add(new JLabel(" Capienza Massima:"));
@@ -55,8 +55,10 @@ public class DashboardDirettoreView extends JFrame {
         pnlAnnulla.add(new JLabel("ID Corso:"));
         txtIdAnnulla = new JTextField(10);
         btnAnnulla = new JButton("Annulla");
+        btnGestionePersonale = new JButton("Gestione Personale");
         pnlAnnulla.add(txtIdAnnulla);
         pnlAnnulla.add(btnAnnulla);
+        pnlAnnulla.add(btnGestionePersonale);
 
         // 4. Area Log/Console verde stile Matrix
         areaLog = new JTextArea();
