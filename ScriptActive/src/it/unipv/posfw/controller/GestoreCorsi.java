@@ -55,12 +55,12 @@ public class GestoreCorsi implements ServizioSwapCorsi {
 
         if (!convalidaTrainer(idPT)) {
             throw new TrainerNonValidoException(
-                    "Errore UC3: Il Personal Trainer con ID " + idPT + " non esiste o non è attivo.");
+                    "Errore: Il Personal Trainer con ID " + idPT + " non esiste o non è attivo.");
         }
 
         if (controllaSovrapposizioni(idPT, orario)) {
             throw new SovrapposizioneOrarioException(
-                    "Errore UC3: Il Trainer " + idPT + " è già occupato in questa fascia oraria.");
+                    "Errore: Il Trainer " + idPT + " è già occupato in questa fascia oraria.");
         }
 
         String idCorsoUnivoco = "CRS-" + UUID.randomUUID().toString().substring(0, 5).toUpperCase();
@@ -68,8 +68,25 @@ public class GestoreCorsi implements ServizioSwapCorsi {
         PersonalTrainer ptAssegnato = new PersonalTrainer("NomePT", "CognomePT", "trainer@scriptactive.it", idPT);
         Corso nuovoCorso = new Corso(idCorsoUnivoco, nome, orario, capienza, ptAssegnato);
 
-        corsoDAO.insert(nuovoCorso);
-        System.out.println("[CONTROLLER] Nuovo corso registrato con ID: " + idCorsoUnivoco);
+        try {
+            // Proviamo a salvare il corso sul database
+            corsoDAO.insert(nuovoCorso);
+            System.out.println("[CONTROLLER] Nuovo corso registrato con ID: " + idCorsoUnivoco);
+            
+        } catch (RuntimeException ex) {
+            /* * EXCEPTION TRANSLATION:
+             * Se il DB rifiuta l'inserimento perché la Foreign Key fallisce (es. il trainer non esiste),
+             * catturiamo l'errore SQL e lanciamo la nostra eccezione di dominio personalizzata.
+             */
+            if (ex.getCause() != null && ex.getCause().getMessage().contains("foreign key constraint fails")) {
+                throw new TrainerNonValidoException(
+                        "OPERAZIONE BLOCCATA: Il Personal Trainer con ID " + idPT + " non esiste nel sistema! Inserire un ID valido."
+                );
+            }
+            
+            // Se è un errore diverso (es. server spento), lo rilanciamo normalmente
+            throw ex; 
+        }
     }
 
     public synchronized void annullaCorso(String idCorso) throws CorsoNonTrovatoException {
@@ -77,7 +94,7 @@ public class GestoreCorsi implements ServizioSwapCorsi {
 
         Corso corso = corsoDAO.findById(idCorso);
         if (corso == null) {
-            throw new CorsoNonTrovatoException("Errore UC3: Corso con ID " + idCorso + " inesistente.");
+            throw new CorsoNonTrovatoException("Errore: Corso con ID " + idCorso + " inesistente.");
         }
 
         corso.setStato(StatoCorso.CANCELLATO);

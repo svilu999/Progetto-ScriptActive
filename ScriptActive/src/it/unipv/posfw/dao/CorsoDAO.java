@@ -9,9 +9,9 @@ public interface CorsoDAO {
     Corso findById(String idCorso);
     List<Corso> findAll();
     
-    // Il metodo per il tuo UC3: non stampa, ma restituisce la lista
+    // Il metodo che non stampa, ma restituisce la lista
     List<Corso> getPalinsesto();
     
-    // NUOVO METODO AGGIUNTO PER IL TUO UC2:
+    // NUOVO METODO AGGIUNTO PER UC2:
     void updatePostiDisponibili(Corso c);
 }
