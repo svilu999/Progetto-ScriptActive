@@ -41,7 +41,9 @@ CREATE TABLE PersonalTrainer (
     Specializzazione VARCHAR(100),
     TipoContratto VARCHAR(50),
 
+    -- ==========================================================================
     -- Gestione Contratti del Personale
+    -- ==========================================================================
     StatoContratto VARCHAR(50) NOT NULL DEFAULT 'ATTIVO',
     Attivo BOOLEAN NOT NULL DEFAULT TRUE,
     TipoRetribuzione VARCHAR(50) NOT NULL DEFAULT 'FISSA_MENSILE',
@@ -56,7 +58,7 @@ CREATE TABLE PersonalTrainer (
 
 CREATE TABLE Cliente (
     ID_Cliente INT PRIMARY KEY,
-    ID_Sede INT NOT NULL, 
+    ID_Sede INT NOT NULL,
     
     FOREIGN KEY (ID_Cliente) REFERENCES Utente(ID_Utente) ON DELETE CASCADE,
     FOREIGN KEY (ID_Sede) REFERENCES Sede(ID_Sede) ON DELETE RESTRICT
@@ -95,8 +97,8 @@ CREATE TABLE Corso (
 
 CREATE TABLE Abbonamento (
     ID_Abbonamento INT AUTO_INCREMENT PRIMARY KEY,
-    Tipo VARCHAR(50) NOT NULL,    
-    Livello VARCHAR(50),          
+    Tipo VARCHAR(50) NOT NULL,
+    Livello VARCHAR(50),
     DataScadenza DATE NOT NULL,
     RinnovoAutomatico BOOLEAN DEFAULT FALSE,
     IBAN VARCHAR(34),
@@ -147,39 +149,55 @@ CREATE TABLE EsercizioRegistrato (
 ) ENGINE=InnoDB;
 
 -- ==============================================================================
--- 4. POPOLAMENTO: INSERIMENTO SEDI 
+-- 4. POPOLAMENTO: INSERIMENTO SEDI
 -- ==============================================================================
 INSERT INTO Sede (ID_Sede, NomeSede) VALUES
 (1, 'Palestra Centrale Milano'),
 (2, 'Palestra Roma Nord');
 
 -- ==============================================================================
--- 5. POPOLAMENTO: INSERIMENTO UTENTI (Tabella Padre)
+-- 5. POPOLAMENTO: INSERIMENTO UTENTI
 -- ==============================================================================
--- Ho forzato gli ID_Utente così non cambieranno mai durante i test
+-- ID fissati per rendere stabili i test.
+-- 1  = Anna Bianchi     Direttore
+-- 2  = Marco Verdi      PT da licenziare nei test UC5
+-- 3  = Mario Rossi      Cliente
+-- 4  = Lorenzo Varano   Cliente
+-- 10 = Luigi Potenza    PT di test già presente nel push dei compagni
+-- 11 = Giulia Neri      PT compatibile e libero per sostituire Marco
+-- 12 = Luca Bianchi     PT compatibile ma occupato nello stesso orario di Marco
+-- 13 = Sara Rossi       PT con specializzazione diversa
+
 INSERT INTO Utente (ID_Utente, CodiceFiscale, Nome, Cognome, Email, PasswordHash, Ruolo, Stato) VALUES
 (1, 'DRTXYZ70M01F205A', 'Anna', 'Bianchi', 'direttore@scriptactive.it', '1234', 'Direttore', 'Attivo'),
 (2, 'PTRXYZ80M01F205B', 'Marco', 'Verdi', 'trainer@scriptactive.it', '1234', 'PersonalTrainer', 'Attivo'),
 (3, 'RSSMRA80A01H501Z', 'Mario', 'Rossi', 'mario.rossi@email.it', '1234', 'Cliente', 'Attivo'),
 (4, 'VRNLRN99M21F205W', 'Lorenzo', 'Varano', 'lorenzo@studenti.unipv.it', '1234', 'Cliente', 'Attivo'),
-(10, 'TRNLUIGI80A01F2X', 'Luigi', 'Potenza', 'luigi.potenza@scriptactive.it', '1234', 'PersonalTrainer', 'Attivo'); -- IL TUO TRAINER DI TEST
+(10, 'TRNLUIGI80A01F2X', 'Luigi', 'Potenza', 'luigi.potenza@scriptactive.it', '1234', 'PersonalTrainer', 'Attivo'),
+(11, 'PTRGNR90A01F205C', 'Giulia', 'Neri', 'giulia.neri@scriptactive.it', '1234', 'PersonalTrainer', 'Attivo'),
+(12, 'PTRLBI90A01F205D', 'Luca', 'Bianchi', 'luca.bianchi@scriptactive.it', '1234', 'PersonalTrainer', 'Attivo'),
+(13, 'PTRSRA90A01F205E', 'Sara', 'Rossi', 'sara.rossi@scriptactive.it', '1234', 'PersonalTrainer', 'Attivo');
 
 -- ==============================================================================
--- 6. POPOLAMENTO: INSERIMENTO GERARCHIA UTENTI (Tabelle Figlie)
+-- 6. POPOLAMENTO: INSERIMENTO GERARCHIA UTENTI
 -- ==============================================================================
-INSERT INTO Direttore (ID_Direttore, CodiceAutorizzazione) VALUES (1, 'DIR-001');
+INSERT INTO Direttore (ID_Direttore, CodiceAutorizzazione) VALUES
+(1, 'DIR-001');
 
-INSERT INTO PersonalTrainer (ID_Trainer, Specializzazione, TipoContratto, StatoContratto, Attivo, TipoRetribuzione, StipendioMensile, ID_Direttore)
+INSERT INTO PersonalTrainer (ID_Trainer, Specializzazione, TipoContratto, StatoContratto, Attivo, TipoRetribuzione, StipendioMensile, CompensoPerLezione, ID_Direttore)
 VALUES 
-(2, 'Pesistica e Forza', 'Indeterminato', 'ATTIVO', TRUE, 'FISSA_MENSILE', 1500.00, 1),
-(10, 'Pilates e Zumba', 'Part-Time', 'ATTIVO', TRUE, 'ORARIA', 0.00, 1);
+(2, 'Pesistica e Forza', 'Indeterminato', 'ATTIVO', TRUE, 'FISSA_MENSILE', 1500.00, NULL, 1),
+(10, 'Pilates e Zumba', 'Part-Time', 'ATTIVO', TRUE, 'A_LEZIONE', 0.00, 25.00, 1),
+(11, 'Pesistica e Forza', 'Indeterminato', 'ATTIVO', TRUE, 'FISSA_MENSILE', 1400.00, NULL, 1),
+(12, 'Pesistica e Forza', 'Indeterminato', 'ATTIVO', TRUE, 'FISSA_MENSILE', 1350.00, NULL, 1),
+(13, 'Pilates', 'Indeterminato', 'ATTIVO', TRUE, 'FISSA_MENSILE', 1300.00, NULL, 1);
 
 INSERT INTO Cliente (ID_Cliente, ID_Sede) VALUES 
 (3, 1), 
 (4, 2);
 
 -- ==============================================================================
--- 7. POPOLAMENTO: INSERIMENTO ABBONAMENTI 
+-- 7. POPOLAMENTO: INSERIMENTO ABBONAMENTI
 -- ==============================================================================
 INSERT INTO Abbonamento (Tipo, Livello, DataScadenza, RinnovoAutomatico, ID_Cliente)
 VALUES ('PREMIUM', 'ANNUALE', '2026-12-31', TRUE, 3);
@@ -188,20 +206,58 @@ INSERT INTO Abbonamento (Tipo, Livello, DataScadenza, RinnovoAutomatico, ID_Clie
 VALUES ('BASE', 'MENSILE', '2026-07-31', FALSE, 4);
 
 -- ==============================================================================
--- 8. POPOLAMENTO: INSERIMENTO CORSI (Richiede Sede, Trainer e Direttore)
+-- 8. POPOLAMENTO: INSERIMENTO CORSI
 -- ==============================================================================
+-- Corsi per testare UC5:
+-- Marco ha corsi futuri e quindi, per essere licenziato, richiede uno swap.
+-- Giulia è libera ed è il sostituto valido.
+-- Luca ha un corso nello stesso orario di Marco, quindi deve essere bloccato come sostituto.
+-- Sara e Luigi restano utili per testare specializzazioni diverse e altri casi d'uso.
+
 INSERT INTO Corso (Nome, DataOra, CapienzaMassima, PostiDisponibili, Stato, ID_Sede, ID_Trainer, ID_Direttore)
 VALUES
 ('Corso di Funzionale', '2026-07-01 18:00:00', 15, 15, 'Pianificato', 1, 2, 1),
-('Corso di Pilates', '2026-07-02 10:00:00', 20, 20, 'Pianificato', 2, 2, 1);
+('Corso di Sala Pesi', '2026-07-02 10:00:00', 20, 20, 'Pianificato', 1, 2, 1),
+('Corso di Cross Training', '2026-07-01 18:00:00', 12, 12, 'Pianificato', 1, 12, 1),
+('Corso di Pilates', '2026-07-03 17:00:00', 20, 20, 'Pianificato', 2, 13, 1),
+('Corso di Zumba', '2026-07-04 19:00:00', 18, 18, 'Pianificato', 2, 10, 1);
 
 -- ==============================================================================
--- 9. POPOLAMENTO: STORICO ALLENAMENTI 
+-- 9. POPOLAMENTO: STORICO ALLENAMENTI
 -- ==============================================================================
-INSERT INTO SessioneAllenamento (ID_Sessione, Data, ID_Cliente) VALUES (1, '2026-06-10', 3);
+INSERT INTO SessioneAllenamento (ID_Sessione, Data, ID_Cliente) VALUES
+(1, '2026-06-10', 3);
 
 INSERT INTO EsercizioRegistrato (GruppoMuscolare, Macchinario, Serie, Ripetizioni, Carico, ID_Sessione)
 VALUES
 ('Petto', 'Panca Piana', 4, 10, 60.00, 1),
 ('Dorso', 'Lat Machine', 3, 12, 50.00, 1),
 ('Gambe', 'Pressa 45', 4, 8, 120.00, 1);
+
+-- ==============================================================================
+-- 10. QUERY DI CONTROLLO PER UC5
+-- ==============================================================================
+-- Da eseguire manualmente in MySQL Workbench se vuoi controllare i dati.
+
+-- SELECT 
+--     pt.ID_Trainer,
+--     u.Nome,
+--     u.Cognome,
+--     pt.Specializzazione,
+--     pt.StatoContratto,
+--     pt.Attivo
+-- FROM PersonalTrainer pt
+-- JOIN Utente u ON pt.ID_Trainer = u.ID_Utente
+-- ORDER BY pt.ID_Trainer;
+
+-- SELECT 
+--     c.ID_Corso,
+--     c.Nome,
+--     c.DataOra,
+--     u.Nome AS NomeTrainer,
+--     u.Cognome AS CognomeTrainer,
+--     pt.Specializzazione
+-- FROM Corso c
+-- JOIN PersonalTrainer pt ON c.ID_Trainer = pt.ID_Trainer
+-- JOIN Utente u ON pt.ID_Trainer = u.ID_Utente
+-- ORDER BY c.DataOra;

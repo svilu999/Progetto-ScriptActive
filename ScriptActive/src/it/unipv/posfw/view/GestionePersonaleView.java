@@ -45,6 +45,7 @@ import java.util.List;
  * - visualizzare i Personal Trainer;
  * - assumere un nuovo Personal Trainer;
  * - licenziare un PT con sostituto compatibile;
+ * - licenziare direttamente un PT senza corsi futuri;
  * - filtrare i sostituti per specializzazione;
  * - calcolare le retribuzioni mensili.
  *
@@ -72,7 +73,8 @@ public class GestionePersonaleView extends JFrame {
 
     private JButton btnAggiorna;
     private JButton btnAssumi;
-    private JButton btnLicenzia;
+    private JButton btnLicenziaConSostituto;
+    private JButton btnLicenziaSenzaSostituto;
     private JButton btnCalcolaRetribuzioni;
 
     private JLabel lblStato;
@@ -190,7 +192,7 @@ public class GestionePersonaleView extends JFrame {
         titolo.setForeground(COLORE_TESTO);
 
         JLabel sottotitolo = new JLabel(
-                "Assunzione, licenziamento con sostituto compatibile e calcolo retribuzioni dei Personal Trainer."
+                "Assunzione, licenziamento diretto o con sostituto compatibile e calcolo retribuzioni dei Personal Trainer."
         );
         sottotitolo.setFont(FONT_SOTTOTITOLO);
         sottotitolo.setForeground(COLORE_TESTO_SECONDARIO);
@@ -460,15 +462,25 @@ public class GestionePersonaleView extends JFrame {
         gbcNota.insets = new Insets(8, 0, 6, 0);
         form.add(nota, gbcNota);
 
-        btnLicenzia = creaBottone("Licenzia PT");
-        btnLicenzia.addActionListener(e -> licenziaPersonalTrainer());
+        btnLicenziaConSostituto = creaBottone("Licenzia con sostituto");
+        btnLicenziaConSostituto.addActionListener(e -> licenziaPersonalTrainerConSostituto());
 
-        GridBagConstraints gbcBottone = new GridBagConstraints();
-        gbcBottone.gridx = 1;
-        gbcBottone.gridy = 3;
-        gbcBottone.fill = GridBagConstraints.HORIZONTAL;
-        gbcBottone.insets = new Insets(10, 8, 0, 0);
-        form.add(btnLicenzia, gbcBottone);
+        GridBagConstraints gbcBottoneConSostituto = new GridBagConstraints();
+        gbcBottoneConSostituto.gridx = 1;
+        gbcBottoneConSostituto.gridy = 3;
+        gbcBottoneConSostituto.fill = GridBagConstraints.HORIZONTAL;
+        gbcBottoneConSostituto.insets = new Insets(10, 8, 0, 0);
+        form.add(btnLicenziaConSostituto, gbcBottoneConSostituto);
+
+        btnLicenziaSenzaSostituto = creaBottone("Licenzia senza sostituto");
+        btnLicenziaSenzaSostituto.addActionListener(e -> licenziaPersonalTrainerSenzaSostituto());
+
+        GridBagConstraints gbcBottoneSenzaSostituto = new GridBagConstraints();
+        gbcBottoneSenzaSostituto.gridx = 1;
+        gbcBottoneSenzaSostituto.gridy = 4;
+        gbcBottoneSenzaSostituto.fill = GridBagConstraints.HORIZONTAL;
+        gbcBottoneSenzaSostituto.insets = new Insets(8, 8, 0, 0);
+        form.add(btnLicenziaSenzaSostituto, gbcBottoneSenzaSostituto);
 
         return form;
     }
@@ -731,7 +743,7 @@ public class GestionePersonaleView extends JFrame {
         }
     }
 
-    private void licenziaPersonalTrainer() {
+    private void licenziaPersonalTrainerConSostituto() {
         try {
             String idDaLicenziare = txtIdDaLicenziare.getText().trim();
 
@@ -802,6 +814,50 @@ public class GestionePersonaleView extends JFrame {
 
         } catch (Exception e) {
             mostraErrore("Errore durante il licenziamento del Personal Trainer:\n" + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void licenziaPersonalTrainerSenzaSostituto() {
+        try {
+            String idDaLicenziare = txtIdDaLicenziare.getText().trim();
+
+            if (idDaLicenziare.isEmpty()) {
+                mostraErrore("Seleziona dalla tabella il PT da licenziare.");
+                return;
+            }
+
+            int conferma = JOptionPane.showConfirmDialog(
+                    this,
+                    "Confermi il licenziamento del PT " + idDaLicenziare
+                            + " senza sostituto?\n"
+                            + "L'operazione riuscirà solo se il PT non ha corsi attivi o futuri.",
+                    "Conferma licenziamento senza sostituto",
+                    JOptionPane.YES_NO_OPTION
+            );
+
+            if (conferma != JOptionPane.YES_OPTION) {
+                return;
+            }
+
+            gestorePersonale.licenziaPT(idDaLicenziare);
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Personal Trainer licenziato correttamente senza sostituto.",
+                    "Operazione completata",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+
+            resetCampiLicenziamento();
+            caricaPersonalTrainer();
+            aggiornaStato("PT licenziato senza sostituto: " + idDaLicenziare);
+
+        } catch (SostitutoNonValidoException | TrainerNonLicenziabileException e) {
+            mostraErrore(e.getMessage());
+
+        } catch (Exception e) {
+            mostraErrore("Errore durante il licenziamento senza sostituto:\n" + e.getMessage());
             e.printStackTrace();
         }
     }

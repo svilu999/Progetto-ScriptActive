@@ -25,15 +25,11 @@ import java.util.List;
  * - richiedere lo swap dei corsi tramite il servizio corsi;
  * - delegare il salvataggio dei dati al DAO MySQL.
  *
- * Questa versione è collegata al database MySQL.
- *
- * Il controller NON contiene query SQL.
+ * Il controller non contiene query SQL.
  * Le query SQL stanno dentro:
- * - PersonalTrainerDAOImplMySQL
- * - ServizioSwapCorsiMySQL
- * - ServizioRetribuzioniMySQL
- *
- * In questo modo GestorePersonale resta responsabile solo della logica del caso d'uso.
+ * - PersonalTrainerDAOImplMySQL;
+ * - ServizioSwapCorsiMySQL;
+ * - ServizioRetribuzioniMySQL.
  */
 public class GestorePersonale {
 
@@ -45,8 +41,6 @@ public class GestorePersonale {
 
     /**
      * Costruttore privato del Singleton.
-     *
-     * Questa versione usa direttamente il database MySQL.
      */
     private GestorePersonale() {
         this.trainerDAO = new PersonalTrainerDAOImplMySQL();
@@ -90,11 +84,6 @@ public class GestorePersonale {
      * UC5 - Flusso di assunzione.
      *
      * Il Direttore inserisce i dati del nuovo Personal Trainer.
-     *
-     * A livello database, il DAO MySQL inserisce i dati nelle tabelle:
-     * - utente
-     * - personal_trainer
-     * - contratto_personale
      */
     public void assumiPT(
             String nome,
@@ -131,22 +120,14 @@ public class GestorePersonale {
     public void licenziaPT(String idDaLicenziare)
             throws SostitutoNonValidoException, TrainerNonLicenziabileException {
 
-        PersonalTrainer ptDaLicenziare = trainerDAO.trovaPerId(idDaLicenziare);
+        idDaLicenziare = normalizzaIdObbligatorio(idDaLicenziare, "Personal Trainer da licenziare");
 
-        if (ptDaLicenziare == null) {
-            throw new SostitutoNonValidoException(
-                    "OPERAZIONE ANNULLATA: Personal Trainer da licenziare non trovato.");
-        }
-
-        if (!ptDaLicenziare.isAttivo()) {
-            throw new TrainerNonLicenziabileException(
-                    "OPERAZIONE ANNULLATA: il Personal Trainer risulta già inattivo o licenziato.");
-        }
+        PersonalTrainer ptDaLicenziare = recuperaTrainerDaLicenziare(idDaLicenziare);
 
         if (servizioSwapCorsi.haCorsiAttiviOFuturi(idDaLicenziare)) {
             throw new TrainerNonLicenziabileException(
                     "OPERAZIONE ANNULLATA: il PT ha corsi attivi o futuri. "
-                            + "Indicare un sostituto e usare licenziaPT(idDaLicenziare, idSostituto).");
+                            + "Indicare un sostituto compatibile prima del licenziamento.");
         }
 
         disattivaRecordPersonale(ptDaLicenziare);
@@ -156,56 +137,35 @@ public class GestorePersonale {
      * UC5 - Licenziamento con sostituzione.
      *
      * Flusso:
-     * 1. recupera il PT da licenziare;
-     * 2. recupera il PT sostituto;
-     * 3. controlla che il sostituto esista, sia attivo e sia diverso;
-     * 4. controlla che il sostituto abbia la stessa specializzazione;
-     * 5. controlla eventuali corsi imminenti;
-     * 6. chiede al servizio corsi di fare lo swap;
-     * 7. solo dopo lo swap disattiva il PT licenziato.
+     * 1. valida gli ID ricevuti;
+     * 2. recupera il PT da licenziare;
+     * 3. recupera il PT sostituto;
+     * 4. controlla che il sostituto sia diverso, attivo e compatibile;
+     * 5. se il PT ha corsi futuri, esegue lo swap;
+     * 6. solo dopo lo swap disattiva il PT licenziato.
      */
     public void licenziaPT(String idDaLicenziare, String idSostituto)
             throws SostitutoNonValidoException, TrainerNonLicenziabileException {
 
-        PersonalTrainer ptDaLicenziare = trainerDAO.trovaPerId(idDaLicenziare);
+        idDaLicenziare = normalizzaIdObbligatorio(idDaLicenziare, "Personal Trainer da licenziare");
+        idSostituto = normalizzaIdObbligatorio(idSostituto, "Personal Trainer sostituto");
 
-        if (ptDaLicenziare == null) {
-            throw new SostitutoNonValidoException(
-                    "OPERAZIONE ANNULLATA: Personal Trainer da licenziare non trovato.");
-        }
-
-        if (!ptDaLicenziare.isAttivo()) {
-            throw new TrainerNonLicenziabileException(
-                    "OPERAZIONE ANNULLATA: il Personal Trainer risulta già inattivo o licenziato.");
-        }
-
-        PersonalTrainer ptSostituto = trainerDAO.trovaPerId(idSostituto);
-
-        if (ptSostituto == null) {
-            throw new SostitutoNonValidoException(
-                    "OPERAZIONE ANNULLATA: il sostituto indicato non esiste.");
-        }
-
-        if (!ptSostituto.isAttivo()) {
-            throw new SostitutoNonValidoException(
-                    "OPERAZIONE ANNULLATA: il sostituto indicato non è attivo.");
-        }
-
-        if (idDaLicenziare.equals(idSostituto)) {
+        if (idDaLicenziare.equalsIgnoreCase(idSostituto)) {
             throw new SostitutoNonValidoException(
                     "OPERAZIONE ANNULLATA: il sostituto non può coincidere con il PT da licenziare.");
         }
 
-        String specializzazioneDaLicenziare = ptDaLicenziare.getSpecializzazione();
-        String specializzazioneSostituto = ptSostituto.getSpecializzazione();
+        PersonalTrainer ptDaLicenziare = recuperaTrainerDaLicenziare(idDaLicenziare);
+        PersonalTrainer ptSostituto = recuperaTrainerSostituto(idSostituto);
 
-        if (specializzazioneDaLicenziare == null
-                || specializzazioneSostituto == null
-                || !specializzazioneDaLicenziare.equalsIgnoreCase(specializzazioneSostituto)) {
+        verificaCompatibilitaSostituto(ptDaLicenziare, ptSostituto);
 
-            throw new SostitutoNonValidoException(
-                    "OPERAZIONE ANNULLATA: il sostituto deve avere la stessa specializzazione del PT da licenziare."
-            );
+        boolean haCorsiAttiviOFuturi = servizioSwapCorsi.haCorsiAttiviOFuturi(idDaLicenziare);
+
+        if (!haCorsiAttiviOFuturi) {
+            System.out.println("[UC5] Il PT non ha corsi futuri: nessuno swap necessario.");
+            disattivaRecordPersonale(ptDaLicenziare);
+            return;
         }
 
         if (servizioSwapCorsi.haCorsiImminenti(idDaLicenziare)) {
@@ -216,6 +176,12 @@ public class GestorePersonale {
                 idDaLicenziare,
                 idSostituto
         );
+
+        if (corsiAggiornati <= 0) {
+            throw new TrainerNonLicenziabileException(
+                    "OPERAZIONE ANNULLATA: il PT risultava avere corsi futuri, "
+                            + "ma nessun corso è stato riassegnato. Verificare il palinsesto.");
+        }
 
         System.out.println("[UC5] Swap completato. Corsi riassegnati: " + corsiAggiornati);
 
@@ -252,5 +218,67 @@ public class GestorePersonale {
 
         System.out.println("[UC5] Totale retribuzioni mensili PT attivi: €" + totale);
         return totale;
+    }
+
+    private String normalizzaIdObbligatorio(String id, String nomeCampo) throws SostitutoNonValidoException {
+        if (id == null || id.trim().isEmpty()) {
+            throw new SostitutoNonValidoException(
+                    "OPERAZIONE ANNULLATA: " + nomeCampo + " non indicato.");
+        }
+
+        return id.trim();
+    }
+
+    private PersonalTrainer recuperaTrainerDaLicenziare(String idDaLicenziare)
+            throws SostitutoNonValidoException, TrainerNonLicenziabileException {
+
+        PersonalTrainer ptDaLicenziare = trainerDAO.trovaPerId(idDaLicenziare);
+
+        if (ptDaLicenziare == null) {
+            throw new SostitutoNonValidoException(
+                    "OPERAZIONE ANNULLATA: Personal Trainer da licenziare non trovato.");
+        }
+
+        if (!ptDaLicenziare.isAttivo()) {
+            throw new TrainerNonLicenziabileException(
+                    "OPERAZIONE ANNULLATA: il Personal Trainer risulta già inattivo o licenziato.");
+        }
+
+        return ptDaLicenziare;
+    }
+
+    private PersonalTrainer recuperaTrainerSostituto(String idSostituto)
+            throws SostitutoNonValidoException {
+
+        PersonalTrainer ptSostituto = trainerDAO.trovaPerId(idSostituto);
+
+        if (ptSostituto == null) {
+            throw new SostitutoNonValidoException(
+                    "OPERAZIONE ANNULLATA: il sostituto indicato non esiste.");
+        }
+
+        if (!ptSostituto.isAttivo()) {
+            throw new SostitutoNonValidoException(
+                    "OPERAZIONE ANNULLATA: il sostituto indicato non è attivo.");
+        }
+
+        return ptSostituto;
+    }
+
+    private void verificaCompatibilitaSostituto(
+            PersonalTrainer ptDaLicenziare,
+            PersonalTrainer ptSostituto) throws SostitutoNonValidoException {
+
+        String specializzazioneDaLicenziare = ptDaLicenziare.getSpecializzazione();
+        String specializzazioneSostituto = ptSostituto.getSpecializzazione();
+
+        if (specializzazioneDaLicenziare == null
+                || specializzazioneSostituto == null
+                || !specializzazioneDaLicenziare.trim().equalsIgnoreCase(specializzazioneSostituto.trim())) {
+
+            throw new SostitutoNonValidoException(
+                    "OPERAZIONE ANNULLATA: il sostituto deve avere la stessa specializzazione del PT da licenziare."
+            );
+        }
     }
 }

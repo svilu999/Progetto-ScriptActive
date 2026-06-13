@@ -178,8 +178,14 @@ public class ServizioSwapCorsiMySQL implements ServizioSwapCorsi {
             int idTrainerSostituto) throws Exception {
 
         /*
-         * Controlla se il sostituto ha già un corso nello stesso orario
-         * di uno dei corsi futuri/attivi del PT da sostituire.
+         * Controllo di sovrapposizione per UC5.
+         *
+         * Il sostituto non può prendere i corsi del PT licenziato
+         * se ha già un altro corso attivo/futuro nello stesso identico orario.
+         *
+         * Nota: nello schema attuale la tabella Corso contiene DataOra,
+         * ma non contiene una durata del corso. Quindi la sovrapposizione
+         * viene valutata sull'orario di inizio.
          */
         String sql = """
             SELECT COUNT(*) AS totale
@@ -191,6 +197,8 @@ public class ServizioSwapCorsiMySQL implements ServizioSwapCorsi {
               AND corsoDaRiassegnare.Stato IN ('Pianificato', 'InCorso')
               AND corsoDelSostituto.Stato IN ('Pianificato', 'InCorso')
               AND corsoDaRiassegnare.DataOra >= NOW()
+              AND corsoDelSostituto.DataOra >= NOW()
+              AND corsoDaRiassegnare.ID_Corso <> corsoDelSostituto.ID_Corso
         """;
 
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
