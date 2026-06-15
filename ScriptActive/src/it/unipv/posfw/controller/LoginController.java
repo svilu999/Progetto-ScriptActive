@@ -74,14 +74,18 @@ public class LoginController {
                 premiumView.clickAccediStorico(clienteLoggato);
             });
             
-            // Bottone "VAI AL PALINSESTO CORSI" (Apre la View dei tuoi compagni!)
-            dashboardView.btnPrenotaCorsi.addActionListener(e -> {
-                dashboardView.dispose();
-                PalinsestoCorsiView corsiView = new PalinsestoCorsiView();
+         // Bottone "VAI AL PALINSESTO CORSI" (Collegato con l'utente reale!)
+            	dashboardView.btnPrenotaCorsi.addActionListener(e -> {
                 
-                // Opzionale: se la view dei corsi ha bisogno del controller
+                // 1. Creiamo la finestra vuota, proprio come volevano i tuoi compagni
+                PalinsestoCorsiView corsiView = new PalinsestoCorsiView(); 
+                
+                // 2. ECCO LA MAGIA: Le passiamo l'utente di nascosto tramite il Setter!
+                corsiView.setClienteLoggato(dashboardView.getUtenteCorrente());
+                
+                // Opzionale: se i compagni hanno il loro controller
                 GestoreCorsi controllerCorsi = GestoreCorsi.getInstance();
-                // corsiView.setController(controllerCorsi); // Scommenta se i tuoi compagni hanno creato questo metodo
+                // corsiView.setController(controllerCorsi); 
                 
                 corsiView.setVisible(true);
             });

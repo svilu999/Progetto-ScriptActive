@@ -28,7 +28,7 @@ public class GestoreCorsi implements ServizioSwapCorsi {
          * Raccordo UC3/MySQL: Disattiviamo il mock in memoria
          * e colleghiamo l'intera applicazione al database reale.
          */
-        this.corsoDAO = new it.unipv.posfw.dao.CorsoDAOMySQL();
+        this.corsoDAO = new it.unipv.posfw.database.CorsoDAOMySQL();
     }
 
     public static synchronized GestoreCorsi getInstance() {
