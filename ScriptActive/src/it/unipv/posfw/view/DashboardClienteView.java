@@ -3,8 +3,11 @@ package it.unipv.posfw.view;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 import it.unipv.posfw.domain.Cliente;
+import it.unipv.posfw.domain.Corso; // Importiamo il Corso del tuo collega!
 
 public class DashboardClienteView extends JFrame {
     
@@ -25,7 +28,7 @@ public class DashboardClienteView extends JFrame {
 
     public DashboardClienteView() {
         setTitle("ScriptActive - Dashboard Cliente");
-        setSize(600, 500); // Finestra più compatta e accogliente
+        setSize(600, 500); 
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout(15, 15));
@@ -63,9 +66,8 @@ public class DashboardClienteView extends JFrame {
         add(scrollPrenotazioni, BorderLayout.CENTER);
 
         // --- 3. SEZIONE IN BASSO: BOTTONI DI NAVIGAZIONE ---
-        JPanel panelBottoni = new JPanel(new GridLayout(1, 2, 15, 0)); // 1 riga, 2 colonne, spazio in mezzo
+        JPanel panelBottoni = new JPanel(new GridLayout(1, 2, 15, 0)); 
         
-        // Bottone per il collega (Prenotazione Corsi)
         btnPrenotaCorsi = new JButton("VAI AL PALINSESTO CORSI");
         btnPrenotaCorsi.setFont(fontBottoni);
         btnPrenotaCorsi.setBackground(new Color(70, 130, 180)); // Blu
@@ -75,7 +77,6 @@ public class DashboardClienteView extends JFrame {
         btnPrenotaCorsi.setBorderPainted(false);
         btnPrenotaCorsi.setPreferredSize(new Dimension(200, 50));
         
-        // Bottone per la tua area (Storico Allenamenti)
         btnAreaPremium = new JButton("LA MIA AREA PREMIUM");
         btnAreaPremium.setFont(fontBottoni);
         btnAreaPremium.setBackground(new Color(77, 43, 107)); 
@@ -91,28 +92,73 @@ public class DashboardClienteView extends JFrame {
         add(panelBottoni, BorderLayout.SOUTH);
     }
 
-    // Metodo fondamentale: quando apriamo la finestra, le passiamo i dati del cliente!
     public void impostaDatiCliente(Cliente cliente) {
         this.utenteCorrente = cliente;
         
-        // Personalizziamo l'intestazione
         lblBenvenuto.setText("Bentornato, " + cliente.getNome() + " " + cliente.getCognome() + "!");
         
         if (cliente.isPremium()) {
-            lblAbbonamento.setText("Livello Abbonamento: PREMIUM ");
-            lblAbbonamento.setForeground(new Color(77, 43, 107)); // Color oro
+            lblAbbonamento.setText("Livello Abbonamento: PREMIUM ⭐");
+            lblAbbonamento.setForeground(new Color(77, 43, 107));
         } else {
             lblAbbonamento.setText("Livello Abbonamento: BASE");
         }
 
-       
-        mostraMessaggioPrenotazioni("Non hai ancora prenotato nessun corso per i prossimi giorni.");
+        // All'inizio mettiamo un messaggio di caricamento o vuoto, 
+        // verrà sovrascritto dal metodo mostraCorsiPrenotati()
+        mostraMessaggioPrenotazioni("Caricamento prenotazioni in corso...");
     }
     
     public Cliente getUtenteCorrente() {
         return this.utenteCorrente;
     }
     
+    // ========================================================
+    // NUOVO METODO: DISEGNA I CORSI PRESI DAL DATABASE
+    // ========================================================
+    public void mostraCorsiPrenotati(List<Corso> corsi) {
+        panelPrenotazioni.removeAll();
+
+        if (corsi == null || corsi.isEmpty()) {
+            mostraMessaggioPrenotazioni("Non hai ancora prenotato nessun corso per i prossimi giorni.");
+        } else {
+            // Formattatore per estrarre data e ora in modo leggibile (es. 15/06/2026 18:30)
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy - HH:mm");
+
+            for (Corso corso : corsi) {
+                JPanel panelScheda = new JPanel(new BorderLayout(10, 10));
+                panelScheda.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createEmptyBorder(5, 10, 5, 10),
+                    BorderFactory.createLineBorder(new Color(200, 200, 200), 1, true)
+                ));
+                panelScheda.setBackground(Color.WHITE);
+
+                StringBuilder sb = new StringBuilder();
+                sb.append("🏋️ ").append(corso.getNome().toUpperCase()).append("\n");
+                sb.append("📅 ").append(corso.getDataOra().format(formatter)).append("\n");
+                
+                // Se c'è un trainer assegnato, stampiamo il nome
+                if (corso.getTrainerAssegnato() != null) {
+                    sb.append("👤 Trainer: ").append(corso.getTrainerAssegnato().getNome()).append(" ").append(corso.getTrainerAssegnato().getCognome());
+                }
+
+                JTextArea txtDettagli = new JTextArea(sb.toString());
+                txtDettagli.setFont(new Font("SansSerif", Font.PLAIN, 14));
+                txtDettagli.setEditable(false);
+                txtDettagli.setOpaque(false);
+
+                // Aggiungiamo i dettagli al pannello
+                panelScheda.add(txtDettagli, BorderLayout.CENTER);
+                
+                panelPrenotazioni.add(panelScheda);
+                panelPrenotazioni.add(Box.createRigidArea(new Dimension(0, 5))); // Piccolo spazio tra le schede
+            }
+        }
+
+        panelPrenotazioni.revalidate();
+        panelPrenotazioni.repaint();
+    }
+
     private void mostraMessaggioPrenotazioni(String messaggio) {
         panelPrenotazioni.removeAll();
         JLabel lblMsg = new JLabel(messaggio);

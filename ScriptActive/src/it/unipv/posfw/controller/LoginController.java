@@ -1,13 +1,19 @@
 package it.unipv.posfw.controller;
 
 import javax.swing.JOptionPane; 
+import java.util.List; // Import per la lista dei corsi
 
 import it.unipv.posfw.database.UtenteDAO;
 import it.unipv.posfw.dao.SessioneDAO;
 import it.unipv.posfw.dao.SessioneDAOSQL;
+import it.unipv.posfw.database.PrenotazioneDAOMySQL;
+import it.unipv.posfw.dao.PrenotazioneDAO;
+
+
 
 // Importiamo i modelli
 import it.unipv.posfw.domain.Cliente;
+import it.unipv.posfw.domain.Corso; // Import per il corso
 import it.unipv.posfw.domain.Direttore;
 import it.unipv.posfw.domain.PersonalTrainer;
 import it.unipv.posfw.domain.Utente;
@@ -15,6 +21,7 @@ import it.unipv.posfw.domain.Utente;
 // Importiamo le View e i Controller
 import it.unipv.posfw.view.LoginView;
 import it.unipv.posfw.controller.GestoreCorsi;
+import it.unipv.posfw.controller.GestorePrenotazioni; // Aggiunto per le prenotazioni!
 import it.unipv.posfw.view.StoricoAllenamentiView;
 import it.unipv.posfw.view.DashboardDirettoreView; 
 import it.unipv.posfw.view.DashboardClienteView; 
@@ -50,7 +57,7 @@ public class LoginController {
 
         // =========================================================
         // ROUTING IN BASE ALLA CLASSE DELL'UTENTE
-        // ======================================================
+        // =========================================================
         
         if (utenteLoggato instanceof Cliente) {
             // --- AREA RISERVATA CLIENTE (ATTERRAGGIO SULLA DASHBOARD) ---
@@ -58,6 +65,19 @@ public class LoginController {
             
             DashboardClienteView dashboardView = new DashboardClienteView();
             dashboardView.impostaDatiCliente(clienteLoggato);
+            
+            // -------------------------------------------------------------
+            // RECUPERO E STAMPA DEI CORSI PRENOTATI DAL DB
+            // -------------------------------------------------------------
+            try {
+                GestorePrenotazioni gestorePrenotazioni = new GestorePrenotazioni();
+                List<Corso> corsiDelCliente = gestorePrenotazioni.getCorsiPrenotatiDalCliente(clienteLoggato);
+                dashboardView.mostraCorsiPrenotati(corsiDelCliente);
+            } catch (Exception e) {
+                System.err.println("Errore nel recupero dei corsi: " + e.getMessage());
+            }
+            // -------------------------------------------------------------
+
             dashboardView.setVisible(true);
             
             // Bottone "LA MIA AREA PREMIUM"
@@ -74,13 +94,14 @@ public class LoginController {
                 premiumView.clickAccediStorico(clienteLoggato);
             });
             
-         // Bottone "VAI AL PALINSESTO CORSI" (Collegato con l'utente reale!)
-            	dashboardView.btnPrenotaCorsi.addActionListener(e -> {
+            // Bottone "VAI AL PALINSESTO CORSI"
+            dashboardView.btnPrenotaCorsi.addActionListener(e -> {
+                dashboardView.dispose();
                 
                 // 1. Creiamo la finestra vuota, proprio come volevano i tuoi compagni
                 PalinsestoCorsiView corsiView = new PalinsestoCorsiView(); 
                 
-                // 2. ECCO LA MAGIA: Le passiamo l'utente di nascosto tramite il Setter!
+                // 2. Le passiamo l'utente di nascosto tramite il Setter
                 corsiView.setClienteLoggato(dashboardView.getUtenteCorrente());
                 
                 // Opzionale: se i compagni hanno il loro controller
@@ -97,14 +118,12 @@ public class LoginController {
             
         } else if (utenteLoggato instanceof PersonalTrainer) {
             // --- AREA RISERVATA PERSONAL TRAINER ---
-            
             PalinsestoCorsiView trainerView = new PalinsestoCorsiView();
             
             // ECCO L'ISTANZIAZIONE DEL CONTROLLER SINGLETON DEI TUOI COLLEGHI:
             GestoreCorsi controllerCorsi = GestoreCorsi.getInstance();
             
             // Assicurati che la PalinsestoCorsiView abbia questo metodo!
-            // se ti dà errore rosso, commentalo temporaneamente con //
             // trainerView.setController(controllerCorsi); 
             
             trainerView.setVisible(true);

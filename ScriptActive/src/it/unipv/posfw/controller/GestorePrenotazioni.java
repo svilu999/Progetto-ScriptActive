@@ -9,6 +9,8 @@ import it.unipv.posfw.domain.Corso;
 import it.unipv.posfw.exceptions.CorsoAlCompletoException;
 import it.unipv.posfw.exceptions.PrenotazioneGiaEffettuataException;
 
+import java.util.List; // IMPORTANTE: Aggiunto per poter usare le liste!
+
 public class GestorePrenotazioni {
 
     private PrenotazioneDAO prenotazioneDAO;
@@ -29,12 +31,12 @@ public class GestorePrenotazioni {
     /**
      * Tenta di prenotare un corso per un cliente.
      */
-    public void prenotaCorso(Cliente cliente, Corso corso) throws Exception { // <-- Metti Exception generica o le tue
+    public void prenotaCorso(Cliente cliente, Corso corso) throws Exception { 
         
         it.unipv.posfw.dao.PrenotazioneDAO prenotazioneDB = new it.unipv.posfw.database.PrenotazioneDAOMySQL();
         it.unipv.posfw.dao.CorsoDAO corsoDB = new it.unipv.posfw.database.CorsoDAOMySQL();
 
-        // ECCO LA MODIFICA: Prendiamo l'ID vero e lo trasformiamo in Stringa!
+        // Prendiamo l'ID vero e lo trasformiamo in Stringa!
         String idCliente = String.valueOf(cliente.getId());
         String idCorso = corso.getIdCorso();
 
@@ -61,12 +63,11 @@ public class GestorePrenotazioni {
         }
     }
 
- 
-//ANNULLAMENTO CON LISTA D'ATTESA ---
+    //ANNULLAMENTO CON LISTA D'ATTESA ---
     
-    	public void annullaPrenotazione(Cliente cliente, Corso corso) throws it.unipv.posfw.exceptions.PrenotazioneInesistenteException {
+    public void annullaPrenotazione(Cliente cliente, Corso corso) throws it.unipv.posfw.exceptions.PrenotazioneInesistenteException {
         
-        // 1. ISTANZIAMO I DAO (Presentiamo le variabili a Java!)
+        // 1. ISTANZIAMO I DAO
         it.unipv.posfw.dao.PrenotazioneDAO prenotazioneDB = new it.unipv.posfw.database.PrenotazioneDAOMySQL();
         it.unipv.posfw.dao.CorsoDAO corsoDB = new it.unipv.posfw.database.CorsoDAOMySQL();
         
@@ -96,5 +97,15 @@ public class GestorePrenotazioni {
         } else {
             System.err.println("Errore durante l'eliminazione della prenotazione nel database.");
         }
+    }
+
+    // ========================================================
+    // NUOVO METODO: RECUPERA I CORSI PRENOTATI DAL CLIENTE
+    // ========================================================
+    public List<Corso> getCorsiPrenotatiDalCliente(Cliente cliente) {
+        String idCliente = String.valueOf(cliente.getId());
+        
+        // Chiediamo al DAO delle prenotazioni (istanziato nel costruttore) di pescare i corsi
+        return prenotazioneDAO.getCorsiPerCliente(idCliente);
     }
 }
