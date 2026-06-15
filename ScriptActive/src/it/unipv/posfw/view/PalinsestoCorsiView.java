@@ -1,6 +1,7 @@
 package it.unipv.posfw.view;
 
 import javax.swing.*;
+
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
@@ -8,12 +9,13 @@ import java.util.List;
 import it.unipv.posfw.controller.GestoreCorsi;
 import it.unipv.posfw.controller.GestorePrenotazioni;
 import it.unipv.posfw.dao.CorsoDAO;
-import it.unipv.posfw.dao.CorsoDAOMySQL;
+import it.unipv.posfw.database.CorsoDAOMySQL;
 import it.unipv.posfw.domain.Cliente;
 import it.unipv.posfw.domain.Corso;
 import it.unipv.posfw.domain.TipoAbbonamento;
 import it.unipv.posfw.exceptions.CorsoAlCompletoException;
 import it.unipv.posfw.exceptions.PrenotazioneGiaEffettuataException;
+import it.unipv.posfw.exceptions.PrenotazioneInesistenteException;
 
 public class PalinsestoCorsiView extends JFrame {
 
@@ -23,12 +25,14 @@ public class PalinsestoCorsiView extends JFrame {
     private JButton btnAggiorna;
     private JButton btnIndietro;
     private JButton btnPrenota;
+    private JButton btnAnnulla;
 
     /*
      * Lista mantenuta in memoria per recuperare l'oggetto Corso
      * corrispondente alla riga selezionata nella tabella.
      */
     private List<Corso> corsiAttuali;
+    private Cliente clienteLoggato;
 
     public PalinsestoCorsiView() {
         setTitle("ScriptActive - Palinsesto Completo");
@@ -36,6 +40,7 @@ public class PalinsestoCorsiView extends JFrame {
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(10, 10));
+
 
         String[] colonne = {
                 "ID Corso",
@@ -67,16 +72,19 @@ public class PalinsestoCorsiView extends JFrame {
 
         btnAggiorna = new JButton("Aggiorna Palinsesto");
         btnPrenota = new JButton("Prenota Corso Selezionato");
+        btnAnnulla = new JButton("Annulla Prenotazione");
         btnIndietro = new JButton("Torna alla Dashboard");
 
         pnlBottoni.add(btnAggiorna);
         pnlBottoni.add(btnPrenota);
+        pnlBottoni.add(btnAnnulla);
         pnlBottoni.add(btnIndietro);
 
         add(pnlBottoni, BorderLayout.SOUTH);
 
         btnAggiorna.addActionListener(e -> caricaDati());
         btnPrenota.addActionListener(e -> prenotaCorsoCliccato());
+        btnAnnulla.addActionListener(e -> annullaCorsoCliccato());
         btnIndietro.addActionListener(e -> dispose());
 
         caricaDati();
@@ -128,17 +136,7 @@ public class PalinsestoCorsiView extends JFrame {
          */
         Corso corsoDaPrenotare = corsiAttuali.get(rigaSelezionata);
 
-        /*
-         * Cliente simulato.
-         * In una versione finale andrebbe preso dalla sessione/login.
-         */
-        Cliente clienteLoggato = new Cliente(
-                "Giulia",
-                "Cliente",
-                "cli@test.com",
-                "3",
-                TipoAbbonamento.BASE
-        );
+        
 
         GestorePrenotazioni gestore = new GestorePrenotazioni();
 
@@ -159,7 +157,17 @@ public class PalinsestoCorsiView extends JFrame {
              */
             caricaDati();
 
-        } catch (CorsoAlCompletoException | PrenotazioneGiaEffettuataException ex) {
+        } catch (CorsoAlCompletoException ex) {
+            // POPUP GIALLO: L'utente è finito in lista d'attesa
+            JOptionPane.showMessageDialog(
+                    this,
+                    ex.getMessage(),
+                    "Info: Lista d'Attesa",
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+        } catch (PrenotazioneGiaEffettuataException ex) {
+            // POPUP ROSSO: L'utente era già prenotato a questo corso
             JOptionPane.showMessageDialog(
                     this,
                     ex.getMessage(),
@@ -168,6 +176,7 @@ public class PalinsestoCorsiView extends JFrame {
             );
 
         } catch (Exception ex) {
+            // POPUP ROSSO: Qualsiasi altro errore generico o di database
             JOptionPane.showMessageDialog(
                     this,
                     "Errore di sistema: " + ex.getMessage(),
@@ -182,5 +191,60 @@ public class PalinsestoCorsiView extends JFrame {
             PalinsestoCorsiView view = new PalinsestoCorsiView();
             view.setVisible(true);
         });
+    }
+    
+    private void annullaCorsoCliccato() {
+        int rigaSelezionata = tabellaCorsi.getSelectedRow();
+
+        if (rigaSelezionata == -1) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Seleziona un corso dalla tabella prima di cliccare su Annulla.",
+                    "Attenzione",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        Corso corsoDaAnnullare = corsiAttuali.get(rigaSelezionata);
+
+       
+
+        GestorePrenotazioni gestore = new GestorePrenotazioni();
+
+        try {
+            gestore.annullaPrenotazione(clienteLoggato, corsoDaAnnullare);
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Prenotazione al corso di " + corsoDaAnnullare.getNome() + " annullata con successo.",
+                    "Successo",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+
+            // Ricarica la tabella per mostrare i posti aggiornati
+            caricaDati();
+
+        } catch (PrenotazioneInesistenteException ex) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    ex.getMessage(),
+                    "Impossibile Annullare",
+                    JOptionPane.ERROR_MESSAGE
+            );
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Errore di sistema: " + ex.getMessage(),
+                    "Errore",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
+    
+ // Metodo per iniettare l'utente dopo che la finestra è stata creata
+    public void setClienteLoggato(Cliente cliente) {
+        this.clienteLoggato = cliente;
     }
 }

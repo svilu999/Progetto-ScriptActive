@@ -2,7 +2,7 @@ package it.unipv.posfw.controller;
 
 import java.util.List;
 import it.unipv.posfw.dao.CorsoDAO;
-import it.unipv.posfw.dao.CorsoDAOMySQL;
+import it.unipv.posfw.database.CorsoDAOMySQL;
 import it.unipv.posfw.domain.Corso;
 
 public class PalinsestoCorsiTest {

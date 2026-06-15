@@ -109,6 +109,10 @@ public class DashboardClienteView extends JFrame {
         mostraMessaggioPrenotazioni("Non hai ancora prenotato nessun corso per i prossimi giorni.");
     }
     
+    public Cliente getUtenteCorrente() {
+        return this.utenteCorrente;
+    }
+    
     private void mostraMessaggioPrenotazioni(String messaggio) {
         panelPrenotazioni.removeAll();
         JLabel lblMsg = new JLabel(messaggio);

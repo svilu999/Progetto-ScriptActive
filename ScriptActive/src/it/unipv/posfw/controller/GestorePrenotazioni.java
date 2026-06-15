@@ -1,8 +1,8 @@
 package it.unipv.posfw.controller;
 
 import it.unipv.posfw.dao.CorsoDAO;
-import it.unipv.posfw.dao.CorsoDAOMySQL;
 import it.unipv.posfw.dao.PrenotazioneDAO;
+import it.unipv.posfw.database.CorsoDAOMySQL;
 import it.unipv.posfw.database.PrenotazioneDAOMySQL;
 import it.unipv.posfw.domain.Cliente;
 import it.unipv.posfw.domain.Corso;
@@ -29,77 +29,72 @@ public class GestorePrenotazioni {
     /**
      * Tenta di prenotare un corso per un cliente.
      */
-    public void prenotaCorso(Cliente cliente, Corso corso)
-            throws CorsoAlCompletoException, PrenotazioneGiaEffettuataException {
+    public void prenotaCorso(Cliente cliente, Corso corso) throws Exception { // <-- Metti Exception generica o le tue
+        
+        it.unipv.posfw.dao.PrenotazioneDAO prenotazioneDB = new it.unipv.posfw.database.PrenotazioneDAOMySQL();
+        it.unipv.posfw.dao.CorsoDAO corsoDB = new it.unipv.posfw.database.CorsoDAOMySQL();
 
-        /*
-         * Controllo di dominio:
-         * verifica se il corso ha ancora posti disponibili.
-         */
-        if (corso.alCompleto()) {
-            throw new CorsoAlCompletoException(
-                    "Spiacenti, il corso " + corso.getNome() + " ha raggiunto la capienza massima."
-            );
+        // ECCO LA MODIFICA: Prendiamo l'ID vero e lo trasformiamo in Stringa!
+        String idCliente = String.valueOf(cliente.getId());
+        String idCorso = corso.getIdCorso();
+
+        if (prenotazioneDB.esistePrenotazione(idCliente, idCorso)) {
+            throw new it.unipv.posfw.exceptions.PrenotazioneGiaEffettuataException("Sei già registrato a questo corso (o sei già in lista d'attesa)!");
         }
 
-        /*
-         * Controllo DAO:
-         * verifica se il cliente ha già prenotato questo corso.
-         */
-        if (prenotazioneDAO.esistePrenotazione(cliente.getIdCliente(), corso.getIdCorso())) {
-            throw new PrenotazioneGiaEffettuataException("Sei già prenotato a questo corso!");
+        if (corso.getPostiDisponibili() > 0) {
+            boolean successo = prenotazioneDB.inserisciPrenotazione(idCliente, idCorso, "Confermata");
+            if (successo) {
+                corso.setPostiDisponibili(corso.getPostiDisponibili() - 1);
+                corsoDB.updatePostiDisponibili(corso);
+            } else {
+                // IL BLOCCO ANTIFREGATURA
+                throw new Exception("Errore interno: impossibile salvare la prenotazione nel Database!");
+            }
+        } else {
+            boolean successo = prenotazioneDB.inserisciPrenotazione(idCliente, idCorso, "InListaAttesa");
+            if (successo) {
+                throw new it.unipv.posfw.exceptions.CorsoAlCompletoException("Il corso è pieno. Sei stato inserito in LISTA D'ATTESA!");
+            } else {
+                throw new Exception("Errore interno: impossibile inserirti in lista d'attesa!");
+            }
         }
-
-        /*
-         * Modifica nel dominio.
-         * decrementaPosti aggiorna l'oggetto Corso in memoria.
-         */
-        corso.decrementaPosti();
-
-        /*
-         * Pattern Observer:
-         * il cliente viene collegato al corso per ricevere eventuali notifiche.
-         */
-        corso.attach(cliente);
-
-        /*
-         * Persistenza:
-         * salva la prenotazione e aggiorna i posti disponibili nel database.
-         */
-        prenotazioneDAO.inserisciPrenotazione(cliente.getIdCliente(), corso.getIdCorso());
-        corsoDAO.updatePostiDisponibili(corso);
-
-        System.out.println(
-                "Prenotazione effettuata con successo! Posti rimanenti: " + corso.getPostiDisponibili()
-        );
     }
 
-    /**
-     * Annulla una prenotazione esistente.
-     */
-    public void annullaPrenotazione(Cliente cliente, Corso corso) {
+ 
+//ANNULLAMENTO CON LISTA D'ATTESA ---
+    
+    	public void annullaPrenotazione(Cliente cliente, Corso corso) throws it.unipv.posfw.exceptions.PrenotazioneInesistenteException {
+        
+        // 1. ISTANZIAMO I DAO (Presentiamo le variabili a Java!)
+        it.unipv.posfw.dao.PrenotazioneDAO prenotazioneDB = new it.unipv.posfw.database.PrenotazioneDAOMySQL();
+        it.unipv.posfw.dao.CorsoDAO corsoDB = new it.unipv.posfw.database.CorsoDAOMySQL();
+        
+        // 2. Recuperiamo gli ID
+        String idCliente = String.valueOf(cliente.getId());
+        String idCorso = corso.getIdCorso();
 
-        /*
-         * Modifica nel dominio:
-         * libera un posto nel corso.
-         */
-        corso.incrementaPosti();
+        // 3. Controllo: L'utente è davvero iscritto?
+        if (!prenotazioneDB.esistePrenotazione(idCliente, idCorso)) {
+            throw new it.unipv.posfw.exceptions.PrenotazioneInesistenteException("Impossibile disiscriversi: non sei prenotato a questo corso!");
+        }
 
-        /*
-         * Pattern Observer:
-         * il cliente viene scollegato dal corso.
-         */
-        corso.detach(cliente);
-
-        /*
-         * Persistenza:
-         * elimina la prenotazione e aggiorna i posti disponibili nel database.
-         */
-        prenotazioneDAO.eliminaPrenotazione(cliente.getIdCliente(), corso.getIdCorso());
-        corsoDAO.updatePostiDisponibili(corso);
-
-        System.out.println(
-                "Prenotazione annullata con successo. Posti rimanenti: " + corso.getPostiDisponibili()
-        );
+        // 4. Eliminiamo la prenotazione dal Database
+        boolean eliminato = prenotazioneDB.eliminaPrenotazione(idCliente, idCorso);
+        
+        if (eliminato) {
+            // 5. Gestione della Lista d'Attesa
+            String idPrimoInAttesa = prenotazioneDB.getPrimoInListaAttesa(idCorso);
+            
+            if (idPrimoInAttesa != null) {
+                prenotazioneDB.aggiornaStatoPrenotazione(idPrimoInAttesa, idCorso, "Confermata");
+                System.out.println("Il posto liberato è stato assegnato automaticamente all'utente ID: " + idPrimoInAttesa);
+            } else {
+                corso.setPostiDisponibili(corso.getPostiDisponibili() + 1);
+                corsoDB.updatePostiDisponibili(corso); 
+            }
+        } else {
+            System.err.println("Errore durante l'eliminazione della prenotazione nel database.");
+        }
     }
 }

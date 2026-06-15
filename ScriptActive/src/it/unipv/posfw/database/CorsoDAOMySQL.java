@@ -1,5 +1,6 @@
-package it.unipv.posfw.dao;
+package it.unipv.posfw.database;
 
+import it.unipv.posfw.dao.CorsoDAO;
 import it.unipv.posfw.domain.Corso;
 import it.unipv.posfw.domain.PersonalTrainer;
 import it.unipv.posfw.domain.StatoCorso;
