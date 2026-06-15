@@ -1,12 +1,11 @@
 package it.unipv.posfw.database; 
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-// 2. Devi importare l'interfaccia LoginDAO perché si trova nel package "dao"
+// Importiamo l'interfaccia
 import it.unipv.posfw.dao.LoginDAO; 
 
 import it.unipv.posfw.domain.Cliente;
@@ -15,34 +14,20 @@ import it.unipv.posfw.domain.Utente;
 
 public class LoginDAOSQL implements LoginDAO {
 
-    private static final String URL = "jdbc:mysql://localhost:3306/scriptactive_db";
-    private static final String USER = "root";
-    private static final String PASS = "Enomis23*"; // Metti la tua vera password!
-
-    public LoginDAOSQL() {
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-        } catch (ClassNotFoundException e) {
-            System.err.println("Driver MySQL non trovato!");
-        }
-    }
-
-    private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(URL, USER, PASS);
-    }
+    
 
     @Override
     public Utente verificaCredenziali(String email, String password) {
         Utente utenteTrovato = null;
         
-        // Cerca l'utente e, se è un cliente, prova a prendere anche i dati dell'abbonamento
         String sql = "SELECT u.Nome, u.Cognome, u.Email, u.CodiceFiscale, u.Ruolo, a.Livello AS LivelloAbbonamento " +
                      "FROM Utente u " +
                      "LEFT JOIN Cliente c ON u.ID_Utente = c.ID_Cliente " +
                      "LEFT JOIN Abbonamento a ON c.ID_Cliente = a.ID_Cliente " +
                      "WHERE u.Email = ? AND u.PasswordHash = ? AND u.Stato = 'Attivo'";
 
-        try (Connection conn = getConnection();
+      // Chiamiamo DatabaseConnection.getConnection() che legge dal tuo file properties!
+        try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, email);
@@ -65,18 +50,16 @@ public class LoginDAOSQL implements LoginDAO {
                             tipoAbb = TipoAbbonamento.PREMIUM;
                         }
                         
-                        // Creiamo l'oggetto Cliente che abbiamo unificato prima
                         utenteTrovato = new Cliente(nome, cognome, mail, codFiscale, tipoAbb);
-                        // (Se Utente non ha un metodo setRuolo, ricordati che il ruolo potresti doverlo gestire nella superclasse)
-                        
                     } 
                     // Qui in futuro potrai aggiungere gli "else if" per Direttore e PersonalTrainer!
                 }
             }
         } catch (SQLException e) {
+            System.err.println("Errore di connessione o query nel login: " + e.getMessage());
             e.printStackTrace();
         }
 
-        return utenteTrovato; // Se non ha trovato nulla, restituisce null
+        return utenteTrovato; 
     }
 }

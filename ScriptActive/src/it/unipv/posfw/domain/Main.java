@@ -4,7 +4,7 @@ import javax.swing.SwingUtilities;
 
 import it.unipv.posfw.controller.LoginController;
 import it.unipv.posfw.view.LoginView;
-import it.unipv.posfw.view.RegistrazioneView; // IMPORTIAMO LA TUA VIEW
+
 
 // IMPORTIAMO IL DAO CORRETTO
 import it.unipv.posfw.database.UtenteDAO;
@@ -21,12 +21,7 @@ public class Main {
             loginView.setController(loginController);
             loginView.setVisible(true);
             
-            // Creiamo un'istanza della tua View per la registrazione
-            RegistrazioneView registrazioneView = new RegistrazioneView();
-            
-            // Facciamo apparire il tuo modulo a step sullo schermo
-           // registrazioneView.mostraModuloRegistrazione();
-
+         
         });
     }
 }

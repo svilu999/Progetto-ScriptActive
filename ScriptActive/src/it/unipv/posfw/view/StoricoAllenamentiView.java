@@ -22,7 +22,7 @@ public class StoricoAllenamentiView extends JFrame {
     // Componenti UI Swing
     private JPanel panelForm;
     private JTextField txtData, txtNomeEsercizio, txtCarichi, txtRipetizioni;
-    private JComboBox<String> comboCategoria; // NUOVO: Menu a tendina
+    private JComboBox<String> comboCategoria; 
     private JButton btnAggiungiEsercizio; 
     private JButton btnSalvaSessione;     
     private JTextArea txtAnteprimaBozza;  
@@ -116,7 +116,7 @@ public class StoricoAllenamentiView extends JFrame {
         // Bottone Aggiungi Esercizio
         btnAggiungiEsercizio = new JButton("Aggiungi Esercizio alla Scheda");
         btnAggiungiEsercizio.setFont(fontTitoli);
-        btnAggiungiEsercizio.setBackground(new Color(70, 130, 180)); // Colore blu elegante
+        btnAggiungiEsercizio.setBackground(new Color(77, 43, 107));
         btnAggiungiEsercizio.setForeground(Color.WHITE);
         btnAggiungiEsercizio.setFocusPainted(false);
         btnAggiungiEsercizio.setOpaque(true);

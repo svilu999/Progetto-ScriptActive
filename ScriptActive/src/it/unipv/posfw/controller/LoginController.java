@@ -49,8 +49,8 @@ public class LoginController {
         view.dispose();
 
         // =========================================================
-        // 5. SMISTAMENTO (ROUTING) IN BASE ALLA CLASSE DELL'UTENTE
-        // =========================================================
+        // ROUTING IN BASE ALLA CLASSE DELL'UTENTE
+        // ======================================================
         
         if (utenteLoggato instanceof Cliente) {
             // --- AREA RISERVATA CLIENTE (ATTERRAGGIO SULLA DASHBOARD) ---

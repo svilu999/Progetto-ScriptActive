@@ -16,7 +16,7 @@ public class DashboardClienteView extends JFrame {
     private JPanel panelPrenotazioni;
     
     public JButton btnAreaPremium;
-    public JButton btnPrenotaCorsi; // Questo servirà al tuo collega!
+    public JButton btnPrenotaCorsi; 
 
     // Font per l'estetica
     private final Font fontTitolo = new Font("SansSerif", Font.BOLD, 22);
@@ -24,7 +24,7 @@ public class DashboardClienteView extends JFrame {
     private final Font fontBottoni = new Font("SansSerif", Font.BOLD, 14);
 
     public DashboardClienteView() {
-        setTitle("ScriptActive - Dashboard Personale");
+        setTitle("ScriptActive - Dashboard Cliente");
         setSize(600, 500); // Finestra più compatta e accogliente
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -44,7 +44,7 @@ public class DashboardClienteView extends JFrame {
         lblBenvenuto.setFont(fontTitolo);
         lblBenvenuto.setHorizontalAlignment(SwingConstants.CENTER);
         
-        lblAbbonamento = new JLabel("Livello Abbonamento: --");
+        lblAbbonamento = new JLabel("Livello Abbonamento:");
         lblAbbonamento.setFont(fontSottotitolo);
         lblAbbonamento.setForeground(Color.DARK_GRAY);
         lblAbbonamento.setHorizontalAlignment(SwingConstants.CENTER);
@@ -78,7 +78,7 @@ public class DashboardClienteView extends JFrame {
         // Bottone per la tua area (Storico Allenamenti)
         btnAreaPremium = new JButton("LA MIA AREA PREMIUM");
         btnAreaPremium.setFont(fontBottoni);
-        btnAreaPremium.setBackground(new Color(255, 140, 0)); // Arancione scuro/Oro
+        btnAreaPremium.setBackground(new Color(77, 43, 107)); 
         btnAreaPremium.setForeground(Color.WHITE);
         btnAreaPremium.setFocusPainted(false);
         btnAreaPremium.setOpaque(true);
@@ -99,14 +99,13 @@ public class DashboardClienteView extends JFrame {
         lblBenvenuto.setText("Bentornato, " + cliente.getNome() + " " + cliente.getCognome() + "!");
         
         if (cliente.isPremium()) {
-            lblAbbonamento.setText("Livello Abbonamento: PREMIUM ⭐");
-            lblAbbonamento.setForeground(new Color(204, 153, 0)); // Color oro
+            lblAbbonamento.setText("Livello Abbonamento: PREMIUM ");
+            lblAbbonamento.setForeground(new Color(77, 43, 107)); // Color oro
         } else {
             lblAbbonamento.setText("Livello Abbonamento: BASE");
         }
 
-        // PER ORA: Mostriamo un messaggio vuoto nella lista prenotazioni
-        // (Il tuo collega userà un metodo simile a mostraStorico() per riempire questo pannello)
+       
         mostraMessaggioPrenotazioni("Non hai ancora prenotato nessun corso per i prossimi giorni.");
     }
     
