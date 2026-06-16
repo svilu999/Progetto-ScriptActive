@@ -4,9 +4,6 @@ import javax.swing.SwingUtilities;
 
 import it.unipv.posfw.controller.LoginController;
 import it.unipv.posfw.view.LoginView;
-
-
-// IMPORTIAMO IL DAO CORRETTO
 import it.unipv.posfw.database.UtenteDAO;
 import it.unipv.posfw.database.UtenteDAOMySQL;
 

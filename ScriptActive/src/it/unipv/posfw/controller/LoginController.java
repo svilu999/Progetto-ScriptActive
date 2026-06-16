@@ -5,14 +5,11 @@ import java.util.List; // Import per la lista dei corsi
 import it.unipv.posfw.database.UtenteDAO;
 import it.unipv.posfw.dao.SessioneDAO;
 import it.unipv.posfw.dao.SessioneDAOSQL;
-// Importiamo i modelli
 import it.unipv.posfw.domain.Cliente;
-import it.unipv.posfw.domain.Corso; // Import per il corso
+import it.unipv.posfw.domain.Corso; 
 import it.unipv.posfw.domain.Direttore;
 import it.unipv.posfw.domain.PersonalTrainer;
 import it.unipv.posfw.domain.Utente;
-
-// Importiamo le View e i Controller
 import it.unipv.posfw.view.LoginView;
 import it.unipv.posfw.view.StoricoAllenamentiView;
 import it.unipv.posfw.view.DashboardDirettoreView; 
@@ -58,9 +55,6 @@ public class LoginController {
             DashboardClienteView dashboardView = new DashboardClienteView();
             dashboardView.impostaDatiCliente(clienteLoggato);
             
-            // -------------------------------------------------------------
-            // RECUPERO E STAMPA DEI CORSI PRENOTATI DAL DB
-            // -------------------------------------------------------------
             try {
                 GestorePrenotazioni gestorePrenotazioni = new GestorePrenotazioni();
                 List<Corso> corsiDelCliente = gestorePrenotazioni.getCorsiPrenotatiDalCliente(clienteLoggato);
@@ -68,11 +62,8 @@ public class LoginController {
             } catch (Exception e) {
                 System.err.println("Errore nel recupero dei corsi: " + e.getMessage());
             }
-            // -------------------------------------------------------------
-
             dashboardView.setVisible(true);
             
-            // Bottone "LA MIA AREA PREMIUM"
             dashboardView.btnAreaPremium.addActionListener(e -> {
                 dashboardView.dispose();
                 
@@ -86,7 +77,7 @@ public class LoginController {
                 premiumView.clickAccediStorico(clienteLoggato);
             });
             
-            // Bottone "VAI AL PALINSESTO CORSI"
+      
             dashboardView.btnPrenotaCorsi.addActionListener(e -> {
                 dashboardView.dispose();
                 
