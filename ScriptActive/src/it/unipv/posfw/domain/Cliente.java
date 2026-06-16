@@ -1,21 +1,14 @@
 package it.unipv.posfw.domain;
 
-// Eredita da Utente e implementa Observer per mantenere il codice dei compagni intatto
+
 public class Cliente extends Utente implements Observer {
     
-    // --- VARIABILI DI ISTANZA UNIFICATE ---
+
     private String codiceFiscale; 
-    
-    // Variabili dal progetto di gruppo (GitHub)
     private TipoAbbonamento abbonamento;
-    
-    // Variabili dal tuo caso d'uso (Registrazione)
     private Sede sedePrincipale;
     private Abbonamento abbonamentoAttivo;
-
-    // --- COSTRUTTORI IN OVERLOADING ---
     
-    // 1. Costruttore Base (Serve al tuo DAO quando fa la ricerca per CF)
     public Cliente(String nome, String cognome, String email, String codiceFiscale) {
         super(nome, cognome, email);
         this.codiceFiscale = codiceFiscale;
@@ -57,6 +50,7 @@ public class Cliente extends Utente implements Observer {
     public String getCodiceFiscale() { 
         return codiceFiscale; 
     }
+    
 
     public void setCodiceFiscale(String codiceFiscale) {
         this.codiceFiscale = codiceFiscale;

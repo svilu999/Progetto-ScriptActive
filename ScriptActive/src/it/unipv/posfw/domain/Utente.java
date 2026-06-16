@@ -21,7 +21,6 @@ public abstract class Utente {
         this.email = email;
     }
 
-    // --- METODI SPECIFICI DEL PROGETTO DI GRUPPO ---
     public int getId() { 
         return id; 
     }

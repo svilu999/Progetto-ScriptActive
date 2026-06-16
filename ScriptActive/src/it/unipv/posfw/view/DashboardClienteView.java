@@ -7,21 +7,18 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import it.unipv.posfw.domain.Cliente;
-import it.unipv.posfw.domain.Corso; // Importiamo il Corso del tuo collega!
+import it.unipv.posfw.domain.Corso; 
 
 public class DashboardClienteView extends JFrame {
     
     private Cliente utenteCorrente;
 
-    // Componenti grafici
     private JLabel lblBenvenuto;
     private JLabel lblAbbonamento;
     private JPanel panelPrenotazioni;
     
     public JButton btnAreaPremium;
     public JButton btnPrenotaCorsi; 
-
-    // Font per l'estetica
     private final Font fontTitolo = new Font("SansSerif", Font.BOLD, 22);
     private final Font fontSottotitolo = new Font("SansSerif", Font.PLAIN, 16);
     private final Font fontBottoni = new Font("SansSerif", Font.BOLD, 14);
@@ -32,15 +29,12 @@ public class DashboardClienteView extends JFrame {
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout(15, 15));
-        
-        // Bordo generale
         ((JPanel)getContentPane()).setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         inizializzaComponenti();
     }
 
     private void inizializzaComponenti() {
-        // --- 1. SEZIONE IN ALTO: INTESTAZIONE ---
         JPanel panelTop = new JPanel(new GridLayout(2, 1, 5, 5));
         
         lblBenvenuto = new JLabel("Benvenuto!");
@@ -56,7 +50,6 @@ public class DashboardClienteView extends JFrame {
         panelTop.add(lblAbbonamento);
         add(panelTop, BorderLayout.NORTH);
 
-        // --- 2. SEZIONE CENTRALE: LE MIE PRENOTAZIONI ---
         panelPrenotazioni = new JPanel();
         panelPrenotazioni.setLayout(new BoxLayout(panelPrenotazioni, BoxLayout.Y_AXIS));
         panelPrenotazioni.setBackground(Color.WHITE);
@@ -64,8 +57,7 @@ public class DashboardClienteView extends JFrame {
         JScrollPane scrollPrenotazioni = new JScrollPane(panelPrenotazioni);
         scrollPrenotazioni.setBorder(BorderFactory.createTitledBorder(null, "I Tuoi Prossimi Corsi", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, fontBottoni));
         add(scrollPrenotazioni, BorderLayout.CENTER);
-
-        // --- 3. SEZIONE IN BASSO: BOTTONI DI NAVIGAZIONE ---
+        
         JPanel panelBottoni = new JPanel(new GridLayout(1, 2, 15, 0)); 
         
         btnPrenotaCorsi = new JButton("VAI AL PALINSESTO CORSI");
@@ -97,29 +89,45 @@ public class DashboardClienteView extends JFrame {
         
         lblBenvenuto.setText("Bentornato, " + cliente.getNome() + " " + cliente.getCognome() + "!");
         
-        if (cliente.isPremium()) {
-            lblAbbonamento.setText("Livello Abbonamento: PREMIUM");
-            lblAbbonamento.setForeground(new Color(77, 43, 107)); 
-        } else {
-            lblAbbonamento.setText("Livello Abbonamento: BASE");
+        // =====================================================================
+        // ALGORITMO INGEGNERIZZATO: DATA-DRIVEN UI
+        // Leggiamo i dati incrociando l'anagrafica Cliente e il suo Abbonamento
+        // =====================================================================
+        
+        // 1. Estraiamo il tipo di abbonamento (Base o Premium)
+        String tipoAbb = "BASE"; 
+        if (cliente.getTipoAbbonamento() != null) {
+            tipoAbb = cliente.getTipoAbbonamento().toString(); 
         }
-
-       
-     
+        
+        // 2. Estraiamo la durata passando dall'oggetto AbbonamentoAttivo!
+        String durataAbb = "N/A";
+        if (cliente.getAbbonamentoAttivo() != null && cliente.getAbbonamentoAttivo().getLivello() != null) {
+            durataAbb = cliente.getAbbonamentoAttivo().getLivello().toString(); 
+        }
+        
+        // 3. Stampiamo tutto in una singola riga pulita
+        lblAbbonamento.setText("Abbonamento: " + tipoAbb.toUpperCase() + " | Durata: " + durataAbb);
+        
+        // 4. Manteniamo un tocco di colore dinamico
+        if ("PREMIUM".equalsIgnoreCase(tipoAbb)) {
+            lblAbbonamento.setForeground(new Color(77, 43, 107)); // Colore speciale per Premium
+        } else {
+            lblAbbonamento.setForeground(Color.DARK_GRAY); // Grigio per Base
+        }
+        // =====================================================================
     }
     
     public Cliente getUtenteCorrente() {
         return this.utenteCorrente;
     }
     
-  
     public void mostraCorsiPrenotati(List<Corso> corsi) {
         panelPrenotazioni.removeAll();
 
         if (corsi == null || corsi.isEmpty()) {
             mostraMessaggioPrenotazioni("Non hai ancora prenotato nessun corso per i prossimi giorni.");
         } else {
-            // Formattatore per estrarre data e ora in modo leggibile
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy - HH:mm");
 
             for (Corso corso : corsi) {
@@ -131,20 +139,33 @@ public class DashboardClienteView extends JFrame {
                 panelScheda.setBackground(Color.WHITE);
 
                 StringBuilder sb = new StringBuilder();
-                sb.append("️ ").append(corso.getNome().toUpperCase()).append("\n");
-                sb.append(" ").append(corso.getDataOra().format(formatter)).append("\n");
+                sb.append("🏋️ ").append(corso.getNome().toUpperCase()).append("\n");
+                sb.append("📅 ").append(corso.getDataOra().format(formatter)).append("\n");
                 
-                // Se c'è un trainer assegnato, stampiamo il nome
+                // =========================================================
+                // INIZIO CEROTTO GRAFICO PER IL TRAINER
+                // =========================================================
                 if (corso.getTrainerAssegnato() != null) {
-                    sb.append("Trainer: ").append(corso.getTrainerAssegnato().getNome()).append(" ").append(corso.getTrainerAssegnato().getCognome());
+                    String nomePt = corso.getTrainerAssegnato().getNome();
+                    String cognomePt = corso.getTrainerAssegnato().getCognome();
+                    
+                    // Se il DAO ci sta mandando l'oggetto "finto" con scritto solo "Trainer"
+                    if ("Trainer".equalsIgnoreCase(nomePt) || nomePt == null || nomePt.trim().isEmpty()) {
+                        sb.append("👤 Trainer: Assegnazione in corso...");
+                    } else {
+                        // Se invece è un nome vero, lo stampa normalmente!
+                        sb.append("👤 Trainer: ").append(nomePt).append(" ").append(cognomePt != null ? cognomePt : "");
+                    }
                 }
+                // =========================================================
+                // FINE CEROTTO GRAFICO
+                // =========================================================
 
                 JTextArea txtDettagli = new JTextArea(sb.toString());
                 txtDettagli.setFont(new Font("SansSerif", Font.PLAIN, 14));
                 txtDettagli.setEditable(false);
                 txtDettagli.setOpaque(false);
 
-           
                 panelScheda.add(txtDettagli, BorderLayout.CENTER);
                 
                 panelPrenotazioni.add(panelScheda);
