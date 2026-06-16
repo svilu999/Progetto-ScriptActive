@@ -98,31 +98,28 @@ public class DashboardClienteView extends JFrame {
         lblBenvenuto.setText("Bentornato, " + cliente.getNome() + " " + cliente.getCognome() + "!");
         
         if (cliente.isPremium()) {
-            lblAbbonamento.setText("Livello Abbonamento: PREMIUM ⭐");
-            lblAbbonamento.setForeground(new Color(77, 43, 107));
+            lblAbbonamento.setText("Livello Abbonamento: PREMIUM");
+            lblAbbonamento.setForeground(new Color(77, 43, 107)); 
         } else {
             lblAbbonamento.setText("Livello Abbonamento: BASE");
         }
 
-        // All'inizio mettiamo un messaggio di caricamento o vuoto, 
-        // verrà sovrascritto dal metodo mostraCorsiPrenotati()
-        mostraMessaggioPrenotazioni("Caricamento prenotazioni in corso...");
+       
+     
     }
     
     public Cliente getUtenteCorrente() {
         return this.utenteCorrente;
     }
     
-    // ========================================================
-    // NUOVO METODO: DISEGNA I CORSI PRESI DAL DATABASE
-    // ========================================================
+  
     public void mostraCorsiPrenotati(List<Corso> corsi) {
         panelPrenotazioni.removeAll();
 
         if (corsi == null || corsi.isEmpty()) {
             mostraMessaggioPrenotazioni("Non hai ancora prenotato nessun corso per i prossimi giorni.");
         } else {
-            // Formattatore per estrarre data e ora in modo leggibile (es. 15/06/2026 18:30)
+            // Formattatore per estrarre data e ora in modo leggibile
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy - HH:mm");
 
             for (Corso corso : corsi) {
@@ -134,12 +131,12 @@ public class DashboardClienteView extends JFrame {
                 panelScheda.setBackground(Color.WHITE);
 
                 StringBuilder sb = new StringBuilder();
-                sb.append("🏋️ ").append(corso.getNome().toUpperCase()).append("\n");
-                sb.append("📅 ").append(corso.getDataOra().format(formatter)).append("\n");
+                sb.append("️ ").append(corso.getNome().toUpperCase()).append("\n");
+                sb.append(" ").append(corso.getDataOra().format(formatter)).append("\n");
                 
                 // Se c'è un trainer assegnato, stampiamo il nome
                 if (corso.getTrainerAssegnato() != null) {
-                    sb.append("👤 Trainer: ").append(corso.getTrainerAssegnato().getNome()).append(" ").append(corso.getTrainerAssegnato().getCognome());
+                    sb.append("Trainer: ").append(corso.getTrainerAssegnato().getNome()).append(" ").append(corso.getTrainerAssegnato().getCognome());
                 }
 
                 JTextArea txtDettagli = new JTextArea(sb.toString());
@@ -147,11 +144,11 @@ public class DashboardClienteView extends JFrame {
                 txtDettagli.setEditable(false);
                 txtDettagli.setOpaque(false);
 
-                // Aggiungiamo i dettagli al pannello
+           
                 panelScheda.add(txtDettagli, BorderLayout.CENTER);
                 
                 panelPrenotazioni.add(panelScheda);
-                panelPrenotazioni.add(Box.createRigidArea(new Dimension(0, 5))); // Piccolo spazio tra le schede
+                panelPrenotazioni.add(Box.createRigidArea(new Dimension(0, 5))); 
             }
         }
 
