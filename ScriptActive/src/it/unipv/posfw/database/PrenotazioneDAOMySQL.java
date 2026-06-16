@@ -130,17 +130,19 @@ public class PrenotazioneDAOMySQL implements PrenotazioneDAO {
     }
 
     // ========================================================
-    // NUOVO METODO AGGIUNTO PER LA DASHBOARD CLIENTE
+    // NUOVO METODO AGGIUNTO PER LA DASHBOARD CLIENTE (AGGIORNATO CON JOIN)
     // ========================================================
     @Override
     public List<Corso> getCorsiPerCliente(String idCliente) {
         List<Corso> corsiPrenotati = new ArrayList<>();
         
-        // Fai attenzione ai nomi delle colonne: se nel tuo DB si chiamano diversamente (es. data_ora), modificali qui!
-        String query = "SELECT c.ID_Corso, c.Nome, c.DataOra, c.PostiDisponibili, c.ID_Trainer " +
-                     "FROM Corso c " +
-                     "JOIN Prenotazione p ON c.ID_Corso = p.ID_Corso " +
-                     "WHERE p.ID_Cliente = ? AND p.Stato = 'Confermata'"; 
+        // La nuova Query con la JOIN per pescare Nome e Cognome del Trainer dalla tabella Utente!
+        String query = "SELECT c.ID_Corso, c.Nome, c.DataOra, c.PostiDisponibili, c.ID_Trainer, " +
+                       "u.Nome AS NomeTrainer, u.Cognome AS CognomeTrainer " +
+                       "FROM Corso c " +
+                       "JOIN Prenotazione p ON c.ID_Corso = p.ID_Corso " +
+                       "JOIN Utente u ON c.ID_Trainer = u.ID_Utente " +
+                       "WHERE p.ID_Cliente = ? AND p.Stato = 'Confermata'"; 
 
         Connection conn = DatabaseManager.getInstance().getConnection();
 
@@ -154,9 +156,14 @@ public class PrenotazioneDAOMySQL implements PrenotazioneDAO {
                     java.time.LocalDateTime dataOra = rs.getTimestamp("DataOra").toLocalDateTime(); 
                     int posti = rs.getInt("PostiDisponibili");
                     String idTrainer = rs.getString("ID_Trainer");
+                    
+                    // Peschiamo i NOMI VERI che ci ha appena restituito il database
+                    String veroNome = rs.getString("NomeTrainer");
+                    String veroCognome = rs.getString("CognomeTrainer");
 
-                    // Creiamo un oggetto finto del Trainer per associarlo al corso senza fare query pesanti
-                    PersonalTrainer trainer = new PersonalTrainer("Trainer", "", "", idTrainer);
+                    // Adesso creiamo un PersonalTrainer REALE! 
+                    // (L'email la lascio vuota perché alla Dashboard non serve)
+                    PersonalTrainer trainer = new PersonalTrainer(veroNome, veroCognome, "", idTrainer);
                     
                     Corso corso = new Corso(idCorso, nomeCorso, dataOra, posti, trainer);
                     corsiPrenotati.add(corso);

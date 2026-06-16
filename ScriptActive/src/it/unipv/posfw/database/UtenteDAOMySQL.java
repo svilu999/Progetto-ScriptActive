@@ -12,6 +12,9 @@ import it.unipv.posfw.domain.Cliente;
 import it.unipv.posfw.domain.TipoAbbonamento;
 import it.unipv.posfw.domain.PersonalTrainer; 
 import it.unipv.posfw.domain.Direttore;
+// Nuovi import per l'abbonamento completo!
+import it.unipv.posfw.domain.Abbonamento;
+import it.unipv.posfw.domain.LivelloAbbonamento;
 
 public class UtenteDAOMySQL implements UtenteDAO {
 
@@ -50,12 +53,19 @@ public class UtenteDAOMySQL implements UtenteDAO {
                     // 2. Creiamo l'oggetto specifico in base al ruolo
                     if (ruolo.equals("Cliente")) {
                         
-                        // Recuperiamo l'abbonamento dal DB
-                        TipoAbbonamento tipoAbb = recuperaAbbonamentoCliente(idUtente, conn);
+                        // ECCO LA MODIFICA: Recuperiamo l'abbonamento COMPLETO dal DB
+                        Abbonamento abbCompleto = recuperaAbbonamentoCompleto(idUtente, cf, conn);
+                        
+                        // Estraiamo solo il Tipo per il costruttore base
+                        TipoAbbonamento tipoAbb = (abbCompleto != null) ? abbCompleto.getTipo() : null;
                         
                         // Creiamo il cliente con il costruttore completo
                         Cliente cliente = new Cliente(nome, cognome, emailDb, cf, tipoAbb);
                         cliente.setId(idUtente); 
+                        
+                        // AGGANCIAMO L'ABBONAMENTO INTERO AL CLIENTE (Così la View troverà la durata!)
+                        cliente.setAbbonamentoAttivo(abbCompleto);
+                        
                         utenteLoggato = cliente;
 
                     } else if (ruolo.equals("PersonalTrainer")) {
@@ -82,22 +92,33 @@ public class UtenteDAOMySQL implements UtenteDAO {
     }
 
     // ==========================================
-    // METODO DI SUPPORTO PER L'ABBONAMENTO
+    // METODO DI SUPPORTO PER L'ABBONAMENTO (POTENZIATO)
     // ==========================================
-    private TipoAbbonamento recuperaAbbonamentoCliente(int idUtente, Connection conn) {
-        String queryAbbonamento = "SELECT Tipo FROM Abbonamento WHERE ID_Cliente = ?";
-        TipoAbbonamento tipoAssegnato = null; // Di default nullo
+    private Abbonamento recuperaAbbonamentoCompleto(int idUtente, String cf, Connection conn) {
+        // Attenzione: assicurati che la colonna per Mese/Semestre/Anno su MySQL si chiami "Livello"
+        String queryAbbonamento = "SELECT Tipo, Livello FROM Abbonamento WHERE ID_Cliente = ?";
+        Abbonamento abbonamentoTrovato = null;
         
         try (PreparedStatement stmtAbb = conn.prepareStatement(queryAbbonamento)) {
             stmtAbb.setInt(1, idUtente);
             
             try (ResultSet rsAbb = stmtAbb.executeQuery()) {
                 if (rsAbb.next()) {
-                    String livelloDB = rsAbb.getString("Tipo"); 
-                    if (livelloDB != null) {
-                        // Converte la stringa del DB (es. "Premium") nell'Enum (PREMIUM)
-                        tipoAssegnato = TipoAbbonamento.valueOf(livelloDB.toUpperCase());
+                    String tipoDB = rsAbb.getString("Tipo"); 
+                    String livelloDB = rsAbb.getString("Livello"); // Peschiamo la durata!
+                    
+                    TipoAbbonamento tipoEnum = null;
+                    LivelloAbbonamento livelloEnum = null;
+                    
+                    if (tipoDB != null) {
+                        tipoEnum = TipoAbbonamento.valueOf(tipoDB.toUpperCase());
                     }
+                    if (livelloDB != null) {
+                        livelloEnum = LivelloAbbonamento.valueOf(livelloDB.toUpperCase());
+                    }
+                    
+                    // Costruiamo l'oggetto completo (metto false e stringa vuota per IBAN che non servono qui)
+                    abbonamentoTrovato = new Abbonamento(cf, livelloEnum, tipoEnum, false, "");
                 }
             }
         } catch (SQLException | IllegalArgumentException e) {
@@ -105,7 +126,7 @@ public class UtenteDAOMySQL implements UtenteDAO {
             e.printStackTrace();
         }
         
-        return tipoAssegnato;
+        return abbonamentoTrovato;
     }
 
     // ==========================================
@@ -191,10 +212,6 @@ public class UtenteDAOMySQL implements UtenteDAO {
     public static void main(String[] args) {
         UtenteDAOMySQL dao = new UtenteDAOMySQL();
         
-        // Simulo la registrazione di un cliente
-        // dao.registraCliente("VRNLRN99M21F205W", "Lorenzo", "Varano", "lorenzo@studenti.unipv.it", "hash_finto_per_ora");
-        
-        // Test di Login (assicurati che questo utente esista nel tuo DB per vedere se funziona)
         System.out.println("Test di Login in corso...");
         Utente utente = dao.effettuaLogin("lorenzo@studenti.unipv.it", "hash_finto_per_ora");
         
@@ -202,8 +219,13 @@ public class UtenteDAOMySQL implements UtenteDAO {
             System.out.println("Login effettuato con successo! Benvenuto " + utente.getNome());
             if (utente instanceof Cliente) {
                 Cliente c = (Cliente) utente;
-                System.out.println("ID Cliente: " + c.getId()); // Questo dimostra che l'ID è stato pescato correttamente
-                System.out.println("Abbonamento: " + c.getTipoAbbonamento());
+                System.out.println("ID Cliente: " + c.getId()); 
+                System.out.println("Tipo Abbonamento: " + c.getTipoAbbonamento());
+                
+                // Ora il test prova a leggere anche il livello!
+                if (c.getAbbonamentoAttivo() != null) {
+                    System.out.println("Durata Abbonamento: " + c.getAbbonamentoAttivo().getLivello());
+                }
             }
         } else {
             System.out.println("Login fallito. Credenziali errate.");
