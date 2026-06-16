@@ -5,7 +5,7 @@ import javax.swing.border.TitledBorder;
 
 import it.unipv.posfw.controller.StoricoAllenamenti;
 import it.unipv.posfw.domain.Cliente;
-import it.unipv.posfw.domain.DatiForm;
+import it.unipv.posfw.domain.DatiFormPojo;
 import it.unipv.posfw.domain.SessioneAllenamento;
 import it.unipv.posfw.exceptions.*;
 
@@ -32,7 +32,7 @@ public class StoricoAllenamentiView extends JFrame {
     
     private Cliente utenteCorrente; 
     
-    private List<DatiForm> eserciziInBozza;
+    private List<DatiFormPojo> eserciziInBozza;
 
     // Font per abbellire l'interfaccia
     private final Font fontTitoli = new Font("SansSerif", Font.BOLD, 14);
@@ -58,7 +58,7 @@ public class StoricoAllenamentiView extends JFrame {
     }
 
     private void inizializzaComponenti() {
-        // --- SEZIONE SUPERIORE ---
+     
         JPanel panelTop = new JPanel(new FlowLayout(FlowLayout.CENTER));
         btnSimulaAccesso = new JButton("Sblocca la tua Area Premium");
         btnSimulaAccesso.setFont(fontTitoli);
@@ -66,14 +66,14 @@ public class StoricoAllenamentiView extends JFrame {
         panelTop.add(btnSimulaAccesso);
         add(panelTop, BorderLayout.NORTH);
 
-        // --- SEZIONE CENTRALE: Form di Creazione Scheda ---
+        //  Form di Creazione Scheda 
         panelForm = new JPanel(new BorderLayout(10, 10));
         panelForm.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createTitledBorder(null, "Crea Nuova Sessione di Allenamento", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, fontTitoli),
             BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
 
-        // Pannello input dati (5 righe per far spazio al menu a tendina)
+   
         JPanel panelInput = new JPanel(new GridLayout(5, 2, 10, 10));
         
         JLabel lblData = new JLabel("Data (dd/MM/yyyy):");
@@ -113,7 +113,7 @@ public class StoricoAllenamentiView extends JFrame {
         txtRipetizioni.setFont(fontTesto);
         panelInput.add(txtRipetizioni);
 
-        // Bottone Aggiungi Esercizio
+      
         btnAggiungiEsercizio = new JButton("Aggiungi Esercizio alla Scheda");
         btnAggiungiEsercizio.setFont(fontTitoli);
         btnAggiungiEsercizio.setBackground(new Color(77, 43, 107));
@@ -123,17 +123,17 @@ public class StoricoAllenamentiView extends JFrame {
         btnAggiungiEsercizio.setBorderPainted(false);
         btnAggiungiEsercizio.addActionListener(e -> clickAggiungiEsercizio());
 
-        // Area Anteprima
+        //  Anteprima
         txtAnteprimaBozza = new JTextArea(5, 20);
         txtAnteprimaBozza.setEditable(false);
         txtAnteprimaBozza.setFont(new Font("Monospaced", Font.PLAIN, 13));
         JScrollPane scrollBozza = new JScrollPane(txtAnteprimaBozza);
         scrollBozza.setBorder(BorderFactory.createTitledBorder(null, "Esercizi in questa sessione", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, fontTesto));
 
-        // Bottone Salva Sessione
+        // Salva Sessione
         btnSalvaSessione = new JButton("SALVA SESSIONE COMPLETA");
         btnSalvaSessione.setFont(fontTitoli);
-        btnSalvaSessione.setBackground(new Color(46, 139, 87)); // Verde brillante
+        btnSalvaSessione.setBackground(new Color(46, 139, 87)); 
         btnSalvaSessione.setForeground(Color.WHITE);
         btnSalvaSessione.setPreferredSize(new Dimension(100, 40));
         btnSalvaSessione.setFocusPainted(false);
@@ -141,7 +141,7 @@ public class StoricoAllenamentiView extends JFrame {
         btnSalvaSessione.setBorderPainted(false); 
         btnSalvaSessione.addActionListener(e -> clickSalvaSessioneCompleta());
 
-        // Assemblaggio della parte centrale
+      
         JPanel panelMiddleContainer = new JPanel(new BorderLayout(10, 10));
         panelMiddleContainer.add(panelInput, BorderLayout.NORTH);
         panelMiddleContainer.add(btnAggiungiEsercizio, BorderLayout.CENTER);
@@ -152,7 +152,7 @@ public class StoricoAllenamentiView extends JFrame {
 
         add(panelForm, BorderLayout.CENTER);
 
-        // --- SEZIONE INFERIORE: Storico Allenamenti ---
+        // Storico Allenamenti
         panelStoricoContainer = new JPanel();
         panelStoricoContainer.setLayout(new BoxLayout(panelStoricoContainer, BoxLayout.Y_AXIS));
         JScrollPane scrollPane = new JScrollPane(panelStoricoContainer);
@@ -195,10 +195,10 @@ public class StoricoAllenamentiView extends JFrame {
             double carichi = Double.parseDouble(txtCarichi.getText());
             int ripetizioni = Integer.parseInt(txtRipetizioni.getText());
 
-            // TRUCCHETTO: Uniamo la categoria al nome per non toccare DatiForm o il DB!
+            //
             String nomeEsercizioFormattato = "[" + categoria + "] " + nomeEsercizio;
 
-            DatiForm nuovoEsercizio = new DatiForm(nomeEsercizioFormattato, carichi, ripetizioni);
+            DatiFormPojo nuovoEsercizio = new DatiFormPojo(nomeEsercizioFormattato, carichi, ripetizioni);
             eserciziInBozza.add(nuovoEsercizio);
             
             aggiornaAnteprimaBozza();
@@ -233,7 +233,7 @@ public class StoricoAllenamentiView extends JFrame {
     private void aggiornaAnteprimaBozza() {
         StringBuilder sb = new StringBuilder();
         int i = 1;
-        for (DatiForm ex : eserciziInBozza) {
+        for (DatiFormPojo ex : eserciziInBozza) {
             sb.append(i++).append(". ").append(ex.getNomeEsercizio().toUpperCase())
               .append(" | ").append(ex.getCarichi()).append(" kg x ").append(ex.getRipetizioni()).append(" rep \n");
         }
@@ -272,22 +272,41 @@ public class StoricoAllenamentiView extends JFrame {
                 ));
                 panelScheda.setBackground(Color.WHITE);
 
-                // CERCHIAMO DI CAPIRE IL GRUPPO MUSCOLARE DELLA SESSIONE
-                String gruppoMuscolare = "Mista";
+                // ====================================================================
+                // ALGORITMO INGEGNERIZZATO PER CALCOLO CATEGORIA (Uso di HashSet)
+                // ====================================================================
+                String gruppoMuscolare = "Mista"; // Default di sicurezza
+                
                 if (!sessione.getEsercizi().isEmpty()) {
-                    String primoNome = sessione.getEsercizi().get(0).getNomeEsercizio();
-                    if (primoNome.startsWith("[")) {
-                        // Estrae la parola tra le parentesi quadre
-                        gruppoMuscolare = primoNome.substring(1, primoNome.indexOf("]"));
+                    // Usiamo un Set per memorizzare le categorie univoche
+                    java.util.Set<String> categorieUniche = new java.util.HashSet<>();
+                    
+                    for (DatiFormPojo esercizio : sessione.getEsercizi()) {
+                        String nomeEs = esercizio.getNomeEsercizio();
+                        if (nomeEs.startsWith("[")) {
+                            // Estraiamo la categoria e la mettiamo nel Set
+                            String cat = nomeEs.substring(1, nomeEs.indexOf("]"));
+                            categorieUniche.add(cat);
+                        }
+                    }
+                    
+                    // Valutiamo il risultato del Set
+                    if (categorieUniche.size() == 1) {
+                        // C'è una sola categoria in tutta la scheda!
+                        gruppoMuscolare = categorieUniche.iterator().next(); 
+                    } else if (categorieUniche.size() > 1) {
+                        // Ci sono più categorie diverse
+                        gruppoMuscolare = "MISTA";
                     }
                 }
+                // ====================================================================
 
                 StringBuilder sb = new StringBuilder();
-                // ECCO L'INTESTAZIONE CHE VOLEVI!
-                sb.append("Sessione di ").append(gruppoMuscolare).append(" del giorno : ").append(sdf.format(sessione.getData())).append("\n\n");
+                // INTESTAZIONE DELLA SESSIONE
+                sb.append("Sessione di ").append(gruppoMuscolare).append(" in data : ").append(sdf.format(sessione.getData())).append("\n\n");
                 
-                for (DatiForm esercizio : sessione.getEsercizi()) {
-                    // Puliamo il nome dell'esercizio togliendo il gruppo muscolare per la stampa della lista
+                for (DatiFormPojo esercizio : sessione.getEsercizi()) {
+                
                     String nomePulito = esercizio.getNomeEsercizio();
                     if (nomePulito.startsWith("[")) {
                         nomePulito = nomePulito.substring(nomePulito.indexOf("]") + 1).trim();

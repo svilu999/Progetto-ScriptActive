@@ -3,7 +3,7 @@ package it.unipv.posfw.controller;
 import java.util.List;
 
 import it.unipv.posfw.domain.Cliente;
-import it.unipv.posfw.domain.DatiForm;
+import it.unipv.posfw.domain.DatiFormPojo;
 import it.unipv.posfw.domain.SessioneAllenamento;
 import it.unipv.posfw.dao.SessioneDAO;
 import it.unipv.posfw.view.StoricoAllenamentiView;
@@ -33,8 +33,8 @@ public class StoricoAllenamenti {
         }
     }
 
-    // AGGIORNATO: Gestisce 3 tipi di errori diversi (Scheda Vuota, Dati Invalidi, Database KO)
-    public void salvaSessioneCompleta(java.util.Date data, List<DatiForm> esercizi, Cliente cliente) 
+    // Gestisce 3 tipi di errori diversi (Scheda Vuota, Dati Invalidi, Database KO)
+    public void salvaSessioneCompleta(java.util.Date data, List<DatiFormPojo> esercizi, Cliente cliente) 
            throws SchedaVuotaException, DatiAllenamentoNonValidiException, SalvataggioFallitoException {
         
         // 1. Controllo: La scheda è vuota?
@@ -43,7 +43,7 @@ public class StoricoAllenamenti {
         }
 
         // 2. Controllo: I dati degli esercizi sono validi?
-        for (DatiForm esercizio : esercizi) {
+        for (DatiFormPojo esercizio : esercizi) {
             if (esercizio.getCarichi() < 0) {
                 throw new DatiAllenamentoNonValidiException("Errore in '" + esercizio.getNomeEsercizio() + "': Il carico non può essere negativo.");
             }
@@ -54,7 +54,7 @@ public class StoricoAllenamenti {
 
         // Se i controlli passano, creo l'oggetto Sessione
         SessioneAllenamento nuovaSessione = new SessioneAllenamento(data, cliente.getIdCliente());
-        for (DatiForm esercizio : esercizi) {
+        for (DatiFormPojo esercizio : esercizi) {
             nuovaSessione.aggiungiEsercizio(esercizio);
         }
 
@@ -66,7 +66,7 @@ public class StoricoAllenamenti {
             throw new SalvataggioFallitoException();
         }
 
-        // Se arriviamo fin qui senza lanciare eccezioni, è andato tutto bene!
+        // Se arriviamo fin qui senza lanciare eccezioni, è andato tutto bene
         caricaStorico(cliente); 
     }
 

@@ -10,7 +10,7 @@ public class SessioneAllenamento {
     private int idSessione; // Serve per collegarsi all'ID di MySQL
     private Date data;
     private String idCliente;
-    private List<DatiForm> esercizi;
+    private List<DatiFormPojo> esercizi;
 
     public SessioneAllenamento(Date data, String idCliente) {
         this.idSessione = -1; // -1 significa "non ancora salvato nel DB"
@@ -27,11 +27,11 @@ public class SessioneAllenamento {
         return idSessione;
     }
 
-    public void aggiungiEsercizio(DatiForm esercizio) {
+    public void aggiungiEsercizio(DatiFormPojo esercizio) {
         this.esercizi.add(esercizio);
     }
 
     public Date getData() { return data; }
     public String getIdCliente() { return idCliente; }
-    public List<DatiForm> getEsercizi() { return esercizi; }
+    public List<DatiFormPojo> getEsercizi() { return esercizi; }
 }

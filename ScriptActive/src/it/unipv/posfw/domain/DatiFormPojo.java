@@ -1,12 +1,12 @@
 package it.unipv.posfw.domain;
 
-public class DatiForm {
+public class DatiFormPojo {
     private String nomeEsercizio;
     private double carichi;
     private int ripetizioni;
 
     // Costruttore aggiornato (solo 3 parametri)
-    public DatiForm(String nomeEsercizio, double carichi, int ripetizioni) {
+    public DatiFormPojo(String nomeEsercizio, double carichi, int ripetizioni) {
         this.nomeEsercizio = nomeEsercizio;
         this.carichi = carichi;
         this.ripetizioni = ripetizioni;

@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import it.unipv.posfw.domain.SessioneAllenamento;
-import it.unipv.posfw.domain.DatiForm;
+import it.unipv.posfw.domain.DatiFormPojo;
 
 public class SessioneDAOSQL implements SessioneDAO {
 
@@ -59,7 +59,7 @@ public class SessioneDAOSQL implements SessioneDAO {
                 }
 
                 try (PreparedStatement pstmtEsercizio = conn.prepareStatement(sqlEsercizio)) {
-                    for (DatiForm esercizio : sessione.getEsercizi()) {
+                    for (DatiFormPojo esercizio : sessione.getEsercizi()) {
                         pstmtEsercizio.setString(1, "Generico"); 
                         pstmtEsercizio.setString(2, esercizio.getNomeEsercizio()); 
                         pstmtEsercizio.setInt(3, 1); 
@@ -113,7 +113,7 @@ public class SessioneDAOSQL implements SessioneDAO {
 
                     String macchinario = rs.getString("Macchinario");
                     if (macchinario != null) { 
-                        DatiForm esercizio = new DatiForm(macchinario, rs.getDouble("Carico"), rs.getInt("Ripetizioni"));
+                        DatiFormPojo esercizio = new DatiFormPojo(macchinario, rs.getDouble("Carico"), rs.getInt("Ripetizioni"));
                         mappaSessioni.get(idSess).aggiungiEsercizio(esercizio);
                     }
                 }

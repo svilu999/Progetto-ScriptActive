@@ -10,7 +10,7 @@ import java.util.Date;
 import java.util.List;
 import it.unipv.posfw.controller.StoricoAllenamenti;
 import it.unipv.posfw.domain.Cliente;
-import it.unipv.posfw.domain.DatiForm;
+import it.unipv.posfw.domain.DatiFormPojo;
 import it.unipv.posfw.domain.TipoAbbonamento;
 import it.unipv.posfw.exceptions.*;
 import it.unipv.posfw.view.StoricoAllenamentiView;
@@ -56,7 +56,7 @@ public class StoricoAllenamentiTest {
     @Test(expected = SchedaVuotaException.class)
     public void testSalvataggioSchedaVuota() throws Exception {
         // SETUP: Creiamo una lista di esercizi vuota
-        List<DatiForm> eserciziVuoti = new ArrayList<>();
+        List<DatiFormPojo> eserciziVuoti = new ArrayList<>();
         Date dataOggi = new Date();
 
         // L'utente preme "Salva" senza aver aggiunto esercizi
@@ -70,7 +70,7 @@ public class StoricoAllenamentiTest {
         
         // 1. Partizione di equivalenza VALIDA
         try {
-            DatiForm valido = new DatiForm("Panca Piana", 50.0, 10);
+            DatiFormPojo valido = new DatiFormPojo("Panca Piana", 50.0, 10);
             assertTrue(valido.getRipetizioni() > 0);
         } catch (Exception e) {
             fail("I dati validi non dovrebbero generare eccezioni.");
@@ -80,7 +80,7 @@ public class StoricoAllenamentiTest {
         boolean haLanciatoEccezione = false;
         try {
             // Simuliamo che l'utente inserisca -5 ripetizioni
-            DatiForm invalido = new DatiForm("Squat", 100.0, -5); 
+            DatiFormPojo invalido = new DatiFormPojo("Squat", 100.0, -5); 
           
         } catch (IllegalArgumentException e) {
             haLanciatoEccezione = true;
