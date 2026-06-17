@@ -8,7 +8,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import it.unipv.posfw.controller.StoricoAllenamenti;
+import it.unipv.posfw.controller.StoricoAllenamentiController;
 import it.unipv.posfw.domain.Cliente;
 import it.unipv.posfw.domain.DatiFormPojo;
 import it.unipv.posfw.domain.TipoAbbonamento;
@@ -17,7 +17,7 @@ import it.unipv.posfw.view.StoricoAllenamentiView;
 
 public class StoricoAllenamentiTest {
 
-    private StoricoAllenamenti controller;
+    private StoricoAllenamentiController controller;
     private Cliente utenteBase;
     private Cliente utentePremium;
  // FASE DI SETUP
@@ -27,7 +27,7 @@ public class StoricoAllenamentiTest {
         
    it.unipv.posfw.dao.SessioneDAO daoPerTest = new it.unipv.posfw.dao.SessioneDAOSQL();
         
-                controller = new StoricoAllenamenti(viewPerTest, daoPerTest);
+                controller = new StoricoAllenamentiController(viewPerTest, daoPerTest);
         
        //istanzio gli attori
         utenteBase = new Cliente("Mario", "Rossi", "m@m.it", "CF1", TipoAbbonamento.BASE);

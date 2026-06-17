@@ -18,7 +18,7 @@ public class Main {
             loginView.setController(loginController);
             loginView.setVisible(true);
             
-         
+        
         });
     }
 }

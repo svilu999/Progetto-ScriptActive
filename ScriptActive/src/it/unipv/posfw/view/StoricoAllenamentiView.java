@@ -3,7 +3,7 @@ package it.unipv.posfw.view;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
-import it.unipv.posfw.controller.StoricoAllenamenti;
+import it.unipv.posfw.controller.StoricoAllenamentiController;
 import it.unipv.posfw.domain.Cliente;
 import it.unipv.posfw.domain.DatiFormPojo;
 import it.unipv.posfw.domain.SessioneAllenamento;
@@ -17,9 +17,8 @@ import java.util.Date;
 import java.util.List;
 
 public class StoricoAllenamentiView extends JFrame {
-    private StoricoAllenamenti controller;
+    private StoricoAllenamentiController controller;
     
-    // Componenti UI Swing
     private JPanel panelForm;
     private JTextField txtData, txtNomeEsercizio, txtCarichi, txtRipetizioni;
     private JComboBox<String> comboCategoria; 
@@ -28,13 +27,14 @@ public class StoricoAllenamentiView extends JFrame {
     private JTextArea txtAnteprimaBozza;  
     
     private JPanel panelStoricoContainer; 
-    private JButton btnSimulaAccesso; 
+    
+    public JButton btnSimulaAccesso; 
+    public JButton btnIndietro; 
     
     private Cliente utenteCorrente; 
     
     private List<DatiFormPojo> eserciziInBozza;
 
-    // Font per abbellire l'interfaccia
     private final Font fontTitoli = new Font("SansSerif", Font.BOLD, 14);
     private final Font fontTesto = new Font("SansSerif", Font.PLAIN, 14);
 
@@ -42,28 +42,44 @@ public class StoricoAllenamentiView extends JFrame {
         eserciziInBozza = new ArrayList<>(); 
         
         setTitle("ScriptActive - I Miei Allenamenti");
-        setSize(600, 800); // Leggermente allargata per respirare meglio
-        setLocationRelativeTo(null); // Centra la finestra nello schermo
+        setSize(600, 800); 
+        setLocationRelativeTo(null); 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new BorderLayout(15, 15)); // Margini tra i pannelli
+        setLayout(new BorderLayout(15, 15)); 
         
-        // Bordo generale per non attaccare i componenti ai lati della finestra
         ((JPanel)getContentPane()).setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         inizializzaComponenti();
     }
 
-    public void setController(StoricoAllenamenti controller) {
+    public void setController(StoricoAllenamentiController controller) {
         this.controller = controller;
     }
 
     private void inizializzaComponenti() {
      
-        JPanel panelTop = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        JPanel panelTop = new JPanel(new BorderLayout()); 
+        
+        // 1. Bottone Indietro (A Sinistra)
+        btnIndietro = new JButton("⬅ Indietro");
+        btnIndietro.setFont(fontTesto);
+        btnIndietro.setFocusPainted(false);
+        btnIndietro.setBackground(new Color(230, 230, 230));
+        panelTop.add(btnIndietro, BorderLayout.WEST);
+
+        // =====================================================================
+        // STILE DEL BOTTONE PREMIUM (Come il bottone "Accedi" Viola)
+        // =====================================================================
         btnSimulaAccesso = new JButton("Sblocca la tua Area Premium");
         btnSimulaAccesso.setFont(fontTitoli);
-        btnSimulaAccesso.addActionListener(e -> clickAccediStorico(utenteCorrente));
-        panelTop.add(btnSimulaAccesso);
+        btnSimulaAccesso.setBackground(new Color(77, 43, 107)); // Il viola di ScriptActive
+        btnSimulaAccesso.setForeground(Color.WHITE); // Testo bianco
+        btnSimulaAccesso.setFocusPainted(false);
+        btnSimulaAccesso.setOpaque(true); // Fondamentale per far vedere il colore su Mac/Windows
+        btnSimulaAccesso.setBorderPainted(false);
+        btnSimulaAccesso.setCursor(new Cursor(Cursor.HAND_CURSOR)); // Cursore a manina
+        // =====================================================================
+        
         add(panelTop, BorderLayout.NORTH);
 
         //  Form di Creazione Scheda 
@@ -73,7 +89,6 @@ public class StoricoAllenamentiView extends JFrame {
             BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
 
-   
         JPanel panelInput = new JPanel(new GridLayout(5, 2, 10, 10));
         
         JLabel lblData = new JLabel("Data (dd/MM/yyyy):");
@@ -113,7 +128,6 @@ public class StoricoAllenamentiView extends JFrame {
         txtRipetizioni.setFont(fontTesto);
         panelInput.add(txtRipetizioni);
 
-      
         btnAggiungiEsercizio = new JButton("Aggiungi Esercizio alla Scheda");
         btnAggiungiEsercizio.setFont(fontTitoli);
         btnAggiungiEsercizio.setBackground(new Color(77, 43, 107));
@@ -141,7 +155,6 @@ public class StoricoAllenamentiView extends JFrame {
         btnSalvaSessione.setBorderPainted(false); 
         btnSalvaSessione.addActionListener(e -> clickSalvaSessioneCompleta());
 
-      
         JPanel panelMiddleContainer = new JPanel(new BorderLayout(10, 10));
         panelMiddleContainer.add(panelInput, BorderLayout.NORTH);
         panelMiddleContainer.add(btnAggiungiEsercizio, BorderLayout.CENTER);
@@ -156,7 +169,7 @@ public class StoricoAllenamentiView extends JFrame {
         panelStoricoContainer = new JPanel();
         panelStoricoContainer.setLayout(new BoxLayout(panelStoricoContainer, BoxLayout.Y_AXIS));
         JScrollPane scrollPane = new JScrollPane(panelStoricoContainer);
-        scrollPane.setBorder(BorderFactory.createTitledBorder(null, "I Miei Allenamenti Registrati", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, fontTitoli));
+        scrollPane.setBorder(BorderFactory.createTitledBorder(null, "I Miei Allenamenti", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, fontTitoli));
         scrollPane.setPreferredSize(new Dimension(500, 250));
         add(scrollPane, BorderLayout.SOUTH);
 
@@ -195,7 +208,6 @@ public class StoricoAllenamentiView extends JFrame {
             double carichi = Double.parseDouble(txtCarichi.getText());
             int ripetizioni = Integer.parseInt(txtRipetizioni.getText());
 
-            //
             String nomeEsercizioFormattato = "[" + categoria + "] " + nomeEsercizio;
 
             DatiFormPojo nuovoEsercizio = new DatiFormPojo(nomeEsercizioFormattato, carichi, ripetizioni);
@@ -213,6 +225,7 @@ public class StoricoAllenamentiView extends JFrame {
         }
     }
 
+    // GESTIONE DELLE ECCEZIONI
     private void clickSalvaSessioneCompleta() {
         try {
             Date data = new SimpleDateFormat("dd/MM/yyyy").parse(txtData.getText());
@@ -224,12 +237,19 @@ public class StoricoAllenamentiView extends JFrame {
             JOptionPane.showMessageDialog(this, "Sessione di allenamento salvata con successo!", "Successo", JOptionPane.INFORMATION_MESSAGE);
 
         } catch (ParseException ex) {
-            JOptionPane.showMessageDialog(this, "Errore nel formato della data (usa dd/MM/yyyy).", "Errore Data", JOptionPane.ERROR_MESSAGE);
-        } catch (SchedaVuotaException | DatiAllenamentoNonValidiException | SalvataggioFallitoException ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Errore di Convalida", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Formato data errato. Utilizza gg/mm/aaaa.", "Errore Input", JOptionPane.WARNING_MESSAGE);
+            
+        } catch (SchedaVuotaException ex) {
+            JOptionPane.showMessageDialog(this, "Non hai inserito nessun esercizio. La scheda non può essere vuota!", "Scheda Vuota", JOptionPane.WARNING_MESSAGE);
+            
+        } catch (DatiAllenamentoNonValidiException ex) {
+            JOptionPane.showMessageDialog(this, "I parametri inseriti non sono validi. Controlla che ripetizioni e carichi siano corretti.", "Dati Non Validi", JOptionPane.WARNING_MESSAGE);
+            
+        } catch (SalvataggioFallitoException ex) {
+            JOptionPane.showMessageDialog(this, "Impossibile contattare il server. Riprova più tardi.\nDettaglio: " + ex.getMessage(), "Errore di Sistema", JOptionPane.ERROR_MESSAGE);
         }
     }
-
+    
     private void aggiornaAnteprimaBozza() {
         StringBuilder sb = new StringBuilder();
         int i = 1;
@@ -240,13 +260,35 @@ public class StoricoAllenamentiView extends JFrame {
         txtAnteprimaBozza.setText(sb.toString());
     }
 
+    // =========================================================================
+    // INSERITO IL BOTTONE SBLOCCA PREMIUM NEL CONTAINER CENTRALE
+    // =========================================================================
     public void mostraBloccoUpgradePremium() {
         panelForm.setVisible(false); 
         impostaStatoForm(false);
-        mostraMessaggioNelContainer("Accesso Negato: Devi essere un utente Premium per inserire o visualizzare gli allenamenti.");
+        
+        panelStoricoContainer.removeAll();
+        
+        // Creiamo la label col messaggio
+        JLabel lblMessaggio = new JLabel("Accesso Negato: L'area allenamenti è riservata agli utenti Premium.");
+        lblMessaggio.setFont(fontTesto);
+        lblMessaggio.setAlignmentX(Component.CENTER_ALIGNMENT); // Centra il testo
+        
+        // Centriamo anche il bottone
+        btnSimulaAccesso.setAlignmentX(Component.CENTER_ALIGNMENT); 
+        // Dimensioni personalizzate per renderlo simile a un tasto "Accedi"
+        btnSimulaAccesso.setMaximumSize(new Dimension(300, 45)); 
+        
+        // Aggiungiamo un po' di spazio e poi i componenti
+        panelStoricoContainer.add(Box.createVerticalStrut(30)); 
+        panelStoricoContainer.add(lblMessaggio);
+        panelStoricoContainer.add(Box.createVerticalStrut(20)); // Spazio tra scritta e bottone
+        panelStoricoContainer.add(btnSimulaAccesso);
+        
         this.revalidate();
         this.repaint();
     }
+    // =========================================================================
 
     public void mostraModuloInserimento() {
         panelForm.setVisible(true); 
@@ -272,37 +314,27 @@ public class StoricoAllenamentiView extends JFrame {
                 ));
                 panelScheda.setBackground(Color.WHITE);
 
-                // ====================================================================
-                // ALGORITMO INGEGNERIZZATO PER CALCOLO CATEGORIA (Uso di HashSet)
-                // ====================================================================
-                String gruppoMuscolare = "Mista"; // Default di sicurezza
+                String gruppoMuscolare = "Mista"; 
                 
                 if (!sessione.getEsercizi().isEmpty()) {
-                    // Usiamo un Set per memorizzare le categorie univoche
                     java.util.Set<String> categorieUniche = new java.util.HashSet<>();
                     
                     for (DatiFormPojo esercizio : sessione.getEsercizi()) {
                         String nomeEs = esercizio.getNomeEsercizio();
                         if (nomeEs.startsWith("[")) {
-                            // Estraiamo la categoria e la mettiamo nel Set
                             String cat = nomeEs.substring(1, nomeEs.indexOf("]"));
                             categorieUniche.add(cat);
                         }
                     }
                     
-                    // Valutiamo il risultato del Set
                     if (categorieUniche.size() == 1) {
-                        // C'è una sola categoria in tutta la scheda!
                         gruppoMuscolare = categorieUniche.iterator().next(); 
                     } else if (categorieUniche.size() > 1) {
-                        // Ci sono più categorie diverse
                         gruppoMuscolare = "MISTA";
                     }
                 }
-                // ====================================================================
 
                 StringBuilder sb = new StringBuilder();
-                // INTESTAZIONE DELLA SESSIONE
                 sb.append("Sessione di ").append(gruppoMuscolare).append(" in data : ").append(sdf.format(sessione.getData())).append("\n\n");
                 
                 for (DatiFormPojo esercizio : sessione.getEsercizi()) {
@@ -332,7 +364,7 @@ public class StoricoAllenamentiView extends JFrame {
                         try {
                             controller.eliminaSessioneSelezionata(sessione, utenteCorrente);
                         } catch (SalvataggioFallitoException ex) {
-                            JOptionPane.showMessageDialog(this, ex.getMessage(), "Errore", JOptionPane.ERROR_MESSAGE);
+                            JOptionPane.showMessageDialog(this, "Impossibile eliminare dal Database: " + ex.getMessage(), "Errore di Sistema", JOptionPane.ERROR_MESSAGE);
                         }
                     }
                 });
@@ -365,6 +397,7 @@ public class StoricoAllenamentiView extends JFrame {
         panelStoricoContainer.removeAll();
         JLabel lblMessaggio = new JLabel(messaggio);
         lblMessaggio.setFont(fontTesto);
+        lblMessaggio.setAlignmentX(Component.CENTER_ALIGNMENT); 
         lblMessaggio.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         panelStoricoContainer.add(lblMessaggio);
         panelStoricoContainer.revalidate();

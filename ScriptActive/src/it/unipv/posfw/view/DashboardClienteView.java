@@ -157,9 +157,7 @@ public class DashboardClienteView extends JFrame {
                         sb.append("👤 Trainer: ").append(nomePt).append(" ").append(cognomePt != null ? cognomePt : "");
                     }
                 }
-                // =========================================================
-                // FINE CEROTTO GRAFICO
-                // =========================================================
+           
 
                 JTextArea txtDettagli = new JTextArea(sb.toString());
                 txtDettagli.setFont(new Font("SansSerif", Font.PLAIN, 14));

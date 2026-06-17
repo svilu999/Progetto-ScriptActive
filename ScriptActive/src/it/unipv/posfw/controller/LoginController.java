@@ -69,7 +69,7 @@ public class LoginController {
                 
                 StoricoAllenamentiView premiumView = new StoricoAllenamentiView();
                 SessioneDAO sessioneDAO = new SessioneDAOSQL();
-                StoricoAllenamenti clienteController = new StoricoAllenamenti(premiumView, sessioneDAO);
+                StoricoAllenamentiController clienteController = new StoricoAllenamentiController(premiumView, sessioneDAO);
                 
                 premiumView.setController(clienteController);
                 premiumView.setUtenteCorrente(clienteLoggato); 

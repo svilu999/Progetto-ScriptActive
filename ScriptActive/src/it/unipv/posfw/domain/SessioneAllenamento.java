@@ -7,13 +7,13 @@ import java.util.List;
 
 
 public class SessioneAllenamento {
-    private int idSessione; // Serve per collegarsi all'ID di MySQL
+    private int idSessione; 
     private Date data;
     private String idCliente;
     private List<DatiFormPojo> esercizi;
 
     public SessioneAllenamento(Date data, String idCliente) {
-        this.idSessione = -1; // -1 significa "non ancora salvato nel DB"
+        this.idSessione = -1;
         this.data = data;
         this.idCliente = idCliente;
         this.esercizi = new ArrayList<>();
