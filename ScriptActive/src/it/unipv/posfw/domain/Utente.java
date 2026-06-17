@@ -20,7 +20,9 @@ public abstract class Utente {
         this.cognome = cognome;
         this.email = email;
     }
-
+ 
+    public abstract void accediAreaRiservata(it.unipv.posfw.controller.LoginController router);
+    
     public int getId() { 
         return id; 
     }

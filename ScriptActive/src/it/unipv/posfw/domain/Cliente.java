@@ -30,14 +30,17 @@ public class Cliente extends Utente implements Observer {
         this.abbonamento = abbonamento;
     }
 
-    // --- METODI DELL'INTERFACCIA OBSERVER (Dei compagni) ---
+
     @Override
     public void update(String messaggio) {
-        // Presuppone che Utente abbia un metodo getNomeCompleto()
-        System.out.println("[NOTIFICA a " + this.getNomeCompleto() + "]: " + messaggio);
+                System.out.println("[NOTIFICA a " + this.getNomeCompleto() + "]: " + messaggio);
     }
 
-    // --- METODI SPECIFICI DEI COMPAGNI ---
+    @Override
+    public void accediAreaRiservata(it.unipv.posfw.controller.LoginController router) {
+        router.apriDashboardCliente(this);
+    }
+    
     public boolean isPremium() {
         return this.abbonamento == TipoAbbonamento.PREMIUM;
     }

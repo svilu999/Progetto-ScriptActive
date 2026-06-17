@@ -9,8 +9,11 @@ public class Direttore extends Utente {
         super(nome, cognome, email); 
         this.codiceAutorizzazione = codiceAutorizzazione;
     }
+    @Override
+    public void accediAreaRiservata(it.unipv.posfw.controller.LoginController router) {
+        router.apriDashboardDirettore(this);
+    }
 
-    // GETTER E SETTER
     public String getCodiceAutorizzazione() { 
         return codiceAutorizzazione; 
     }

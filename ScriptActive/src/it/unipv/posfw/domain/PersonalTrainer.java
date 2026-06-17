@@ -62,6 +62,11 @@ public class PersonalTrainer extends Utente {
     
     public boolean isAttivo() { return isAttivo; }
     public void setAttivo(boolean isAttivo) { this.isAttivo = isAttivo; }
+    
+    @Override
+    public void accediAreaRiservata(it.unipv.posfw.controller.LoginController router) {
+        router.apriDashboardTrainer(this);
+    }
 
     // =========================================================
     // METODO DI BUSINESS (Intatto!)

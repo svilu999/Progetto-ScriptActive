@@ -89,27 +89,21 @@ public class DashboardClienteView extends JFrame {
         
         lblBenvenuto.setText("Bentornato, " + cliente.getNome() + " " + cliente.getCognome() + "!");
         
-        // =====================================================================
-        // ALGORITMO INGEGNERIZZATO: DATA-DRIVEN UI
-        // Leggiamo i dati incrociando l'anagrafica Cliente e il suo Abbonamento
-        // =====================================================================
-        
-        // 1. Estraiamo il tipo di abbonamento (Base o Premium)
+       
         String tipoAbb = "BASE"; 
         if (cliente.getTipoAbbonamento() != null) {
             tipoAbb = cliente.getTipoAbbonamento().toString(); 
         }
         
-        // 2. Estraiamo la durata passando dall'oggetto AbbonamentoAttivo!
         String durataAbb = "N/A";
         if (cliente.getAbbonamentoAttivo() != null && cliente.getAbbonamentoAttivo().getLivello() != null) {
             durataAbb = cliente.getAbbonamentoAttivo().getLivello().toString(); 
         }
         
-        // 3. Stampiamo tutto in una singola riga pulita
+        
         lblAbbonamento.setText("Abbonamento: " + tipoAbb.toUpperCase() + " | Durata: " + durataAbb);
         
-        // 4. Manteniamo un tocco di colore dinamico
+        
         if ("PREMIUM".equalsIgnoreCase(tipoAbb)) {
             lblAbbonamento.setForeground(new Color(77, 43, 107)); // Colore speciale per Premium
         } else {
@@ -142,9 +136,7 @@ public class DashboardClienteView extends JFrame {
                 sb.append("🏋️ ").append(corso.getNome().toUpperCase()).append("\n");
                 sb.append("📅 ").append(corso.getDataOra().format(formatter)).append("\n");
                 
-                // =========================================================
-                // INIZIO CEROTTO GRAFICO PER IL TRAINER
-                // =========================================================
+                
                 if (corso.getTrainerAssegnato() != null) {
                     String nomePt = corso.getTrainerAssegnato().getNome();
                     String cognomePt = corso.getTrainerAssegnato().getCognome();
