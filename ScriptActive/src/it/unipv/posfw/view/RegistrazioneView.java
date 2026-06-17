@@ -88,8 +88,14 @@ public class RegistrazioneView extends JFrame {
         aggiungiLabelEInput(p, "Email", txtEmail = new JTextField());
         aggiungiLabelEInput(p, "Password", txtPassword = new JPasswordField());
 
+      
         JButton btnNext = creaBlueButton("AVANTI");
-        
+     
+        btnNext.setBackground(new Color(77, 43, 107));
+        btnNext.setForeground(Color.WHITE);
+        btnNext.setFocusPainted(false);
+        btnNext.setOpaque(true);
+        btnNext.setBorderPainted(false);
         btnNext.addActionListener(e -> {
             String password = new String(txtPassword.getPassword());
             
