@@ -48,7 +48,7 @@ public class LoginView extends JFrame {
         panelBottoni.setLayout(new BoxLayout(panelBottoni, BoxLayout.Y_AXIS));
         panelBottoni.setBorder(BorderFactory.createEmptyBorder(0, 20, 20, 20));
 
-        // 1. Bottone Accedi
+
         btnAccedi = new JButton("Accedi");
         btnAccedi.setAlignmentX(Component.CENTER_ALIGNMENT);
         btnAccedi.setBackground(new Color(77, 43, 107)); 
@@ -72,12 +72,11 @@ public class LoginView extends JFrame {
         btnRegistrati.setForeground(new Color(77, 43, 107)); 
   
         
-        // Azione per aprire la finestra di registrazione
+        
         btnRegistrati.addActionListener(e -> {
-            // Chiudi la schermata di login
+           
             this.dispose();
             
-            // Apri la schermata di registrazione
             RegistrazioneView regView = new RegistrazioneView();
            
             
