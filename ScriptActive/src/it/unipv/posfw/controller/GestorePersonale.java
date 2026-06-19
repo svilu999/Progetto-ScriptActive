@@ -1,7 +1,7 @@
 package it.unipv.posfw.controller;
 
 import it.unipv.posfw.dao.PersonalTrainerDAO;
-import it.unipv.posfw.dao.PersonalTrainerDAOImplMySQL;
+import it.unipv.posfw.database.PersonalTrainerDAOMySQL;
 import it.unipv.posfw.domain.PersonalTrainer;
 import it.unipv.posfw.exceptions.SostitutoNonValidoException;
 import it.unipv.posfw.exceptions.TrainerGiaAssuntoException;
@@ -43,7 +43,7 @@ public class GestorePersonale {
      * Costruttore privato del Singleton.
      */
     private GestorePersonale() {
-        this.trainerDAO = new PersonalTrainerDAOImplMySQL();
+        this.trainerDAO = new PersonalTrainerDAOMySQL();
         this.servizioSwapCorsi = new ServizioSwapCorsiMySQL();
         this.servizioRetribuzioni = new ServizioRetribuzioniMySQL();
     }
