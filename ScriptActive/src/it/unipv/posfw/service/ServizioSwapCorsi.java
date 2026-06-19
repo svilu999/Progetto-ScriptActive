@@ -3,8 +3,7 @@ package it.unipv.posfw.service;
 import it.unipv.posfw.exceptions.SostitutoNonValidoException;
 
 /**
- * Interfaccia di integrazione tra UC5 (Gestione dei Contratti del Personale)
- * e il modulo dei corsi/palinsesto.
+ * Interfaccia di integrazione tra la gestione del personale e il modulo dei corsi/palinsesto.
  *
  * Il punto importante è che GestorePersonale NON deve conoscere i dettagli
  * interni di GestoreCorsi, CorsoDAO o della lista dei corsi. GestorePersonale
@@ -14,9 +13,7 @@ import it.unipv.posfw.exceptions.SostitutoNonValidoException;
  * 2. verificare se ha corsi imminenti;
  * 3. richiedere lo swap del trainer sui corsi attivi/futuri.
  *
- * In questo modo UC5 resta autonomo e non "ruba" responsabilità al caso d'uso
- * del palinsesto corsi. La classe concreta che implementa questa interfaccia
- * può essere GestoreCorsi, ma GestorePersonale dipende dall'astrazione.
+ * In questo modo il GestorePersonale resta autonomo.
  */
 public interface ServizioSwapCorsi {
 
@@ -38,7 +35,7 @@ public interface ServizioSwapCorsi {
      *
      * Nel progetto la soglia scelta è 24 ore: un corso è imminente se è ATTIVO
      * e cade tra il momento attuale e le prossime 24 ore. La soglia è gestita
-     * nell'implementazione concreta, così UC5 non deve conoscere i dettagli del
+     * nell'implementazione concreta, così facendo il gestore del personale non conosce i dettagli del
      * palinsesto.
      *
      * @param idTrainer id del Personal Trainer da controllare
@@ -49,11 +46,11 @@ public interface ServizioSwapCorsi {
     /**
      * Richiede la sostituzione del Personal Trainer sui corsi attivi/futuri.
      *
-     * Questo metodo rappresenta la "notifica swap" citata nel caso d'uso UC5:
+     * Questo metodo rappresenta la "notifica swap":
      * GestorePersonale segnala al modulo corsi che un PT sta per essere
      * licenziato e che i suoi corsi devono essere riassegnati a un sostituto.
      *
-     * Importante: lo swap NON deve cancellare i corsi. Deve soltanto cambiare il
+     * Lo swap NON deve cancellare i corsi. Deve soltanto cambiare il
      * trainer assegnato, mantenendo intatti id corso, data, capienza, iscritti e
      * stato del corso.
      *

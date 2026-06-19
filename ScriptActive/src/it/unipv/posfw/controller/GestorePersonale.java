@@ -135,10 +135,8 @@ public class GestorePersonale {
         disattivaRecordPersonale(ptDaLicenziare);
     }
 
-    /**
-     * UC5 - Licenziamento con sostituzione.
-     *
-     * Flusso:
+    /*
+     * Flusso del licenziamento con sostituzione:
      * 1. valida gli ID ricevuti;
      * 2. recupera il PT da licenziare;
      * 3. recupera il PT sostituto;
@@ -165,13 +163,13 @@ public class GestorePersonale {
         boolean haCorsiAttiviOFuturi = servizioSwapCorsi.haCorsiAttiviOFuturi(idDaLicenziare);
 
         if (!haCorsiAttiviOFuturi) {
-            System.out.println("[UC5] Il PT non ha corsi futuri: nessuno swap necessario.");
+            System.out.println("Il PT non ha corsi futuri: nessuno swap necessario.");
             disattivaRecordPersonale(ptDaLicenziare);
             return;
         }
 
         if (servizioSwapCorsi.haCorsiImminenti(idDaLicenziare)) {
-            System.out.println("[UC5] Il PT ha corsi imminenti: lo swap viene eseguito prima della disattivazione.");
+            System.out.println("Il PT ha corsi imminenti: lo swap viene eseguito prima della disattivazione.");
         }
 
         int corsiAggiornati = servizioSwapCorsi.sostituisciTrainerNeiCorsi(

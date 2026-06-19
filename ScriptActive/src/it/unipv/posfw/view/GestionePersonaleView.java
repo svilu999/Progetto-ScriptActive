@@ -39,7 +39,7 @@ import java.awt.Insets;
 import java.util.List;
 
 /**
- * View Swing per UC5 - Gestione dei Contratti del Personale.
+ * View Swing per la Gestione dei Contratti del Personale.
  *
  * Funzioni principali:
  * - visualizzare i Personal Trainer;
@@ -101,7 +101,6 @@ public class GestionePersonaleView extends JFrame {
     public GestionePersonaleView() {
         /*
          * Uso il Look & Feel del sistema operativo.
-         * In questo modo la view risulta meno "vecchio Swing".
          */
         impostaLookAndFeel();
 
@@ -142,9 +141,6 @@ public class GestionePersonaleView extends JFrame {
          * Uso un contenitore centrale con GridBagLayout:
          * - la tabella prende più spazio verticale;
          * - i pannelli sotto restano più compatti.
-         *
-         * Questo corregge il problema della versione precedente,
-         * dove la tabella poteva mostrare solo l'intestazione.
          */
         JPanel contenuto = new JPanel(new GridBagLayout());
         contenuto.setBackground(COLORE_SFONDO);
@@ -214,12 +210,6 @@ public class GestionePersonaleView extends JFrame {
         JScrollPane scrollPane = new JScrollPane(tabellaPT);
         scrollPane.setBorder(BorderFactory.createLineBorder(COLORE_BORDO));
         scrollPane.getViewport().setBackground(Color.WHITE);
-
-        /*
-         * Altezza preferita esplicita:
-         * garantisce che siano visibili anche le righe,
-         * non solo l'intestazione della tabella.
-         */
         scrollPane.setPreferredSize(new Dimension(900, 260));
 
         card.add(scrollPane, BorderLayout.CENTER);
@@ -589,7 +579,7 @@ public class GestionePersonaleView extends JFrame {
 
     private void caricaSostitutiCompatibili(String idDaLicenziare, String specializzazioneRichiesta) {
         /*
-         * Pulisco la tendina ogni volta che viene selezionato un nuovo PT.
+         * Viene pulita la tendina ogni volta che viene selezionato un nuovo PT.
          * In questo modo non rimangono sostituti caricati da selezioni precedenti.
          */
         comboSostituto.removeAllItems();
@@ -603,7 +593,7 @@ public class GestionePersonaleView extends JFrame {
         try {
             /*
              * Recupero tutti i Personal Trainer dal controller.
-             * Il controller usa il DAO MySQL, quindi i dati arrivano dal database.
+             * Il controller va a coordinare il DAO MySQL per prendere i dati dal database.
              */
             List<PersonalTrainer> elenco = gestorePersonale.getElencoPersonalTrainer();
 
@@ -628,7 +618,7 @@ public class GestionePersonaleView extends JFrame {
                         && pt.getSpecializzazione().equalsIgnoreCase(specializzazioneRichiesta);
 
                 /*
-                 * Aggiungo alla tendina solo i PT realmente compatibili.
+                 * Aggiungo alla tendina solo i PT realmente compatibili filtrandoli per specializzazione.
                  */
                 if (!stessoTrainer && attivo && stessaSpecializzazione) {
                     comboSostituto.addItem(
@@ -642,8 +632,7 @@ public class GestionePersonaleView extends JFrame {
             }
 
             /*
-             * Se la tendina contiene solo la voce iniziale,
-             * significa che non esistono sostituti compatibili.
+             * Se la tendina contiene solo la voce iniziale, significa che non esistono sostituti compatibili.
              */
             if (comboSostituto.getItemCount() == 1) {
                 comboSostituto.addItem("Nessun sostituto compatibile");
@@ -755,9 +744,6 @@ public class GestionePersonaleView extends JFrame {
              * Leggo dalla tendina il sostituto selezionato.
              * La voce ha formato:
              * ID - Nome Cognome - Specializzazione
-             *
-             * Esempio:
-             * PT003 - Giuseppe Verdi - Sala pesi
              */
             String selezioneSostituto = (String) comboSostituto.getSelectedItem();
 
@@ -774,12 +760,6 @@ public class GestionePersonaleView extends JFrame {
 
             /*
              * Estraggo solo l'ID del sostituto dalla stringa della tendina.
-             *
-             * Da:
-             * PT003 - Giuseppe Verdi - Sala pesi
-             *
-             * ottengo:
-             * PT003
              */
             String idSostituto = selezioneSostituto.split(" - ")[0].trim();
 
