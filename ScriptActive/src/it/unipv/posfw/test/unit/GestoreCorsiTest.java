@@ -1,4 +1,4 @@
-package it.unipv.posfw.test;
+package it.unipv.posfw.test.unit;
 /**
  * Classe dedicata al Testing di Unità per il componente {@link GestoreCorsi}.
  * 
