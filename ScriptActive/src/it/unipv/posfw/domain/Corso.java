@@ -72,13 +72,9 @@ public class Corso implements Subject {
         }
     }
 
-    // =========================================================
-    // UC5 - punto di merge con Gestione Personale
-    // =========================================================
     public void setTrainerAssegnato(PersonalTrainer trainerAssegnato) {
         /*
-         * Merge UC5:
-         * quando un Personal Trainer viene licenziato, il corso NON deve essere
+         * Quando un Personal Trainer viene licenziato, il corso NON deve essere
          * cancellato. Lo swap cambia solo il trainer assegnato, preservando
          * id corso, data, posti, iscritti e stato del corso.
          */

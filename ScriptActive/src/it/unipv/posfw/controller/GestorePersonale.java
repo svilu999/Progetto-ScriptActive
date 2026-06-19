@@ -81,7 +81,7 @@ public class GestorePersonale {
     }
 
     /**
-     * UC5 - Flusso di assunzione.
+     *Flusso di assunzione.
      *
      * Il Direttore inserisce i dati del nuovo Personal Trainer.
      */
@@ -115,7 +115,7 @@ public class GestorePersonale {
     }
 
     /**
-     * UC5 - Licenziamento senza sostituto.
+     *Licenziamento senza sostituto.
      *
      * Consentito solo se il PT non ha corsi attivi o futuri.
      */

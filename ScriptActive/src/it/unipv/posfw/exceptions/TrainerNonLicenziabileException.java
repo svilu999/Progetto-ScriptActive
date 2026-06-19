@@ -1,8 +1,6 @@
 package it.unipv.posfw.exceptions;
 
-/**
- * Eccezione specifica di UC5.
- *
+/*
  * Viene lanciata quando il Direttore prova a licenziare un Personal Trainer in
  * una situazione non sicura per il sistema, ad esempio quando il PT ha ancora
  * corsi attivi/futuri ma non è stato indicato alcun sostituto.
