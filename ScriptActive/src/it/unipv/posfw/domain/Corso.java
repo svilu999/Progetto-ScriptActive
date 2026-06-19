@@ -1,5 +1,23 @@
 package it.unipv.posfw.domain;
 
+/**
+ * Rappresenta l'entità centrale del Modello di Dominio per la gestione delle attività della palestra.
+ * 
+ * In conformità con l'architettura Model-View-Controller (MVC), questa classe funge da "Model", 
+ * astraendo lo stato e il comportamento dei dati di business. È implementata come un Plain Old 
+ * Java Object (POJO), garantendo che la logica di dominio sia pura e disaccoppiata da 
+ * infrastrutture di persistenza o di presentazione.
+ * 
+ * La classe agisce come "ConcreteSubject" nel Pattern Observer: mantiene 
+ * un registro di osservatori e provvede a notificarli 
+ * automaticamente in caso di variazioni dello stato interno (meccanismo "Push from below"), 
+ * come previsto nei diagrammi di sequenza per la cancellazione di un corso (UC3).
+ * 
+ * @author Lorenzo
+ * @version 2.0
+ * @see Subject
+ * @see Observer
+ */
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;

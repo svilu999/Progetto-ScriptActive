@@ -7,16 +7,16 @@ import java.util.List;
  * Interfaccia che definisce il contratto formale per le operazioni di persistenza 
  * dell'entità di dominio Corso. 
  * 
- * Seguendo il pattern Data Access Object (DAO) [1], questa interfaccia agisce come 
- * una Pure Fabrication [2, 3], assegnando la responsabilità della persistenza a una 
+ * Seguendo il pattern Data Access Object (DAO), questa interfaccia agisce come 
+ * una Pure Fabrication, assegnando la responsabilità della persistenza a una 
  * classe artificiale esterna al dominio per mantenere alta la coesione delle Entity.
- * L'approccio permette di realizzare il principio di Dependency Inversion [4], 
- * garantendo il Low Coupling [5] tra lo strato di logica applicativa e i dettagli 
- * implementativi del Data Access Layer [6].
+ * L'approccio permette di realizzare il principio di Dependency Inversion, 
+ * garantendo il Low Coupling tra lo strato di logica applicativa e i dettagli 
+ * implementativi del Data Access Layer.
  *
  * @author Lorenzo
  * @version 1.2
- * @see it.unipv.posfw.domain.Corso
+ * @see Corso
  */
 public interface CorsoDAO {
 
@@ -67,7 +67,7 @@ public interface CorsoDAO {
 
     /**
      * Aggiorna esclusivamente l'attributo relativo ai posti disponibili.
-     * Metodo inserito per soddisfare i requisiti del caso d'uso UC2 (Prenotazione),
+     * Metodo inserito per soddisfare i requisiti del caso d'uso UC2,
      * permettendo aggiornamenti mirati senza dover persistere l'intera entità.
      * 
      * @param c L'istanza del Corso contenente lo stato aggiornato della capienza.

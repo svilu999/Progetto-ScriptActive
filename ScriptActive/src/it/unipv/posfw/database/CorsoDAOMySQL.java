@@ -1,5 +1,20 @@
 package it.unipv.posfw.database;
-
+/**
+ * Implementazione concreta del Data Access Object (DAO) per il database MySQL.
+ * 
+ * In qualità di Pure Fabrication, questa classe isola la logica di persistenza dal Modello 
+ * di Dominio, garantendo l'Alta Coesione delle Entity. Implementa il pattern ORM 
+ * (Object-Relational Mapping) traducendo le tuple delle tabelle relazionali in oggetti 
+ * Java Bean (POJO) tramite mapping indiretto.
+ * 
+ * La classe applica rigorosamente le linee guida del corso: utilizzo di PreparedStatement 
+ * per la prevenzione di SQL Injection, gestione deterministica delle risorse JDBC nei 
+ * blocchi finally e Exception Translation per disaccoppiare i layer superiori dai 
+ * dettagli implementativi del DBMS.
+ * 
+ * @author Lorenzo
+ * @version 2.0
+ */
 import it.unipv.posfw.dao.CorsoDAO;
 import it.unipv.posfw.domain.Corso;
 import it.unipv.posfw.domain.PersonalTrainer;
