@@ -1,4 +1,4 @@
-package it.unipv.posfw.controller;
+package it.unipv.posfw.test;
 
 import java.util.List;
 import it.unipv.posfw.dao.CorsoDAO;

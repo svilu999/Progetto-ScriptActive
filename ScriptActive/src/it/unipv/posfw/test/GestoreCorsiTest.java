@@ -1,4 +1,4 @@
-package it.unipv.posfw.controller;
+package it.unipv.posfw.test;
 /**
  * Classe dedicata al Testing di Unità per il componente {@link GestoreCorsi}.
  * 
@@ -20,6 +20,8 @@ package it.unipv.posfw.controller;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import it.unipv.posfw.controller.GestoreCorsi;
 import it.unipv.posfw.exceptions.SovrapposizioneOrarioException;
 import java.time.LocalDateTime;
 
