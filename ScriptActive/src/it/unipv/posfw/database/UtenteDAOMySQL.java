@@ -8,6 +8,7 @@ import java.sql.Statement;
 
 // Importiamo tutte le classi del dominio necessarie!
 import it.unipv.posfw.domain.Utente;
+import it.unipv.posfw.util.DatabaseManager;
 import it.unipv.posfw.domain.Cliente;
 import it.unipv.posfw.domain.TipoAbbonamento;
 import it.unipv.posfw.domain.PersonalTrainer; 
@@ -26,7 +27,7 @@ public class UtenteDAOMySQL implements UtenteDAO {
         Utente utenteLoggato = null;
         String queryLogin = "SELECT * FROM Utente WHERE Email = ? AND PasswordHash = ?";
         
-        Connection conn = DatabaseConnection.getConnection();
+        Connection conn = DatabaseManager.getInstance().getConnection();
 
         try (PreparedStatement stmt = conn.prepareStatement(queryLogin)) {
              
@@ -158,7 +159,7 @@ public class UtenteDAOMySQL implements UtenteDAO {
         String insertUtente = "INSERT INTO Utente (CodiceFiscale, Nome, Cognome, Email, PasswordHash, Ruolo) VALUES (?, ?, ?, ?, ?, 'Cliente')";
         String insertCliente = "INSERT INTO Cliente (ID_Cliente) VALUES (?)";
         
-        Connection conn = DatabaseConnection.getConnection();
+        Connection conn = DatabaseManager.getInstance().getConnection();
 
         try {
             conn.setAutoCommit(false); 

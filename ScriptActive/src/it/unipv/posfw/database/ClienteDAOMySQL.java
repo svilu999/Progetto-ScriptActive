@@ -10,6 +10,7 @@ import it.unipv.posfw.dao.ClienteDAO;
 import it.unipv.posfw.domain.Abbonamento;
 import it.unipv.posfw.domain.Cliente;
 import it.unipv.posfw.domain.TipoAbbonamento;
+import it.unipv.posfw.util.DatabaseManager;
 import it.unipv.posfw.domain.LivelloAbbonamento; 
 
 public class ClienteDAOMySQL implements ClienteDAO {
@@ -19,7 +20,7 @@ public class ClienteDAOMySQL implements ClienteDAO {
         String query = "SELECT * FROM Utente WHERE CodiceFiscale = ?";
 
         try {
-            Connection conn = DatabaseConnection.getConnection();
+        	Connection conn = DatabaseManager.getInstance().getConnection();
             PreparedStatement ps = conn.prepareStatement(query);
             ps.setString(1, codiceFiscale);
             ResultSet rs = ps.executeQuery();
@@ -48,9 +49,11 @@ public class ClienteDAOMySQL implements ClienteDAO {
 
     @Override
     public boolean inserisciCliente(Cliente c) {
-        Connection conn = null;
+        Connection conn = null; // La dichiariamo una sola volta qui fuori!
+        
         try {
-            conn = DatabaseConnection.getConnection();
+            // Qui assegniamo solo il valore. NIENTE PAROLA 'Connection' prima di conn!
+            conn = DatabaseManager.getInstance().getConnection();
             conn.setAutoCommit(false); 
 
             String insertUtente = "INSERT INTO Utente (CodiceFiscale, Nome, Cognome, Email, PasswordHash, Ruolo, Stato) VALUES (?, ?, ?, ?, ?, 'Cliente', 'Attivo')";
@@ -106,6 +109,8 @@ public class ClienteDAOMySQL implements ClienteDAO {
                 String insertPagamento = "INSERT INTO Pagamento (Importo, DataTransazione, Esito, ID_Abbonamento) VALUES (?, NOW(), 'Successo', ?)";
                 PreparedStatement psPag = conn.prepareStatement(insertPagamento);
                 
+                // ATTENZIONE ALLE COSTANTI MAGICHE QUI! (Slide 5)
+                // Se hai tempo, questi 50.0, 250.0 ecc. andrebbero messi in Costanti.java
                 double importoFinale = 0.0;
                 if (abb.getLivello() == LivelloAbbonamento.MENSILE) importoFinale = 50.0;
                 else if (abb.getLivello() == LivelloAbbonamento.SEMESTRALE) importoFinale = 250.0;
@@ -122,7 +127,8 @@ public class ClienteDAOMySQL implements ClienteDAO {
             }
 
             conn.commit();
-            conn.setAutoCommit(true);
+            // Chiudere la connessione dopo il commit è buona pratica
+            conn.close(); 
             return true;
 
         } catch (SQLException e) {
@@ -130,7 +136,7 @@ public class ClienteDAOMySQL implements ClienteDAO {
             if (conn != null) {
                 try {
                     conn.rollback(); 
-                    conn.setAutoCommit(true);
+                    conn.close(); // Chiudiamo la connessione anche se c'è stato un errore
                 } catch (SQLException ex) {
                     ex.printStackTrace();
                 }
