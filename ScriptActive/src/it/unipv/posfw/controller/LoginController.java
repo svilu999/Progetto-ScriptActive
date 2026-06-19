@@ -17,23 +17,33 @@ import it.unipv.posfw.view.DashboardClienteView;
 import it.unipv.posfw.view.PalinsestoCorsiView; 
 
 /**
- * Controller responsabile dell'autenticazione degli utenti e del routing iniziale.
+ * La classe {@code LoginController} incarna il ruolo di <b>Controller</b> all'interno del pattern architetturale <b>MVC (Model-View-Controller)</b>.
  * <p>
- * Applica il pattern architetturale MVC e utilizza la tecnica avanzata del 
- * <b>Double Dispatch (Polimorfismo)</b> per risolvere il code smell "Replace Conditional 
- * with Polymorphism". Evita catene di if-else basate sul controllo dei tipi (instanceof)
- * delegando il reindirizzamento direttamente agli oggetti di dominio.
+ * Presiede alla gestione della fase iniziale del ciclo di vita dell'applicazione (Autenticazione).
+ * Il suo compito è validare gli input della View, interrogare il Modello di persistenza (DAO) e governare 
+ * le transizioni di stato della Graphical User Interface (Routing).
  * </p>
+ * <p>
+ * <b>Valenza Ingegneristica (Double Dispatch e Polimorfismo):</b><br>
+ * Risolve proattivamente l'anti-pattern algoritmico basato sull'introspezione dei tipi (RTTI) e sulle catene 
+ * decisionali (<i>Code Smell: Replace Conditional with Polymorphism</i>). Anziché utilizzare blocchi {@code if-else} 
+ * con operatori {@code instanceof} per determinare quale dashboard aprire, il controller avvia il meccanismo di 
+ * <b>Double Dispatch</b> delegando all'oggetto di dominio il compito di instradare il flusso chiamando a sua volta 
+ * il metodo appropriato su questo controller. Questo garantisce il rispetto del principio Open/Closed (OCP) dei principi SOLID.
+ * </p>
+ * * @author Vilucchi
+ * @version 1.2
+ * @see it.unipv.posfw.view.LoginView
+ * @see it.unipv.posfw.domain.Utente
  */
 public class LoginController {
+    
     private LoginView view;
     private UtenteDAO dao;
+    private Utente utenteLoggato; 
 
     /**
-     * Costruisce il controller per la gestione del Login.
-     *
-     * @param view La vista (interfaccia grafica) del form di login.
-     * @param dao  Il Data Access Object per la verifica delle credenziali sul database.
+     * Costruttore della classe {@code LoginController}.
      */
     public LoginController(LoginView view, UtenteDAO dao) {
         this.view = view;
@@ -41,49 +51,42 @@ public class LoginController {
     }
 
     /**
-     * Gestisce il tentativo di accesso da parte di un utente.
-     * Effettua i controlli preliminari sui campi, verifica le credenziali tramite DAO
-     * e, in caso di successo, innesca il meccanismo polimorfico di instradamento.
-     *
-     * @param email    L'indirizzo email inserito dall'utente.
-     * @param password La password inserita dall'utente.
+     * Governa il flusso principale del caso d'uso di Autenticazione (Login).
      */
     public void effettuaLogin(String email, String password) {
-        // 1. Controllo base
+        
+        /* 1. Validazione sintattica pre-condizionale */
         if (email.isEmpty() || password.isEmpty()) {
             view.mostraErrore("Inserisci sia email che password.");
             return;
         }
 
-        // 2. Chiedo al DAO di verificare nel DB
-        Utente utenteLoggato = dao.effettuaLogin(email, password);
+        /* 2. Delega al livello di persistenza */
+        Utente utente = dao.effettuaLogin(email, password);
 
-        // 3. Se l'utente non esiste, la password è sbagliata, o non è "Attivo"
-        if (utenteLoggato == null) {
+        /* 3. Gestione del Flusso Alternativo: fallimento dell'autenticazione */
+        if (utente == null) {
+            this.utenteLoggato = null; // Assicuriamo che sia nullo in caso di fallimento
             view.mostraErrore("Credenziali errate o utente non attivo.");
             return;
         }
+        
+        /* ASSEGNAZIONE PER IL TEST E PER IL DOMINIO */
+        this.utenteLoggato = utente;
 
-        // 4. Se il login ha successo, chiudiamo la schermata di login
+        /* 4. Smontaggio della View di Login */
         view.dispose();
 
-        // =========================================================
-        // ROUTING INGEGNERIZZATO IN BASE ALLA TIPOLOGIA DI UTENTE
-        // =========================================================
-        
-        // Questa singola riga chiama il metodo corretto sulla base del tipo 
-        // dinamico dell'utente (Cliente, Direttore o PersonalTrainer)
+        /* 5. Innesco Double Dispatch */
         utenteLoggato.accediAreaRiservata(this); 
     }
 
+    public Utente getUtenteLoggato() {
+        return this.utenteLoggato;
+    }
 
     /**
-     * Inizializza e mostra la Dashboard dedicata ai Clienti.
-     * Associa inoltre i listener necessari per la navigazione verso l'Area Premium
-     * e verso il Palinsesto Corsi.
-     * * Metodo richiamato tramite Double Dispatch dalla classe {@link Cliente}.
-     *
-     * @param clienteLoggato L'istanza del cliente autenticato nel sistema.
+     * Punto di atterraggio del pattern Double Dispatch per il ruolo di attore <b>Cliente</b>.
      */
     public void apriDashboardCliente(Cliente clienteLoggato) {
         DashboardClienteView dashboardView = new DashboardClienteView();
@@ -94,13 +97,12 @@ public class LoginController {
             List<Corso> corsiDelCliente = gestorePrenotazioni.getCorsiPrenotatiDalCliente(clienteLoggato);
             dashboardView.mostraCorsiPrenotati(corsiDelCliente);
         } catch (Exception e) {
-            System.err.println("Errore nel recupero dei corsi: " + e.getMessage());
+            System.err.println("Errore architetturale nel recupero dei corsi: " + e.getMessage());
         }
         
         dashboardView.setVisible(true);
         
-        // Listener per navigare allo Storico Allenamenti (Area Premium)
-        dashboardView.btnAreaPremium.addActionListener(e -> {
+        dashboardView.addAreaPremiumListener(e -> {
             dashboardView.dispose();
             
             StoricoAllenamentiView premiumView = new StoricoAllenamentiView();
@@ -113,8 +115,7 @@ public class LoginController {
             premiumView.clickAccediStorico(clienteLoggato);
         });
         
-        // Listener per navigare al Palinsesto
-        dashboardView.btnPrenotaCorsi.addActionListener(e -> {
+        dashboardView.addPrenotaCorsiListener(e -> {
             dashboardView.dispose();
             PalinsestoCorsiView corsiView = new PalinsestoCorsiView(); 
             corsiView.setClienteLoggato(dashboardView.getUtenteCorrente());
@@ -122,23 +123,11 @@ public class LoginController {
         });
     }
 
-    /**
-     * Inizializza e mostra la Dashboard dedicata al Direttore.
-     * Metodo richiamato tramite Double Dispatch dalla classe {@link Direttore}.
-     *
-     * @param direttoreLoggato L'istanza del direttore autenticato nel sistema.
-     */
     public void apriDashboardDirettore(Direttore direttoreLoggato) {
         DashboardDirettoreView direttoreView = new DashboardDirettoreView();
         direttoreView.setVisible(true);
     }
 
-    /**
-     * Inizializza e mostra il Portale Operativo (Palinsesto) dedicato ai Personal Trainer.
-     * Metodo richiamato tramite Double Dispatch dalla classe {@link PersonalTrainer}.
-     *
-     * @param trainerLoggato L'istanza del trainer autenticato nel sistema.
-     */
     public void apriDashboardTrainer(PersonalTrainer trainerLoggato) {
         PalinsestoCorsiView trainerView = new PalinsestoCorsiView();
         GestoreCorsi controllerCorsi = GestoreCorsi.getInstance();
