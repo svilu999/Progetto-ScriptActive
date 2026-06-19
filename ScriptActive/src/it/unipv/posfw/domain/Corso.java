@@ -11,7 +11,7 @@ package it.unipv.posfw.domain;
  * La classe agisce come "ConcreteSubject" nel Pattern Observer: mantiene 
  * un registro di osservatori e provvede a notificarli 
  * automaticamente in caso di variazioni dello stato interno (meccanismo "Push from below"), 
- * come previsto nei diagrammi di sequenza per la cancellazione di un corso (UC3).
+ * come previsto nei diagrammi di sequenza per la cancellazione di un corso.
  * 
  * @author Lorenzo
  * @version 2.0

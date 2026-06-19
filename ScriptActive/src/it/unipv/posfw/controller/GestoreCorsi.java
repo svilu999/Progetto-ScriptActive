@@ -1,9 +1,9 @@
 package it.unipv.posfw.controller;
 
 /**
- * Classe Controller coordinatrice per il caso d'uso UC3 (Gestione Corsi).
+ * Classe Controller coordinatrice.
  * 
- * Secondo l'architettura Model-View-Controller (MVC) definita nelle lezioni, questa componente 
+ * Secondo l'architettura Model-View-Controller, questa componente 
  * funge da mediatore tra lo strato di presentazione (Boundary) e il Modello di Dominio (Entity). 
  * Implementa il pattern Singleton per garantire un unico punto di accesso globale alle operazioni 
  * di sistema, mantenendo lo stato del coordinamento centralizzato.
