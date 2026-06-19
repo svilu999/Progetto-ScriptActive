@@ -14,8 +14,27 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Implementazione MySQL del DAO dei Personal Trainer.
+ *
+ * Questa classe incapsula tutte le operazioni SQL relative ai Personal Trainer,
+ * evitando che il controller GestorePersonale conosca direttamente la struttura
+ * delle tabelle o le query del database.
+ *
+ * Gestisce salvataggio, ricerca, aggiornamento, soft delete
+ * e caricamento dell'elenco dei Personal Trainer.
+ */
 public class PersonalTrainerDAOMySQL implements PersonalTrainerDAO {
 
+    /**
+     * Salva un Personal Trainer nel database.
+     *
+     * Il metodo inserisce o aggiorna prima il record nella tabella Utente e poi
+     * salva i dati specifici nella tabella PersonalTrainer. Le due operazioni
+     * vengono eseguite nella stessa transazione.
+     *
+     * @param pt Personal Trainer da salvare
+     */
     @Override
     public void salva(PersonalTrainer pt) {
         /*
@@ -100,6 +119,15 @@ public class PersonalTrainerDAOMySQL implements PersonalTrainerDAO {
         }
     }
 
+    /**
+     * Cerca un Personal Trainer tramite identificativo.
+     *
+     * Il metodo esegue una join tra Utente e PersonalTrainer per ricostruire
+     * l'oggetto di dominio completo.
+     *
+     * @param idPT identificativo del Personal Trainer da cercare
+     * @return Personal Trainer trovato, oppure null se non esiste
+     */
     @Override
     public PersonalTrainer trovaPerId(String idPT) {
         Integer idTrainer = estraiIdNumerico(idPT);
@@ -146,6 +174,15 @@ public class PersonalTrainerDAOMySQL implements PersonalTrainerDAO {
         }
     }
 
+    /**
+     * Aggiorna i dati di un Personal Trainer già presente nel database.
+     *
+     * Il metodo aggiorna sia i dati specifici del trainer sia i dati comuni
+     * presenti nella tabella Utente, mantenendo coerente lo stato dell'utente
+     * con lo stato contrattuale del Personal Trainer.
+     *
+     * @param pt Personal Trainer con i dati aggiornati
+     */
     @Override
     public void aggiorna(PersonalTrainer pt) {
         Integer idTrainer = estraiIdNumerico(pt.getIdTrainer());
@@ -216,6 +253,15 @@ public class PersonalTrainerDAOMySQL implements PersonalTrainerDAO {
         }
     }
 
+    /**
+     * Disattiva logicamente un Personal Trainer.
+     *
+     * Il metodo non elimina fisicamente il record dal database. Imposta il
+     * trainer come LICENZIATO e aggiorna lo stato dell'utente associato a
+     * Inattivo.
+     *
+     * @param idPT identificativo del Personal Trainer da disattivare
+     */
     @Override
     public void elimina(String idPT) {
         /*
@@ -262,6 +308,14 @@ public class PersonalTrainerDAOMySQL implements PersonalTrainerDAO {
         }
     }
 
+    /**
+     * Restituisce l'elenco completo dei Personal Trainer presenti nel database.
+     *
+     * Ogni riga letta dal database viene convertita in un oggetto
+     * PersonalTrainer tramite un metodo di supporto dedicato.
+     *
+     * @return lista dei Personal Trainer disponibili
+     */
     @Override
     public List<PersonalTrainer> trovaTutti() {
         List<PersonalTrainer> lista = new ArrayList<>();
@@ -301,6 +355,18 @@ public class PersonalTrainerDAOMySQL implements PersonalTrainerDAO {
         return lista;
     }
 
+    /**
+     * Salva o aggiorna il record Utente associato al Personal Trainer.
+     *
+     * Poiché nello schema adottato l'identificativo del Personal Trainer coincide
+     * con l'identificativo dell'utente, il metodo restituisce l'ID_Utente da usare
+     * anche come ID_Trainer.
+     *
+     * @param conn connessione database attiva
+     * @param pt Personal Trainer da associare a un utente
+     * @return identificativo dell'utente associato al trainer
+     * @throws Exception se si verifica un errore durante l'accesso al database
+     */
     private int salvaOAggiornaUtente(Connection conn, PersonalTrainer pt) throws Exception {
         /*
          * Siccome nello schema comune ID_Trainer coincide con ID_Utente,
@@ -347,6 +413,14 @@ public class PersonalTrainerDAOMySQL implements PersonalTrainerDAO {
         }
     }
 
+    /**
+     * Aggiorna i dati della tabella Utente collegati al Personal Trainer.
+     *
+     * @param conn connessione database attiva
+     * @param idUtente identificativo dell'utente da aggiornare
+     * @param pt Personal Trainer contenente i dati aggiornati
+     * @throws Exception se si verifica un errore durante l'aggiornamento
+     */
     private void aggiornaUtente(Connection conn, int idUtente, PersonalTrainer pt) throws Exception {
         String sql = """
             UPDATE Utente
@@ -369,6 +443,14 @@ public class PersonalTrainerDAOMySQL implements PersonalTrainerDAO {
         }
     }
 
+    /**
+     * Cerca l'identificativo di un utente tramite email.
+     *
+     * @param conn connessione database attiva
+     * @param email email dell'utente da cercare
+     * @return identificativo dell'utente, oppure null se non esiste
+     * @throws Exception se si verifica un errore durante la query
+     */
     private Integer trovaIdUtenteDaEmail(Connection conn, String email) throws Exception {
         if (email == null || email.isBlank()) {
             return null;
@@ -389,6 +471,16 @@ public class PersonalTrainerDAOMySQL implements PersonalTrainerDAO {
         return null;
     }
 
+    /**
+     * Recupera un direttore esistente oppure crea un direttore tecnico predefinito.
+     *
+     * Il metodo serve a rispettare il vincolo dello schema comune, nel quale la
+     * tabella PersonalTrainer richiede il riferimento a un direttore.
+     *
+     * @param conn connessione database attiva
+     * @return identificativo del direttore da associare al Personal Trainer
+     * @throws Exception se si verifica un errore durante il recupero o la creazione
+     */
     private int recuperaOCreaDirettorePredefinito(Connection conn) throws Exception {
         /*
          * Serve perché nello schema comune PersonalTrainer richiede ID_Direttore.
@@ -466,6 +558,16 @@ public class PersonalTrainerDAOMySQL implements PersonalTrainerDAO {
         return idUtenteDirettore;
     }
 
+    /**
+     * Costruisce un oggetto PersonalTrainer a partire da una riga del ResultSet.
+     *
+     * Il metodo ricostruisce anche la strategia di retribuzione corretta in base
+     * al tipo di retribuzione salvato nel database.
+     *
+     * @param rs ResultSet posizionato sulla riga da convertire
+     * @return oggetto PersonalTrainer ricostruito dai dati del database
+     * @throws Exception se si verifica un errore nella lettura dei dati
+     */
     private PersonalTrainer creaPersonalTrainerDaResultSet(ResultSet rs) throws Exception {
         String tipoRetribuzione = rs.getString("TipoRetribuzione");
 
@@ -494,6 +596,13 @@ public class PersonalTrainerDAOMySQL implements PersonalTrainerDAO {
         return pt;
     }
 
+    /**
+     * Converte la strategia di retribuzione del Personal Trainer nei campi
+     * richiesti dallo schema relazionale.
+     *
+     * @param pt Personal Trainer da analizzare
+     * @return dati retributivi da salvare nella tabella PersonalTrainer
+     */
     private DatiRetribuzione calcolaDatiRetribuzione(PersonalTrainer pt) {
         double stipendioMensile = 0.00;
         Double compensoPerLezione = null;
@@ -524,6 +633,12 @@ public class PersonalTrainerDAOMySQL implements PersonalTrainerDAO {
         );
     }
 
+    /**
+     * Normalizza lo stato contrattuale del Personal Trainer.
+     *
+     * @param statoContratto stato contrattuale ricevuto dall'oggetto di dominio
+     * @return stato contrattuale valido da salvare nel database
+     */
     private String normalizzaStatoContratto(String statoContratto) {
         if (statoContratto == null || statoContratto.isBlank()) {
             return "ATTIVO";
@@ -532,6 +647,12 @@ public class PersonalTrainerDAOMySQL implements PersonalTrainerDAO {
         return statoContratto;
     }
 
+    /**
+     * Estrae la parte numerica da un identificativo testuale.
+     *
+     * @param id identificativo da convertire
+     * @return valore numerico dell'identificativo, oppure null se non valido
+     */
     private Integer estraiIdNumerico(String id) {
         if (id == null || id.isBlank()) {
             return null;
@@ -546,6 +667,15 @@ public class PersonalTrainerDAOMySQL implements PersonalTrainerDAO {
         return Integer.parseInt(soloNumeri);
     }
 
+    /**
+     * Genera un codice fiscale tecnico per i Personal Trainer creati dal sistema.
+     *
+     * Il metodo viene usato per rispettare il vincolo NOT NULL e UNIQUE del campo
+     * CodiceFiscale nella tabella Utente.
+     *
+     * @param pt Personal Trainer per cui generare il codice tecnico
+     * @return codice fiscale tecnico stabile
+     */
     private String generaCodiceFiscaleTecnico(PersonalTrainer pt) {
         /*
          * Lo schema richiede CodiceFiscale NOT NULL e UNIQUE.
@@ -563,12 +693,24 @@ public class PersonalTrainerDAOMySQL implements PersonalTrainerDAO {
         return "PT" + numeri;
     }
 
+    /**
+     * Oggetto di supporto interno usato per trasferire i dati retributivi
+     * calcolati dalla strategia verso la query SQL di salvataggio.
+     */
     private static class DatiRetribuzione {
         private final String tipoContratto;
         private final String tipoRetribuzione;
         private final double stipendioMensile;
         private final Double compensoPerLezione;
 
+        /**
+         * Costruisce un contenitore dei dati retributivi da salvare su database.
+         *
+         * @param tipoContratto tipo contrattuale descrittivo
+         * @param tipoRetribuzione tipo di retribuzione usato nello schema MySQL
+         * @param stipendioMensile importo mensile fisso
+         * @param compensoPerLezione compenso previsto per ogni lezione
+         */
         private DatiRetribuzione(
                 String tipoContratto,
                 String tipoRetribuzione,

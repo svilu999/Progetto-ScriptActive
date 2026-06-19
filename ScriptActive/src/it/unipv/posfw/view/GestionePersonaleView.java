@@ -39,18 +39,14 @@ import java.awt.Insets;
 import java.util.List;
 
 /**
- * View Swing per la Gestione dei Contratti del Personale.
+ * View Swing per la gestione dei PersonalTrainer.
  *
- * Funzioni principali:
- * - visualizzare i Personal Trainer;
- * - assumere un nuovo Personal Trainer;
- * - licenziare un PT con sostituto compatibile;
- * - licenziare direttamente un PT senza corsi futuri;
- * - filtrare i sostituti per specializzazione;
- * - calcolare le retribuzioni mensili.
+ * La classe permette al Direttore di visualizzare i trainer, assumere un nuovo
+ * PersonalTrainer, licenziarlo con o senza sostituto e calcolare il totale delle
+ * retribuzioni mensili.
  *
- * La view NON contiene query SQL.
- * La view comunica solo con GestorePersonale.
+ * La view non esegue query SQL: raccoglie i dati inseriti dall'utente e delega
+ * le operazioni principali a GestorePersonale.
  */
 public class GestionePersonaleView extends JFrame {
 
@@ -98,6 +94,9 @@ public class GestionePersonaleView extends JFrame {
     private final Font FONT_BASE = new Font("SansSerif", Font.PLAIN, 13);
     private final Font FONT_BOTTONE = new Font("SansSerif", Font.BOLD, 13);
 
+    /**
+     * Crea la finestra di gestione del personale e inizializza tutti i componenti grafici.
+     */
     public GestionePersonaleView() {
         /*
          * Uso il Look & Feel del sistema operativo.
@@ -111,6 +110,9 @@ public class GestionePersonaleView extends JFrame {
         caricaPersonalTrainer();
     }
 
+    /**
+     * Imposta il Look and Feel del sistema operativo, se disponibile.
+     */
     private void impostaLookAndFeel() {
         try {
             System.setProperty("apple.awt.application.appearance", "system");
@@ -123,17 +125,23 @@ public class GestionePersonaleView extends JFrame {
         }
     }
 
+    /**
+     * Imposta le proprietà principali della finestra.
+     */
     private void inizializzaFinestra() {
         setTitle("ScriptActive - Gestione Personale");
         setSize(1120, 760);
         setMinimumSize(new Dimension(1000, 680));
         setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
         getContentPane().setBackground(COLORE_SFONDO);
     }
 
+    /**
+     * Inizializza e dispone i componenti principali della schermata.
+     */
     private void inizializzaComponenti() {
         add(creaHeader(), BorderLayout.NORTH);
 
@@ -178,6 +186,11 @@ public class GestionePersonaleView extends JFrame {
         add(contenuto, BorderLayout.CENTER);
     }
 
+    /**
+     * Crea l'intestazione superiore della finestra.
+     *
+     * @return pannello contenente titolo e sottotitolo
+     */
     private JPanel creaHeader() {
         JPanel header = new JPanel(new BorderLayout());
         header.setBackground(COLORE_SFONDO);
@@ -202,6 +215,11 @@ public class GestionePersonaleView extends JFrame {
         return header;
     }
 
+    /**
+     * Crea il pannello che contiene la tabella dei PersonalTrainer.
+     *
+     * @return pannello con tabella e scroll
+     */
     private JPanel creaCardTabella() {
         JPanel card = creaCard("Elenco Personal Trainer");
 
@@ -216,6 +234,12 @@ public class GestionePersonaleView extends JFrame {
         return card;
     }
 
+    /**
+     * Crea la tabella usata per mostrare i PersonalTrainer.
+     *
+     * La selezione di una riga compila automaticamente il campo del trainer da
+     * licenziare e aggiorna la lista dei possibili sostituti compatibili.
+     */
     private void creaTabella() {
         /*
          * Definisco le colonne della tabella.
@@ -299,6 +323,9 @@ public class GestionePersonaleView extends JFrame {
         });
     }
 
+    /**
+     * Configura l'aspetto grafico della tabella.
+     */
     private void configuraTabella() {
         tabellaPT.setFont(FONT_BASE);
         tabellaPT.setForeground(COLORE_TESTO);
@@ -362,6 +389,11 @@ public class GestionePersonaleView extends JFrame {
         tabellaPT.getColumnModel().getColumn(5).setPreferredWidth(80);
     }
 
+    /**
+     * Crea il pannello che contiene le operazioni di assunzione e licenziamento.
+     *
+     * @return pannello delle operazioni principali
+     */
     private JPanel creaPannelloOperazioni() {
         JPanel pannelloContenitore = new JPanel(new GridBagLayout());
         pannelloContenitore.setOpaque(false);
@@ -389,6 +421,11 @@ public class GestionePersonaleView extends JFrame {
         return pannelloContenitore;
     }
 
+    /**
+     * Crea il form grafico per l'assunzione di un nuovo PersonalTrainer.
+     *
+     * @return pannello del form di assunzione
+     */
     private JPanel creaFormAssunzione() {
         JPanel form = new JPanel(new GridBagLayout());
         form.setOpaque(false);
@@ -430,6 +467,11 @@ public class GestionePersonaleView extends JFrame {
         return form;
     }
 
+    /**
+     * Crea il form grafico per il licenziamento con o senza sostituto.
+     *
+     * @return pannello del form di licenziamento
+     */
     private JPanel creaFormLicenziamento() {
         JPanel form = new JPanel(new GridBagLayout());
         form.setOpaque(false);
@@ -479,6 +521,11 @@ public class GestionePersonaleView extends JFrame {
         return form;
     }
 
+    /**
+     * Crea la barra inferiore con stato della schermata e pulsanti di supporto.
+     *
+     * @return pannello della barra delle azioni
+     */
     private JPanel creaBarraAzioni() {
         JPanel barra = new JPanel(new BorderLayout());
         barra.setOpaque(false);
@@ -505,6 +552,12 @@ public class GestionePersonaleView extends JFrame {
         return barra;
     }
 
+    /**
+     * Crea un pannello con bordo e titolo, usato come contenitore grafico.
+     *
+     * @param titoloSezione titolo da mostrare nel pannello
+     * @return pannello configurato come card
+     */
     private JPanel creaCard(String titoloSezione) {
         JPanel card = new JPanel(new BorderLayout(0, 12));
         card.setBackground(COLORE_CARD);
@@ -521,6 +574,11 @@ public class GestionePersonaleView extends JFrame {
         return card;
     }
 
+    /**
+     * Crea un campo di testo con lo stile usato nella finestra.
+     *
+     * @return campo di testo configurato
+     */
     private JTextField creaCampoTesto() {
         JTextField campo = new JTextField();
         campo.setFont(FONT_BASE);
@@ -533,6 +591,11 @@ public class GestionePersonaleView extends JFrame {
         return campo;
     }
 
+    /**
+     * Crea una combo box con lo stile usato nella finestra.
+     *
+     * @return combo box configurata
+     */
     private JComboBox<String> creaComboBox() {
         JComboBox<String> combo = new JComboBox<>();
         combo.setFont(FONT_BASE);
@@ -542,6 +605,12 @@ public class GestionePersonaleView extends JFrame {
         return combo;
     }
 
+    /**
+     * Crea un bottone con lo stile usato nella finestra.
+     *
+     * @param testo testo da mostrare sul bottone
+     * @return bottone configurato
+     */
     private JButton creaBottone(String testo) {
         /*
          * Uso lo stile nativo del sistema per evitare problemi di testo invisibile
@@ -554,6 +623,14 @@ public class GestionePersonaleView extends JFrame {
         return bottone;
     }
 
+    /**
+     * Aggiunge una riga etichetta-campo a un form grafico.
+     *
+     * @param form pannello a cui aggiungere la riga
+     * @param riga indice della riga nel GridBagLayout
+     * @param testoLabel testo della label
+     * @param componenteInput componente grafico da inserire accanto alla label
+     */
     private void aggiungiRigaForm(JPanel form, int riga, String testoLabel, Component componenteInput) {
         JLabel label = new JLabel(testoLabel);
         label.setFont(FONT_BASE);
@@ -577,6 +654,15 @@ public class GestionePersonaleView extends JFrame {
         form.add(componenteInput, gbcInput);
     }
 
+    /**
+     * Carica nella combo box i PersonalTrainer che possono sostituire quello selezionato.
+     *
+     * Il filtro esclude il trainer da licenziare e considera solo trainer attivi
+     * con la stessa specializzazione.
+     *
+     * @param idDaLicenziare identificativo del trainer da licenziare
+     * @param specializzazioneRichiesta specializzazione richiesta al sostituto
+     */
     private void caricaSostitutiCompatibili(String idDaLicenziare, String specializzazioneRichiesta) {
         /*
          * Viene pulita la tendina ogni volta che viene selezionato un nuovo PT.
@@ -618,7 +704,7 @@ public class GestionePersonaleView extends JFrame {
                         && pt.getSpecializzazione().equalsIgnoreCase(specializzazioneRichiesta);
 
                 /*
-                 * Aggiungo alla tendina solo i PT realmente compatibili filtrandoli per specializzazione e stato contrattuale.
+                 * Aggiungo alla tendina solo i PT realmente compatibili filtrandoli per specializzazione.
                  */
                 if (!stessoTrainer && attivo && stessaSpecializzazione) {
                     comboSostituto.addItem(
@@ -644,6 +730,9 @@ public class GestionePersonaleView extends JFrame {
         }
     }
 
+    /**
+     * Carica l'elenco dei PersonalTrainer e aggiorna la tabella della view.
+     */
     private void caricaPersonalTrainer() {
         try {
             modelloTabella.setRowCount(0);
@@ -671,6 +760,10 @@ public class GestionePersonaleView extends JFrame {
         }
     }
 
+    /**
+     * Legge i dati del form di assunzione e richiede a GestorePersonale
+     * l'inserimento del nuovo PersonalTrainer.
+     */
     private void assumiPersonalTrainer() {
         try {
             String nome = txtNome.getText().trim();
@@ -736,6 +829,12 @@ public class GestionePersonaleView extends JFrame {
         }
     }
 
+    /**
+     * Gestisce il licenziamento di un PersonalTrainer con sostituto selezionato.
+     *
+     * Il metodo legge gli ID dalla schermata, chiede conferma all'utente e poi
+     * delega a GestorePersonale il controllo e l'operazione effettiva.
+     */
     private void licenziaPersonalTrainerConSostituto() {
         try {
             String idDaLicenziare = txtIdDaLicenziare.getText().trim();
@@ -802,6 +901,12 @@ public class GestionePersonaleView extends JFrame {
         }
     }
 
+    /**
+     * Gestisce il licenziamento di un PersonalTrainer senza sostituto.
+     *
+     * L'operazione viene delegata a GestorePersonale, che verifica se il trainer
+     * può essere disattivato senza lasciare corsi scoperti.
+     */
     private void licenziaPersonalTrainerSenzaSostituto() {
         try {
             String idDaLicenziare = txtIdDaLicenziare.getText().trim();
@@ -846,6 +951,9 @@ public class GestionePersonaleView extends JFrame {
         }
     }
 
+    /**
+     * Richiede il calcolo del totale mensile delle retribuzioni e mostra il risultato.
+     */
     private void calcolaRetribuzioniMensili() {
         try {
             double totale = gestorePersonale.calcolaTotaleStipendiMensili();
@@ -865,6 +973,9 @@ public class GestionePersonaleView extends JFrame {
         }
     }
 
+    /**
+     * Pulisce i campi del form di assunzione dopo un inserimento completato.
+     */
     private void pulisciCampiAssunzione() {
         txtNome.setText("");
         txtCognome.setText("");
@@ -875,12 +986,20 @@ public class GestionePersonaleView extends JFrame {
         comboTipoRetribuzione.setSelectedIndex(0);
     }
 
+    /**
+     * Ripristina i campi usati per il licenziamento.
+     */
     private void resetCampiLicenziamento() {
         txtIdDaLicenziare.setText("");
         comboSostituto.removeAllItems();
         comboSostituto.addItem("Seleziona sostituto...");
     }
 
+    /**
+     * Mostra un messaggio di errore all'utente.
+     *
+     * @param messaggio testo dell'errore da visualizzare
+     */
     private void mostraErrore(String messaggio) {
         aggiornaStato("Errore: operazione non completata.");
 
@@ -892,12 +1011,22 @@ public class GestionePersonaleView extends JFrame {
         );
     }
 
+    /**
+     * Aggiorna il messaggio di stato nella parte bassa della finestra.
+     *
+     * @param messaggio testo da mostrare nello stato
+     */
     private void aggiornaStato(String messaggio) {
         if (lblStato != null) {
             lblStato.setText(messaggio);
         }
     }
 
+    /**
+     * Metodo main usato per avviare direttamente la schermata.
+     *
+     * @param args argomenti da linea di comando, non usati
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             GestionePersonaleView view = new GestionePersonaleView();
