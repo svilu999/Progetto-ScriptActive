@@ -7,8 +7,26 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
+/**
+ * Implementazione MySQL dell'interfaccia ServizioSwapCorsi.
+ *
+ * La classe contiene la logica concreta per verificare i corsi assegnati a un
+ * PersonalTrainer e per sostituire il trainer nei corsi attivi o futuri.
+ *
+ * Viene usata da GestorePersonale per evitare che un PersonalTrainer venga
+ * disattivato lasciando corsi senza istruttore.
+ */
 public class ServizioSwapCorsiMySQL implements ServizioSwapCorsi {
 
+    /**
+     * Verifica se il PersonalTrainer indicato ha corsi attivi o futuri.
+     *
+     * Il metodo controlla la tabella Corso e considera solo i corsi con stato
+     * compatibile e data successiva o uguale al momento corrente.
+     *
+     * @param idTrainer identificativo del PersonalTrainer da controllare
+     * @return true se esiste almeno un corso attivo o futuro, false altrimenti
+     */
     @Override
     public boolean haCorsiAttiviOFuturi(String idTrainer) {
         Integer idTrainerNumerico = estraiIdNumerico(idTrainer);
@@ -44,6 +62,15 @@ public class ServizioSwapCorsiMySQL implements ServizioSwapCorsi {
         }
     }
 
+    /**
+     * Verifica se il PersonalTrainer indicato ha corsi imminenti.
+     *
+     * Un corso viene considerato imminente se è programmato tra il momento
+     * corrente e le successive 24 ore.
+     *
+     * @param idTrainer identificativo del PersonalTrainer da controllare
+     * @return true se esiste almeno un corso imminente, false altrimenti
+     */
     @Override
     public boolean haCorsiImminenti(String idTrainer) {
         Integer idTrainerNumerico = estraiIdNumerico(idTrainer);
@@ -79,6 +106,18 @@ public class ServizioSwapCorsiMySQL implements ServizioSwapCorsi {
         }
     }
 
+    /**
+     * Sostituisce un PersonalTrainer nei corsi attivi o futuri.
+     *
+     * Il metodo verifica la validità del sostituto, controlla eventuali
+     * sovrapposizioni orarie e aggiorna i corsi assegnandoli al nuovo trainer.
+     * I corsi non vengono cancellati.
+     *
+     * @param idTrainerDaSostituire identificativo del PersonalTrainer da sostituire
+     * @param idTrainerSostituto identificativo del PersonalTrainer sostituto
+     * @return numero di corsi aggiornati
+     * @throws SostitutoNonValidoException se il sostituto non è valido o ha sovrapposizioni
+     */
     @Override
     public int sostituisciTrainerNeiCorsi(String idTrainerDaSostituire, String idTrainerSostituto)
             throws SostitutoNonValidoException {
@@ -150,6 +189,14 @@ public class ServizioSwapCorsiMySQL implements ServizioSwapCorsi {
         }
     }
 
+    /**
+     * Verifica se esiste un PersonalTrainer attivo con contratto attivo.
+     *
+     * @param conn connessione database attiva
+     * @param idTrainer identificativo numerico del PersonalTrainer
+     * @return true se il trainer esiste ed è attivo, false altrimenti
+     * @throws Exception se si verifica un errore durante la query
+     */
     private boolean esisteTrainerAttivo(Connection conn, int idTrainer) throws Exception {
         String sql = """
             SELECT COUNT(*) AS totale
@@ -172,6 +219,19 @@ public class ServizioSwapCorsiMySQL implements ServizioSwapCorsi {
         return false;
     }
 
+    /**
+     * Verifica se il PersonalTrainer sostituto ha corsi sovrapposti.
+     *
+     * Il metodo confronta gli orari dei corsi del trainer da sostituire con gli
+     * orari dei corsi già assegnati al sostituto. Se trova una coincidenza, lo
+     * swap viene bloccato.
+     *
+     * @param conn connessione database attiva
+     * @param idTrainerDaSostituire identificativo del trainer da sostituire
+     * @param idTrainerSostituto identificativo del trainer sostituto
+     * @return true se esiste almeno una sovrapposizione, false altrimenti
+     * @throws Exception se si verifica un errore durante la query
+     */
     private boolean sostitutoHaSovrapposizioni(
             Connection conn,
             int idTrainerDaSostituire,
@@ -211,6 +271,12 @@ public class ServizioSwapCorsiMySQL implements ServizioSwapCorsi {
         return false;
     }
 
+    /**
+     * Estrae la parte numerica da un identificativo testuale.
+     *
+     * @param id identificativo da convertire
+     * @return identificativo numerico, oppure null se il valore non è valido
+     */
     private Integer estraiIdNumerico(String id) {
         if (id == null || id.isBlank()) {
             return null;

@@ -1,24 +1,21 @@
 package it.unipv.posfw.service;
 
 /**
- * Interfaccia per il calcolo delle retribuzioni del personale.
+ * Interfaccia di servizio per il calcolo delle retribuzioni del personale.
  *
- * Serve a tenere separata la logica di calcolo degli stipendi
- * dal controller GestorePersonale.
- *
- * In questo modo GestorePersonale non contiene query SQL.
+ * L'interfaccia separa GestorePersonale dalla logica concreta di calcolo
+ * delle retribuzioni e dall'accesso ai dati necessari per eseguire tale calcolo.
  */
 public interface ServizioRetribuzioni {
 
     /**
-     * Calcola il totale mensile delle retribuzioni dei Personal Trainer attivi.
+     * Calcola il totale mensile delle retribuzioni dei PersonalTrainer attivi.
      *
-     * Regole:
-     * - FISSA_MENSILE: usa lo stipendio_mensile del contratto;
-     * - A_LEZIONE: conta i corsi COMPLETO del mese corrente
-     *   e moltiplica per compenso_per_lezione.
+     * Le regole di calcolo dipendono dall'implementazione concreta. Nel sistema
+     * sono previste retribuzioni fisse mensili e retribuzioni basate sul numero
+     * di lezioni svolte.
      *
-     * @return totale retribuzioni mensili dei PT attivi
+     * @return totale mensile delle retribuzioni dei PersonalTrainer attivi
      */
     double calcolaTotaleRetribuzioniMensili();
 }

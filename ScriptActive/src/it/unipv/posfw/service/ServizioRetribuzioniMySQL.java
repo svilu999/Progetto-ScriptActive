@@ -7,19 +7,28 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 /**
- * Implementazione MySQL del servizio per il calcolo delle retribuzioni.
+ * Implementazione MySQL dell'interfaccia ServizioRetribuzioni.
  *
- * Versione allineata allo schema comune scriptactive_db.
+ * La classe calcola il costo mensile complessivo dei PersonalTrainer attivi
+ * leggendo i dati retributivi dalla tabella PersonalTrainer e, quando necessario,
+ * i corsi completati dalla tabella Corso.
  *
- * I dati retributivi sono salvati direttamente nella tabella PersonalTrainer:
- * - TipoRetribuzione
- * - StipendioMensile
- * - CompensoPerLezione
- *
- * Non viene usata la vecchia tabella contratto_personale.
+ * I dati retributivi considerati sono:
+ * - TipoRetribuzione;
+ * - StipendioMensile;
+ * - CompensoPerLezione.
  */
 public class ServizioRetribuzioniMySQL implements ServizioRetribuzioni {
 
+    /**
+     * Calcola il totale mensile delle retribuzioni dei PersonalTrainer attivi.
+     *
+     * Per i trainer con retribuzione fissa viene considerato lo stipendio mensile.
+     * Per i trainer retribuiti a lezione vengono contati i corsi completati nel
+     * mese corrente e moltiplicati per il compenso previsto per lezione.
+     *
+     * @return totale mensile delle retribuzioni dei PersonalTrainer attivi
+     */
     @Override
     public double calcolaTotaleRetribuzioniMensili() {
 
