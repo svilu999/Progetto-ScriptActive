@@ -15,7 +15,6 @@ package it.unipv.posfw.domain;
  *
  * @author Lorenzo
  * @version 1.1
- * @see <a href="http://docs.oracle.com/javase/8/docs/api/">Java Standard Documentation</a>
  */
 public enum StatoCorso {
 

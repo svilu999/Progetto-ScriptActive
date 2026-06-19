@@ -1,5 +1,22 @@
 package it.unipv.posfw.view;
-
+/**
+ * Classe Boundary deputata alla gestione dell'interfaccia utente per il palinsesto corsi.
+ * 
+ * In conformità con lo stile architetturale Model-View-Controller (MVC), questa classe ricopre 
+ * il ruolo di View, incaricata della presentazione dei dati e della cattura degli eventi utente.
+ * Rispetta il "Principio di separazione Modello-Vista": la View non possiede logica applicativa 
+ * né accede direttamente alla persistenza, ma delega le operazioni di sistema ai Controller 
+ * competenti (GestoreCorsi e GestorePrenotazioni) realizzando il Low Coupling.
+ * 
+ * La classe implementa l'interfaccia Observer per supportare il meccanismo di "Push from below", 
+ * permettendo al Modello di Dominio di notificare i cambiamenti di stato (es. cancellazione 
+ * corsi in UC3) senza creare accoppiamento diretto verso lo strato di presentazione.
+ * 
+ * @author Lorenzo
+ * @version 2.0
+ * @see Observer
+ * @see GestoreCorsi
+ */
 import javax.swing.*;
 
 import javax.swing.table.DefaultTableModel;

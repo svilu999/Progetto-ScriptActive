@@ -1,5 +1,24 @@
 package it.unipv.posfw.view;
-
+/**
+ * Classe Boundary che realizza l'interfaccia principale per l'attore "Direttore", 
+ * deputata alla gestione operativa del palinsesto (UC3).
+ * 
+ * In conformità con lo stile architetturale Model-View-Controller (MVC), questa componente 
+ * ricopre il ruolo di View, fungendo da mediatore tra l'utente fisico e la logica 
+ * applicativa del sistema. La classe implementa il "Principio di separazione 
+ * Modello-Vista", garantendo che la GUI non contenga logica di business né acceda 
+ * direttamente alla persistenza (Low Coupling).
+ * 
+ * La comunicazione verso lo strato inferiore avviene tramite il meccanismo di delega 
+ * degli eventi: le azioni dell'utente vengono catturate dai listener e inoltrate al 
+ * Controller competente (GestoreCorsi), rispettando i flussi definiti nei diagrammi 
+ * di sequenza di progetto.
+ * 
+ * @author Lorenzo
+ * @version 2.0
+ * @see GestoreCorsi
+ * @see Direttore
+ */
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
