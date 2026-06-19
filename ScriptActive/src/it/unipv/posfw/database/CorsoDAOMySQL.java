@@ -20,7 +20,7 @@ public class CorsoDAOMySQL implements CorsoDAO {
     public void insert(Corso c) {
         /*
          * Metodo usato sia per creare/salvare corsi sia per rendere persistente
-         * lo swap UC5.
+         * lo swap.
          *
          * Schema comune:
          * Corso(
@@ -153,7 +153,7 @@ public class CorsoDAOMySQL implements CorsoDAO {
 
     private void aggiornaCorso(Connection conn, Corso c, int idCorso) throws Exception {
         /*
-         * Aggiornamento usato anche dallo swap UC5.
+         * Aggiornamento usato anche dallo swap.
          * Quando cambia il PT assegnato, aggiorniamo ID_Trainer.
          * Il corso resta nel palinsesto e non viene cancellato.
          */

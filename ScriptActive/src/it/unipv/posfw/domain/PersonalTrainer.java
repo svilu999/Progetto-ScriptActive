@@ -4,19 +4,16 @@ import it.unipv.posfw.strategy.StrategiaRetribuzione;
 
 public class PersonalTrainer extends Utente {
     
-    // --- DATI DI LORENZO E DATABASE ---
-    private String idTrainer; // Spesso usato per il Codice Fiscale
+
+    private String idTrainer;
     private String specializzazione;
-    private String tipoContratto; // Aggiunto per non perdere il dato del DB (es. Part-Time)
+    private String tipoContratto;
     
-    // --- DATI DEL TUO CASO D'USO (UC5) ---
     private StrategiaRetribuzione strategia;
     private String statoContratto; 
     private boolean isAttivo;
 
-    // =========================================================
-    // COSTRUTTORE 1: Il tuo (Quello completo per UC5)
-    // =========================================================
+    // COSTRUTTORE 1
     // Da usare quando si creano Trainer con una strategia di stipendio definita
     public PersonalTrainer(String nome, String cognome, String email, String idTrainer, String specializzazione, StrategiaRetribuzione strategia) {
         super(nome, cognome, email); 
@@ -27,24 +24,20 @@ public class PersonalTrainer extends Utente {
         this.isAttivo = true;
     }
 
-    // =========================================================
-    // COSTRUTTORE 2: Quello di Lorenzo e del nostro DAO (Login)
-    // =========================================================
-    // Il nostro UtenteDAOMySQL userà in automatico questo quando l'utente fa Login!
+    // COSTRUTTORE 2
+    // Da usare quando l'utente fa il login
     public PersonalTrainer(String nome, String cognome, String email, String idTrainer) {
         super(nome, cognome, email); 
         this.idTrainer = idTrainer;
         
-        // Dati di default per evitare che il programma crashi (NullPointerException)
+        // Dati di default per evitare dei crash (NullPointerException)
         this.specializzazione = "Non definita";
         this.strategia = null;
         this.statoContratto = "ATTIVO";
         this.isAttivo = true;
     }
 
-    // =========================================================
-    // GETTER E SETTER (Per far felici tutti i framework e DB)
-    // =========================================================
+    // GETTER E SETTER
     public String getIdTrainer() { return idTrainer; }
     public void setIdTrainer(String idTrainer) { this.idTrainer = idTrainer; }
     
@@ -68,9 +61,7 @@ public class PersonalTrainer extends Utente {
         router.apriDashboardTrainer(this);
     }
 
-    // =========================================================
-    // METODO DI BUSINESS (Intatto!)
-    // =========================================================
+    // METODO DI BUSINESS
     public double calcolaStipendioMensile(int corsi) {
         if (strategia != null) {
             return strategia.calcolaStipendio(corsi);

@@ -158,15 +158,6 @@ INSERT INTO Sede (ID_Sede, NomeSede) VALUES
 -- ==============================================================================
 -- 5. POPOLAMENTO: INSERIMENTO UTENTI
 -- ==============================================================================
--- ID fissati per rendere stabili i test.
--- 1  = Anna Bianchi     Direttore
--- 2  = Marco Verdi      PT da licenziare nei test UC5
--- 3  = Mario Rossi      Cliente
--- 4  = Lorenzo Varano   Cliente
--- 10 = Luigi Potenza    PT di test già presente nel push dei compagni
--- 11 = Giulia Neri      PT compatibile e libero per sostituire Marco
--- 12 = Luca Bianchi     PT compatibile ma occupato nello stesso orario di Marco
--- 13 = Sara Rossi       PT con specializzazione diversa
 
 INSERT INTO Utente (ID_Utente, CodiceFiscale, Nome, Cognome, Email, PasswordHash, Ruolo, Stato) VALUES
 (1, 'DRTXYZ70M01F205A', 'Anna', 'Bianchi', 'direttore@scriptactive.it', '1234', 'Direttore', 'Attivo'),
@@ -208,12 +199,6 @@ VALUES ('BASE', 'MENSILE', '2026-07-31', FALSE, 4);
 -- ==============================================================================
 -- 8. POPOLAMENTO: INSERIMENTO CORSI
 -- ==============================================================================
--- Corsi per testare UC5:
--- Marco ha corsi futuri e quindi, per essere licenziato, richiede uno swap.
--- Giulia è libera ed è il sostituto valido.
--- Luca ha un corso nello stesso orario di Marco, quindi deve essere bloccato come sostituto.
--- Sara e Luigi restano utili per testare specializzazioni diverse e altri casi d'uso.
-
 INSERT INTO Corso (Nome, DataOra, CapienzaMassima, PostiDisponibili, Stato, ID_Sede, ID_Trainer, ID_Direttore)
 VALUES
 ('Corso di Funzionale', '2026-07-01 18:00:00', 15, 15, 'Pianificato', 1, 2, 1),
@@ -234,30 +219,3 @@ VALUES
 ('Dorso', 'Lat Machine', 3, 12, 50.00, 1),
 ('Gambe', 'Pressa 45', 4, 8, 120.00, 1);
 
--- ==============================================================================
--- 10. QUERY DI CONTROLLO PER UC5
--- ==============================================================================
--- Da eseguire manualmente in MySQL Workbench se vuoi controllare i dati.
-
--- SELECT 
---     pt.ID_Trainer,
---     u.Nome,
---     u.Cognome,
---     pt.Specializzazione,
---     pt.StatoContratto,
---     pt.Attivo
--- FROM PersonalTrainer pt
--- JOIN Utente u ON pt.ID_Trainer = u.ID_Utente
--- ORDER BY pt.ID_Trainer;
-
--- SELECT 
---     c.ID_Corso,
---     c.Nome,
---     c.DataOra,
---     u.Nome AS NomeTrainer,
---     u.Cognome AS CognomeTrainer,
---     pt.Specializzazione
--- FROM Corso c
--- JOIN PersonalTrainer pt ON c.ID_Trainer = pt.ID_Trainer
--- JOIN Utente u ON pt.ID_Trainer = u.ID_Utente
--- ORDER BY c.DataOra;

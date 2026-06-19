@@ -95,7 +95,7 @@ public class ServizioSwapCorsiMySQL implements ServizioSwapCorsi {
         }
 
         /*
-         * Swap UC5:
+         * Swap:
          * i corsi NON vengono cancellati.
          * Viene aggiornato solo ID_Trainer nella tabella Corso.
          */
@@ -178,14 +178,10 @@ public class ServizioSwapCorsiMySQL implements ServizioSwapCorsi {
             int idTrainerSostituto) throws Exception {
 
         /*
-         * Controllo di sovrapposizione per UC5.
+         * Controllo di sovrapposizione dei corsi:
          *
          * Il sostituto non può prendere i corsi del PT licenziato
          * se ha già un altro corso attivo/futuro nello stesso identico orario.
-         *
-         * Nota: nello schema attuale la tabella Corso contiene DataOra,
-         * ma non contiene una durata del corso. Quindi la sovrapposizione
-         * viene valutata sull'orario di inizio.
          */
         String sql = """
             SELECT COUNT(*) AS totale

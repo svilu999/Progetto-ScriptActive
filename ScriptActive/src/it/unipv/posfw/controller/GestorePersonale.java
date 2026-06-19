@@ -81,7 +81,7 @@ public class GestorePersonale {
     }
 
     /**
-     * UC5 - Flusso di assunzione.
+     *Flusso di assunzione.
      *
      * Il Direttore inserisce i dati del nuovo Personal Trainer.
      */
@@ -111,11 +111,11 @@ public class GestorePersonale {
 
         trainerDAO.salva(nuovoTrainer);
 
-        System.out.println("[UC5] Record creato e attivato per il PT: " + nuovoTrainer.getNomeCompleto());
+        System.out.println(" Record creato e attivato per il PT: " + nuovoTrainer.getNomeCompleto());
     }
 
     /**
-     * UC5 - Licenziamento senza sostituto.
+     *Licenziamento senza sostituto.
      *
      * Consentito solo se il PT non ha corsi attivi o futuri.
      */
@@ -135,10 +135,8 @@ public class GestorePersonale {
         disattivaRecordPersonale(ptDaLicenziare);
     }
 
-    /**
-     * UC5 - Licenziamento con sostituzione.
-     *
-     * Flusso:
+    /*
+     * Flusso del licenziamento con sostituzione:
      * 1. valida gli ID ricevuti;
      * 2. recupera il PT da licenziare;
      * 3. recupera il PT sostituto;
@@ -165,13 +163,13 @@ public class GestorePersonale {
         boolean haCorsiAttiviOFuturi = servizioSwapCorsi.haCorsiAttiviOFuturi(idDaLicenziare);
 
         if (!haCorsiAttiviOFuturi) {
-            System.out.println("[UC5] Il PT non ha corsi futuri: nessuno swap necessario.");
+            System.out.println("Il PT non ha corsi futuri: nessuno swap necessario.");
             disattivaRecordPersonale(ptDaLicenziare);
             return;
         }
 
         if (servizioSwapCorsi.haCorsiImminenti(idDaLicenziare)) {
-            System.out.println("[UC5] Il PT ha corsi imminenti: lo swap viene eseguito prima della disattivazione.");
+            System.out.println("Il PT ha corsi imminenti: lo swap viene eseguito prima della disattivazione.");
         }
 
         int corsiAggiornati = servizioSwapCorsi.sostituisciTrainerNeiCorsi(
@@ -185,7 +183,7 @@ public class GestorePersonale {
                             + "ma nessun corso è stato riassegnato. Verificare il palinsesto.");
         }
 
-        System.out.println("[UC5] Swap completato. Corsi riassegnati: " + corsiAggiornati);
+        System.out.println("Swap completato. Corsi riassegnati: " + corsiAggiornati);
 
         disattivaRecordPersonale(ptDaLicenziare);
     }
@@ -201,7 +199,7 @@ public class GestorePersonale {
 
         trainerDAO.aggiorna(ptDaLicenziare);
 
-        System.out.println("[UC5] Record di " + ptDaLicenziare.getNomeCompleto()
+        System.out.println("Record di " + ptDaLicenziare.getNomeCompleto()
                 + " disattivato con successo tramite soft delete.");
     }
 
@@ -218,7 +216,7 @@ public class GestorePersonale {
     public double calcolaTotaleStipendiMensili() {
         double totale = servizioRetribuzioni.calcolaTotaleRetribuzioniMensili();
 
-        System.out.println("[UC5] Totale retribuzioni mensili PT attivi: €" + totale);
+        System.out.println("Totale retribuzioni mensili PT attivi: €" + totale);
         return totale;
     }
 

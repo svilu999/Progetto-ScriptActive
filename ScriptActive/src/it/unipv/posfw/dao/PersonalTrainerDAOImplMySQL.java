@@ -18,8 +18,6 @@ public class PersonalTrainerDAOImplMySQL implements PersonalTrainerDAO {
     @Override
     public void salva(PersonalTrainer pt) {
         /*
-         * DAO aggiornato per lo schema comune:
-         *
          * Utente:
          * - ID_Utente
          * - CodiceFiscale
@@ -40,8 +38,6 @@ public class PersonalTrainerDAOImplMySQL implements PersonalTrainerDAO {
          * - StipendioMensile
          * - CompensoPerLezione
          * - ID_Direttore
-         *
-         * Non viene più usata la tabella contratto_personale.
          */
 
         try (Connection conn = DatabaseManager.getInstance().getConnection()) {
@@ -222,7 +218,7 @@ public class PersonalTrainerDAOImplMySQL implements PersonalTrainerDAO {
     @Override
     public void elimina(String idPT) {
         /*
-         * Soft delete coerente con UC5:
+         * Soft delete:
          * il PT non viene eliminato fisicamente dal database.
          * Viene marcato come LICENZIATO e non attivo.
          */
@@ -552,8 +548,7 @@ public class PersonalTrainerDAOImplMySQL implements PersonalTrainerDAO {
     private String generaCodiceFiscaleTecnico(PersonalTrainer pt) {
         /*
          * Lo schema richiede CodiceFiscale NOT NULL e UNIQUE.
-         * La view UC5 non gestisce il codice fiscale, quindi generiamo
-         * un codice tecnico stabile partendo dall'email.
+         * Quindi generiamo un codice tecnico stabile partendo dall'email.
          */
         String base = pt.getEmail();
 
