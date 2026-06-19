@@ -25,7 +25,7 @@ public class StoricoAllenamentiTest {
     public void initTest() {
                 StoricoAllenamentiView viewPerTest = new StoricoAllenamentiView();
         
-   it.unipv.posfw.dao.SessioneDAO daoPerTest = new it.unipv.posfw.dao.SessioneDAOSQL();
+   it.unipv.posfw.dao.SessioneDAO daoPerTest = new it.unipv.posfw.database.SessioneDAOMySQL();
         
                 controller = new StoricoAllenamentiController(viewPerTest, daoPerTest);
         

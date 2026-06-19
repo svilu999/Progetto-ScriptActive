@@ -6,15 +6,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
-/**
- * Gestore centralizzato della connessione al database.
- *
- * Non mantiene una singola Connection globale.
- * Ogni chiamata a getConnection() apre una nuova connessione valida.
- *
- * Questo evita l'errore:
- * "No operations allowed after connection closed"
- */
+
 public class DatabaseManager {
 
     private static DatabaseManager instance;
@@ -47,10 +39,7 @@ public class DatabaseManager {
         return instance;
     }
 
-    /**
-     * Restituisce una nuova connessione ogni volta.
-     * I DAO possono chiuderla con try-with-resources senza rompere le chiamate successive.
-     */
+   
     public Connection getConnection() {
         try {
             return DriverManager.getConnection(

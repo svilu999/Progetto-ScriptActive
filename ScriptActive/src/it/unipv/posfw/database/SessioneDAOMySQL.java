@@ -1,7 +1,6 @@
-package it.unipv.posfw.dao;
+package it.unipv.posfw.database;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -12,40 +11,29 @@ import java.util.List;
 import java.util.Map;
 
 import it.unipv.posfw.domain.SessioneAllenamento;
+import it.unipv.posfw.dao.SessioneDAO;
 import it.unipv.posfw.domain.DatiFormPojo;
 
-public class SessioneDAOSQL implements SessioneDAO {
+import it.unipv.posfw.util.DatabaseManager; 
 
-    // DATI DI CONNESSIONE
-    private static final String URL = "jdbc:mysql://localhost:3306/scriptactive_db";
-    private static final String USER = "root";
-    private static final String PASS = "Enomis23*";
+public class SessioneDAOMySQL implements SessioneDAO {
 
-    public SessioneDAOSQL() {
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-        } catch (ClassNotFoundException e) {
-            System.err.println("Driver MySQL non trovato! Assicurati di aver aggiunto il JAR.");
-        }
-    }
-
-    private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(URL, USER, PASS);
+    public SessioneDAOMySQL() {
+        
     }
 
     @Override
     public boolean salvaSessione(SessioneAllenamento sessione) {
-        // SOLUZIONE: Uso una subquery per inserire l'ID_Utente numerico partendo dal CodiceFiscale (Stringa)
         String sqlSessione = "INSERT INTO SessioneAllenamento (Data, ID_Cliente) VALUES (?, (SELECT ID_Utente FROM Utente WHERE CodiceFiscale = ?))";
         String sqlEsercizio = "INSERT INTO EsercizioRegistrato (GruppoMuscolare, Macchinario, Serie, Ripetizioni, Carico, ID_Sessione) VALUES (?, ?, ?, ?, ?, ?)";
 
-        try (Connection conn = getConnection()) {
+        // USIAMO IL DATABASE MANAGER PER PRENDERE LA CONNESSIONE
+        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
             conn.setAutoCommit(false); 
 
             try (PreparedStatement pstmtSess = conn.prepareStatement(sqlSessione, Statement.RETURN_GENERATED_KEYS)) {
                 
                 pstmtSess.setDate(1, new java.sql.Date(sessione.getData().getTime()));
-                // Ora possiamo passare direttamente la stringa senza che vada in crash
                 pstmtSess.setString(2, sessione.getIdCliente()); 
                 pstmtSess.executeUpdate();
 
@@ -89,17 +77,17 @@ public class SessioneDAOSQL implements SessioneDAO {
     public List<SessioneAllenamento> getStorico(String idCliente) {
         Map<Integer, SessioneAllenamento> mappaSessioni = new LinkedHashMap<>();
 
-        // SOLUZIONE: Join con Utente per poter filtrare direttamente per CodiceFiscale
         String sql = "SELECT s.ID_Sessione, s.Data, u.CodiceFiscale, e.Macchinario, e.Carico, e.Ripetizioni " +
                      "FROM SessioneAllenamento s " +
                      "JOIN Utente u ON s.ID_Cliente = u.ID_Utente " +
                      "LEFT JOIN EsercizioRegistrato e ON s.ID_Sessione = e.ID_Sessione " +
                      "WHERE u.CodiceFiscale = ? ORDER BY s.Data DESC, s.ID_Sessione DESC";
 
-        try (Connection conn = getConnection();
+        // USIAMO IL DATABASE MANAGER PER PRENDERE LA CONNESSIONE
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setString(1, idCliente); // Passiamo il Codice Fiscale in formato stringa
+            pstmt.setString(1, idCliente); 
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
@@ -129,7 +117,7 @@ public class SessioneDAOSQL implements SessioneDAO {
     public boolean eliminaSessioneSpecifica(SessioneAllenamento sessione) {
         String sql = "DELETE FROM SessioneAllenamento WHERE ID_Sessione = ?";
 
-        try (Connection conn = getConnection();
+                try (Connection conn = DatabaseManager.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, sessione.getIdSessione());

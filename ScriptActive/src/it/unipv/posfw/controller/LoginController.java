@@ -2,9 +2,9 @@ package it.unipv.posfw.controller;
 
 import java.util.List;
 
+import it.unipv.posfw.database.SessioneDAOMySQL;
 import it.unipv.posfw.database.UtenteDAO;
 import it.unipv.posfw.dao.SessioneDAO;
-import it.unipv.posfw.dao.SessioneDAOSQL;
 import it.unipv.posfw.domain.Cliente;
 import it.unipv.posfw.domain.Corso; 
 import it.unipv.posfw.domain.Direttore;
@@ -71,7 +71,7 @@ public class LoginController {
             dashboardView.dispose();
             
             StoricoAllenamentiView premiumView = new StoricoAllenamentiView();
-            SessioneDAO sessioneDAO = new SessioneDAOSQL();
+            SessioneDAO sessioneDAO = new SessioneDAOMySQL();
             StoricoAllenamentiController clienteController = new StoricoAllenamentiController(premiumView, sessioneDAO);
             
             premiumView.setController(clienteController);

@@ -12,7 +12,7 @@ import it.unipv.posfw.domain.Cliente;
 import it.unipv.posfw.domain.TipoAbbonamento;
 import it.unipv.posfw.domain.Utente;
 
-public class LoginDAOSQL implements LoginDAO {
+public class LoginDAOMySQL implements LoginDAO {
 
     
 
