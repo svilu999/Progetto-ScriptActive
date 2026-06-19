@@ -20,8 +20,8 @@ import it.unipv.posfw.domain.Corso;
  *
  * @author Lorenzo
  * @version 1.2
- * @see it.unipv.posfw.dao.CorsoDAO
- * @see it.unipv.posfw.domain.Corso
+ * @see CorsoDAO
+ * @see Corso
  */
 public class PalinsestoCorsiTest {
 

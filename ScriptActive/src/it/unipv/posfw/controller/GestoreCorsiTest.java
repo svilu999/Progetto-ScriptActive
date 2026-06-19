@@ -1,5 +1,21 @@
 package it.unipv.posfw.controller;
-
+/**
+ * Classe dedicata al Testing di Unità per il componente {@link GestoreCorsi}.
+ * 
+ * In conformità con le linee guida del corso sulla Verifica e Convalida, questa classe
+ * implementa test funzionali automatizzati volti ad accertare la correttezza del 
+ * comportamento del sistema rispetto ai requisiti di UC3. Ogni metodo segue rigorosamente
+ * la triade strutturale Setup-Action-Assertion, isolando le operazioni per verificare 
+ * la logica di coordinamento del controller.
+ * 
+ * In termini architetturali, il test valida l'interazione tra lo strato di controllo
+ * (Singleton) e il Modello di Dominio, assicurando che le precondizioni e le 
+ * eccezioni di business siano gestite correttamente.
+ *
+ * @author Lorenzo
+ * @version 2.1
+ * @see GestoreCorsi
+ */
 // Nuovi import ufficiali di JUnit 5 (Jupiter)
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
