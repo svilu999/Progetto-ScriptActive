@@ -128,7 +128,7 @@ public class GestionePersonaleView extends JFrame {
         setSize(1120, 760);
         setMinimumSize(new Dimension(1000, 680));
         setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout());
 
         getContentPane().setBackground(COLORE_SFONDO);
@@ -618,7 +618,7 @@ public class GestionePersonaleView extends JFrame {
                         && pt.getSpecializzazione().equalsIgnoreCase(specializzazioneRichiesta);
 
                 /*
-                 * Aggiungo alla tendina solo i PT realmente compatibili filtrandoli per specializzazione.
+                 * Aggiungo alla tendina solo i PT realmente compatibili filtrandoli per specializzazione e stato contrattuale.
                  */
                 if (!stessoTrainer && attivo && stessaSpecializzazione) {
                     comboSostituto.addItem(

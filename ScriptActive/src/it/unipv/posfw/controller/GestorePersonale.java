@@ -27,7 +27,7 @@ import java.util.List;
  *
  * Il controller non contiene query SQL.
  * Le query SQL stanno dentro:
- * - PersonalTrainerDAOImplMySQL;
+ * - PersonalTrainerDAOMySQL;
  * - ServizioSwapCorsiMySQL;
  * - ServizioRetribuzioniMySQL.
  */
@@ -247,7 +247,8 @@ public class GestorePersonale {
                     "OPERAZIONE ANNULLATA: Personal Trainer da licenziare non trovato.");
         }
 
-        if (!ptDaLicenziare.isAttivo()) {
+        if (!ptDaLicenziare.isAttivo()
+                || !"ATTIVO".equalsIgnoreCase(ptDaLicenziare.getStatoContratto())) {
             throw new TrainerNonLicenziabileException(
                     "OPERAZIONE ANNULLATA: il Personal Trainer risulta già inattivo o licenziato.");
         }
@@ -265,7 +266,8 @@ public class GestorePersonale {
                     "OPERAZIONE ANNULLATA: il sostituto indicato non esiste.");
         }
 
-        if (!ptSostituto.isAttivo()) {
+        if (!ptSostituto.isAttivo()
+                || !"ATTIVO".equalsIgnoreCase(ptSostituto.getStatoContratto())) {
             throw new SostitutoNonValidoException(
                     "OPERAZIONE ANNULLATA: il sostituto indicato non è attivo.");
         }
