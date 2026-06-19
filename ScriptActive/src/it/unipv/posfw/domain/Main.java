@@ -16,7 +16,7 @@ public class Main {
             LoginView loginView = new LoginView();
             LoginController loginController = new LoginController(loginView, loginDAO);
             loginView.setController(loginController);
-            loginView.setVisible(true);
+            loginView.setVisible(true); 
             
         
         });
