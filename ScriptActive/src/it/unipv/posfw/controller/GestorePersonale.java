@@ -1,7 +1,7 @@
 package it.unipv.posfw.controller;
 
 import it.unipv.posfw.dao.PersonalTrainerDAO;
-import it.unipv.posfw.dao.PersonalTrainerDAOImplMySQL;
+import it.unipv.posfw.database.PersonalTrainerDAOMySQL;
 import it.unipv.posfw.domain.PersonalTrainer;
 import it.unipv.posfw.exceptions.SostitutoNonValidoException;
 import it.unipv.posfw.exceptions.TrainerGiaAssuntoException;
@@ -27,7 +27,7 @@ import java.util.List;
  *
  * Il controller non contiene query SQL.
  * Le query SQL stanno dentro:
- * - PersonalTrainerDAOImplMySQL;
+ * - PersonalTrainerDAOMySQL;
  * - ServizioSwapCorsiMySQL;
  * - ServizioRetribuzioniMySQL.
  */
@@ -43,7 +43,7 @@ public class GestorePersonale {
      * Costruttore privato del Singleton.
      */
     private GestorePersonale() {
-        this.trainerDAO = new PersonalTrainerDAOImplMySQL();
+        this.trainerDAO = new PersonalTrainerDAOMySQL();
         this.servizioSwapCorsi = new ServizioSwapCorsiMySQL();
         this.servizioRetribuzioni = new ServizioRetribuzioniMySQL();
     }
@@ -81,7 +81,7 @@ public class GestorePersonale {
     }
 
     /**
-     * UC5 - Flusso di assunzione.
+     *Flusso di assunzione.
      *
      * Il Direttore inserisce i dati del nuovo Personal Trainer.
      */
@@ -115,7 +115,7 @@ public class GestorePersonale {
     }
 
     /**
-     * UC5 - Licenziamento senza sostituto.
+     *Licenziamento senza sostituto.
      *
      * Consentito solo se il PT non ha corsi attivi o futuri.
      */
@@ -247,7 +247,8 @@ public class GestorePersonale {
                     "OPERAZIONE ANNULLATA: Personal Trainer da licenziare non trovato.");
         }
 
-        if (!ptDaLicenziare.isAttivo()) {
+        if (!ptDaLicenziare.isAttivo()
+                || !"ATTIVO".equalsIgnoreCase(ptDaLicenziare.getStatoContratto())) {
             throw new TrainerNonLicenziabileException(
                     "OPERAZIONE ANNULLATA: il Personal Trainer risulta già inattivo o licenziato.");
         }
@@ -265,7 +266,8 @@ public class GestorePersonale {
                     "OPERAZIONE ANNULLATA: il sostituto indicato non esiste.");
         }
 
-        if (!ptSostituto.isAttivo()) {
+        if (!ptSostituto.isAttivo()
+                || !"ATTIVO".equalsIgnoreCase(ptSostituto.getStatoContratto())) {
             throw new SostitutoNonValidoException(
                     "OPERAZIONE ANNULLATA: il sostituto indicato non è attivo.");
         }

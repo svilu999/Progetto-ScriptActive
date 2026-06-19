@@ -1,5 +1,6 @@
-package it.unipv.posfw.dao;
+package it.unipv.posfw.database;
 
+import it.unipv.posfw.dao.PersonalTrainerDAO;
 import it.unipv.posfw.domain.PersonalTrainer;
 import it.unipv.posfw.strategy.RetribuzioneFissa;
 import it.unipv.posfw.strategy.RetribuzioneProvvigione;
@@ -13,7 +14,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PersonalTrainerDAOImplMySQL implements PersonalTrainerDAO {
+public class PersonalTrainerDAOMySQL implements PersonalTrainerDAO {
 
     @Override
     public void salva(PersonalTrainer pt) {

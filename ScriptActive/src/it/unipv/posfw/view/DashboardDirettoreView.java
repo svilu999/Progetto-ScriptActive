@@ -69,7 +69,7 @@ public class DashboardDirettoreView extends JFrame {
         pnlNavigazione.setBorder(BorderFactory.createTitledBorder("3. Integrazioni Sistema"));
         
         // CORREZIONE APPLICATA QUI: Rimosso "JButton" all'inizio per evitare lo shadowing
-        btnGestionePersonale = new JButton("Apri Modulo Gestione Personale (UC5)");
+        btnGestionePersonale = new JButton("Apri Modulo Gestione Personale");
         pnlNavigazione.add(btnGestionePersonale);
 
         // Aggiungiamo i due sotto-pannelli al contenitore centrale
@@ -151,7 +151,7 @@ public class DashboardDirettoreView extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 GestionePersonaleView finestraPersonale = new GestionePersonaleView();
                 finestraPersonale.setVisible(true);
-                areaLog.append("[VIEW] Apertura finestra Gestione Personale - UC5.\n");
+                areaLog.append("[VIEW] Apertura finestra Gestione Personale .\n");
             }
         });
     }

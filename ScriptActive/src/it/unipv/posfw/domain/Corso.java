@@ -73,7 +73,7 @@ public class Corso implements Subject {
     }
 
     public void setTrainerAssegnato(PersonalTrainer trainerAssegnato) {
-      
+
         this.trainerAssegnato = trainerAssegnato;
         notifyObservers();
     }

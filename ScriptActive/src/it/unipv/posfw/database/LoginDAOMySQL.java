@@ -11,8 +11,9 @@ import it.unipv.posfw.dao.LoginDAO;
 import it.unipv.posfw.domain.Cliente;
 import it.unipv.posfw.domain.TipoAbbonamento;
 import it.unipv.posfw.domain.Utente;
+import it.unipv.posfw.util.DatabaseManager;
 
-public class LoginDAOSQL implements LoginDAO {
+public class LoginDAOMySQL implements LoginDAO {
 
     
 
@@ -27,7 +28,7 @@ public class LoginDAOSQL implements LoginDAO {
                      "WHERE u.Email = ? AND u.PasswordHash = ? AND u.Stato = 'Attivo'";
 
       // Chiamiamo DatabaseConnection.getConnection() che legge dal tuo file properties!
-        try (Connection conn = DatabaseConnection.getConnection();
+        try (Connection conn = DatabaseManager.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, email);

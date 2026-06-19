@@ -107,7 +107,7 @@ public class GestoreCorsi implements ServizioSwapCorsi {
     }
 
     // =========================================================
-    // UC5 - integrazione con Gestione Contratti del Personale
+    //Integrazione con Gestione Contratti del Personale
     // =========================================================
 
     @Override
@@ -190,11 +190,6 @@ public class GestoreCorsi implements ServizioSwapCorsi {
                                     + " ha già un corso nello stesso orario del corso " + corso.getIdCorso() + ".");
                 }
 
-                /*
-                 * Merge UC5:
-                 * prima Lorenzo cancellava i corsi con setStato(CANCELLATO).
-                 * Ora il corso resta ATTIVO e viene riassegnato al sostituto.
-                 */
                 corso.setTrainerAssegnato(ptSostituto);
                 corsoDAO.insert(corso);
                 corsiAggiornati++;
@@ -204,20 +199,7 @@ public class GestoreCorsi implements ServizioSwapCorsi {
         return corsiAggiornati;
     }
 
-    /**
-     * Metodo mantenuto solo per compatibilità con eventuali chiamate vecchie.
-     * Non cancella più i corsi: UC5 richiede sempre un sostituto per fare lo swap.
-     */
-    @Deprecated
-    public synchronized void rimuoviPtDaCorsi(PersonalTrainer pt) {
-        if (pt == null) {
-            return;
-        }
 
-        System.out.println("[CONTROLLER-INTEGRAZIONE] rimuoviPtDaCorsi non cancella più i corsi. "
-                + "Usare sostituisciPtNeiCorsi(ptDaLicenziare, ptSostituto) per lo swap UC5. PT: "
-                + pt.getIdTrainer());
-    }
 
     // =========================================================
     // Validazioni interne
@@ -247,14 +229,8 @@ public class GestoreCorsi implements ServizioSwapCorsi {
 }
 
 /*
- * NOTE MERGE UC3/UC5
- *
  * - GestoreCorsi mantiene le responsabilità del caso d'uso corsi: creare,
  *   annullare e consultare il palinsesto.
- * - Per UC5 espone anche l'interfaccia ServizioSwapCorsi, così GestorePersonale
- *   può dipendere da un'astrazione e non dal controller concreto.
- * - Il vecchio comportamento rimuoviPtDaCorsi cancellava i corsi del PT
- *   licenziato. È stato neutralizzato perché non era coerente con UC5.
  * - La regola corretta è: PT licenziato -> corsi futuri ATTIVI riassegnati al
  *   sostituto -> solo dopo il PT viene disattivato tramite soft delete.
  */

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import it.unipv.posfw.domain.Sede;
+import it.unipv.posfw.util.DatabaseManager;
 
 public class SedeDAOMySQL {
 
@@ -19,7 +20,7 @@ public class SedeDAOMySQL {
 
         try {
             // Prendiamo la connessione FUORI dal try-with-resources per NON farla chiudere!
-            Connection conn = DatabaseConnection.getConnection();
+        	Connection conn = DatabaseManager.getInstance().getConnection();
             
             // Mettiamo nel try-with-resources solo il PreparedStatement
             try (PreparedStatement pstmt = conn.prepareStatement(query)) {
@@ -40,7 +41,7 @@ public class SedeDAOMySQL {
         String query = "SELECT ID_Sede, NomeSede FROM Sede";
 
         try {
-            Connection conn = DatabaseConnection.getConnection();
+        	Connection conn = DatabaseManager.getInstance().getConnection();
             
             try (PreparedStatement pstmt = conn.prepareStatement(query);
                  ResultSet rs = pstmt.executeQuery()) {
@@ -66,7 +67,7 @@ public class SedeDAOMySQL {
         String query = "SELECT ID_Sede, NomeSede FROM Sede";
 
         try {
-            Connection conn = DatabaseConnection.getConnection();
+        	Connection conn = DatabaseManager.getInstance().getConnection();
             
             try (PreparedStatement pstmt = conn.prepareStatement(query);
                  ResultSet rs = pstmt.executeQuery()) {

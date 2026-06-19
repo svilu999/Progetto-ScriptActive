@@ -7,7 +7,7 @@ import it.unipv.posfw.domain.DatiFormPojo;
 import it.unipv.posfw.domain.SessioneAllenamento;
 import it.unipv.posfw.domain.Corso; 
 import it.unipv.posfw.dao.SessioneDAO;
-import it.unipv.posfw.dao.SessioneDAOSQL; 
+import it.unipv.posfw.database.SessioneDAOMySQL;
 import it.unipv.posfw.view.DashboardClienteView;
 import it.unipv.posfw.view.StoricoAllenamentiView;
 import it.unipv.posfw.view.PalinsestoCorsiView;
@@ -53,7 +53,7 @@ public class StoricoAllenamentiController {
             dashboardView.btnAreaPremium.addActionListener(ev -> {
                 dashboardView.dispose();
                 StoricoAllenamentiView premiumView = new StoricoAllenamentiView();
-                SessioneDAO sessioneDAO = new SessioneDAOSQL();
+                SessioneDAO sessioneDAO = new SessioneDAOMySQL();
                 StoricoAllenamentiController clienteController = new StoricoAllenamentiController(premiumView, sessioneDAO);
                 
                 premiumView.setController(clienteController);

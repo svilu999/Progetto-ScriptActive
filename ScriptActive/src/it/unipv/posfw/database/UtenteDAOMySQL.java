@@ -8,6 +8,7 @@ import java.sql.Statement;
 
 // Importiamo tutte le classi del dominio necessarie!
 import it.unipv.posfw.domain.Utente;
+import it.unipv.posfw.util.DatabaseManager;
 import it.unipv.posfw.domain.Cliente;
 import it.unipv.posfw.domain.TipoAbbonamento;
 import it.unipv.posfw.domain.PersonalTrainer; 
@@ -26,7 +27,7 @@ public class UtenteDAOMySQL implements UtenteDAO {
         Utente utenteLoggato = null;
         String queryLogin = "SELECT * FROM Utente WHERE Email = ? AND PasswordHash = ?";
         
-        Connection conn = DatabaseConnection.getConnection();
+        Connection conn = DatabaseManager.getInstance().getConnection();
 
         try (PreparedStatement stmt = conn.prepareStatement(queryLogin)) {
              
@@ -129,9 +130,7 @@ public class UtenteDAOMySQL implements UtenteDAO {
         return abbonamentoTrovato;
     }
 
-    // ==========================================
-    // METODO DI SUPPORTO PER IL DIRETTORE
-    // ==========================================
+
     private String recuperaAutorizzazioneDirettore(int idUtente, Connection conn) {
         String queryAuth = "SELECT CodiceAutorizzazione FROM Direttore WHERE ID_Direttore = ?";
         String codiceTrovato = "Sconosciuto"; 
@@ -149,16 +148,14 @@ public class UtenteDAOMySQL implements UtenteDAO {
         return codiceTrovato;
     }
 
-    // ==========================================
-    // METODO PER REGISTRARE UN NUOVO CLIENTE
-    // ==========================================
+  
     @Override
     public void registraCliente(String cf, String nome, String cognome, String email, String passwordHash) {
         
         String insertUtente = "INSERT INTO Utente (CodiceFiscale, Nome, Cognome, Email, PasswordHash, Ruolo) VALUES (?, ?, ?, ?, ?, 'Cliente')";
         String insertCliente = "INSERT INTO Cliente (ID_Cliente) VALUES (?)";
         
-        Connection conn = DatabaseConnection.getConnection();
+        Connection conn = DatabaseManager.getInstance().getConnection();
 
         try {
             conn.setAutoCommit(false); 
@@ -206,29 +203,5 @@ public class UtenteDAOMySQL implements UtenteDAO {
         }
     }
 
-    // ==========================================
-    // TEST AL VOLO
-    // ==========================================
-    public static void main(String[] args) {
-        UtenteDAOMySQL dao = new UtenteDAOMySQL();
-        
-        System.out.println("Test di Login in corso...");
-        Utente utente = dao.effettuaLogin("lorenzo@studenti.unipv.it", "hash_finto_per_ora");
-        
-        if (utente != null) {
-            System.out.println("Login effettuato con successo! Benvenuto " + utente.getNome());
-            if (utente instanceof Cliente) {
-                Cliente c = (Cliente) utente;
-                System.out.println("ID Cliente: " + c.getId()); 
-                System.out.println("Tipo Abbonamento: " + c.getTipoAbbonamento());
-                
-                // Ora il test prova a leggere anche il livello!
-                if (c.getAbbonamentoAttivo() != null) {
-                    System.out.println("Durata Abbonamento: " + c.getAbbonamentoAttivo().getLivello());
-                }
-            }
-        } else {
-            System.out.println("Login fallito. Credenziali errate.");
-        }
-    }
+   
 }
