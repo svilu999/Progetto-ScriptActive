@@ -1,16 +1,18 @@
 package it.unipv.posfw.exceptions;
 
-/*
- * Viene lanciata quando il Direttore prova a licenziare un Personal Trainer in
- * una situazione non sicura per il sistema, ad esempio quando il PT ha ancora
- * corsi attivi/futuri ma non è stato indicato alcun sostituto.
+/**
+ * Eccezione lanciata quando un PersonalTrainer non può essere licenziato.
  *
- * Il suo scopo è evitare una disattivazione incompleta del personale, cioè il
- * caso in cui il PT venga segnato come LICENZIATO mentre alcuni corsi restano
- * ancora assegnati a lui o rimangono senza istruttore.
+ * Viene usata, ad esempio, quando il trainer ha ancora corsi attivi o futuri
+ * e non è stato indicato un sostituto valido.
  */
 public class TrainerNonLicenziabileException extends Exception {
 
+    /**
+     * Crea l'eccezione con il messaggio da mostrare o gestire.
+     *
+     * @param message descrizione dell'errore
+     */
     public TrainerNonLicenziabileException(String message) {
         super(message);
     }

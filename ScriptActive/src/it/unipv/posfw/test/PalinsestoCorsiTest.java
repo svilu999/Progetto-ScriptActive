@@ -1,4 +1,4 @@
-package it.unipv.posfw.controller;
+package it.unipv.posfw.test;
 
 import java.util.List;
 import it.unipv.posfw.dao.CorsoDAO;
@@ -20,8 +20,8 @@ import it.unipv.posfw.domain.Corso;
  *
  * @author Lorenzo
  * @version 1.2
- * @see it.unipv.posfw.dao.CorsoDAO
- * @see it.unipv.posfw.domain.Corso
+ * @see CorsoDAO
+ * @see Corso
  */
 public class PalinsestoCorsiTest {
 

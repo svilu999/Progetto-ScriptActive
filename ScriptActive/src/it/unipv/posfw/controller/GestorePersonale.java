@@ -15,21 +15,25 @@ import it.unipv.posfw.strategy.StrategiaRetribuzione;
 import java.util.List;
 
 /**
- * Controller GRASP del caso d'uso UC5 - Gestione dei Contratti del Personale.
+ * Controller applicativo del caso d'uso UC5 - Gestione dei Contratti del Personale.
  *
- * Responsabilità principali:
- * - assumere un nuovo Personal Trainer;
- * - impedire doppie registrazioni dello stesso PT;
- * - licenziare un PT tramite soft delete;
- * - bloccare il licenziamento se il PT ha corsi attivi/futuri e manca un sostituto;
- * - richiedere lo swap dei corsi tramite il servizio corsi;
- * - delegare il salvataggio dei dati al DAO MySQL.
+ * <p>La classe coordina le operazioni richieste dalla view e delega ai DAO e ai
+ * servizi applicativi le attività di persistenza, controllo dei corsi e calcolo
+ * delle retribuzioni.</p>
  *
- * Il controller non contiene query SQL.
- * Le query SQL stanno dentro:
- * - PersonalTrainerDAOMySQL;
- * - ServizioSwapCorsiMySQL;
- * - ServizioRetribuzioniMySQL.
+ * <p>Responsabilità principali:</p>
+ * <ul>
+ *   <li>assumere un nuovo Personal Trainer;</li>
+ *   <li>impedire doppie registrazioni dello stesso PT;</li>
+ *   <li>licenziare un PT tramite soft delete;</li>
+ *   <li>bloccare il licenziamento se il PT ha corsi attivi o futuri e manca un sostituto;</li>
+ *   <li>richiedere lo swap dei corsi tramite il servizio corsi;</li>
+ *   <li>delegare il salvataggio dei dati al DAO MySQL.</li>
+ * </ul>
+ *
+ * <p>Il controller non contiene query SQL: l'accesso al database è incapsulato in
+ * {@link PersonalTrainerDAOMySQL}, {@link ServizioSwapCorsiMySQL} e
+ * {@link ServizioRetribuzioniMySQL}.</p>
  */
 public class GestorePersonale {
 
@@ -50,6 +54,9 @@ public class GestorePersonale {
 
     /**
      * Costruttore utile per test o integrazione.
+     *
+     * @param trainerDAO DAO da usare per la persistenza dei Personal Trainer
+     * @param servizioSwapCorsi servizio per il controllo e lo swap dei corsi
      */
     public GestorePersonale(PersonalTrainerDAO trainerDAO, ServizioSwapCorsi servizioSwapCorsi) {
         this.trainerDAO = trainerDAO;
@@ -59,6 +66,10 @@ public class GestorePersonale {
 
     /**
      * Costruttore completo utile per test o futura integrazione.
+     *
+     * @param trainerDAO DAO da usare per la persistenza dei Personal Trainer
+     * @param servizioSwapCorsi servizio per il controllo e lo swap dei corsi
+     * @param servizioRetribuzioni servizio per il calcolo delle retribuzioni
      */
     public GestorePersonale(
             PersonalTrainerDAO trainerDAO,
@@ -71,7 +82,9 @@ public class GestorePersonale {
     }
 
     /**
-     * Metodo Singleton.
+     * Restituisce l'istanza Singleton del gestore del personale.
+     *
+     * @return istanza unica di GestorePersonale
      */
     public static GestorePersonale getInstance() {
         if (istanza == null) {
@@ -81,9 +94,18 @@ public class GestorePersonale {
     }
 
     /**
-     *Flusso di assunzione.
+     * Gestisce il flusso di assunzione di un nuovo Personal Trainer.
      *
-     * Il Direttore inserisce i dati del nuovo Personal Trainer.
+     * <p>Il metodo normalizza l'identificativo, controlla eventuali duplicati
+     * e delega al DAO il salvataggio del nuovo trainer.</p>
+     *
+     * @param nome nome del Personal Trainer
+     * @param cognome cognome del Personal Trainer
+     * @param email email del Personal Trainer
+     * @param idPT identificativo del Personal Trainer, oppure AUTO per la generazione automatica
+     * @param specializzazione specializzazione professionale del Personal Trainer
+     * @param contratto strategia di retribuzione associata al Personal Trainer
+     * @throws TrainerGiaAssuntoException se esiste già un trainer con lo stesso identificativo
      */
     public void assumiPT(
             String nome,
@@ -115,9 +137,15 @@ public class GestorePersonale {
     }
 
     /**
-     *Licenziamento senza sostituto.
+     * Gestisce il licenziamento di un Personal Trainer senza sostituto.
      *
-     * Consentito solo se il PT non ha corsi attivi o futuri.
+     * <p>Il licenziamento senza sostituto è consentito solo se il trainer non ha
+     * corsi attivi o futuri assegnati. In caso contrario il metodo interrompe
+     * l'operazione lanciando un'eccezione applicativa.</p>
+     *
+     * @param idDaLicenziare identificativo del Personal Trainer da licenziare
+     * @throws SostitutoNonValidoException se l'identificativo non è valido o il trainer non esiste
+     * @throws TrainerNonLicenziabileException se il trainer ha corsi attivi o futuri
      */
     public void licenziaPT(String idDaLicenziare)
             throws SostitutoNonValidoException, TrainerNonLicenziabileException {
@@ -135,14 +163,18 @@ public class GestorePersonale {
         disattivaRecordPersonale(ptDaLicenziare);
     }
 
-    /*
-     * Flusso del licenziamento con sostituzione:
-     * 1. valida gli ID ricevuti;
-     * 2. recupera il PT da licenziare;
-     * 3. recupera il PT sostituto;
-     * 4. controlla che il sostituto sia diverso, attivo e compatibile;
-     * 5. se il PT ha corsi futuri, esegue lo swap;
-     * 6. solo dopo lo swap disattiva il PT licenziato.
+    /**
+     * Gestisce il licenziamento di un Personal Trainer con sostituzione.
+     *
+     * <p>Il metodo valida gli identificativi ricevuti, recupera il trainer da
+     * licenziare e il trainer sostituto, verifica che il sostituto sia diverso,
+     * attivo e compatibile per specializzazione, esegue lo swap dei corsi attivi
+     * o futuri e solo alla fine disattiva logicamente il trainer licenziato.</p>
+     *
+     * @param idDaLicenziare identificativo del Personal Trainer da licenziare
+     * @param idSostituto identificativo del Personal Trainer sostituto
+     * @throws SostitutoNonValidoException se il sostituto non è valido o non è compatibile
+     * @throws TrainerNonLicenziabileException se il trainer non può essere licenziato in sicurezza
      */
     public void licenziaPT(String idDaLicenziare, String idSostituto)
             throws SostitutoNonValidoException, TrainerNonLicenziabileException {
@@ -189,9 +221,13 @@ public class GestorePersonale {
     }
 
     /**
-     * Soft delete del Personal Trainer.
+     * Esegue il soft delete del Personal Trainer.
      *
-     * Il PT non viene eliminato fisicamente dal database.
+     * <p>Il trainer non viene eliminato fisicamente dal database: il suo stato
+     * contrattuale viene impostato a LICENZIATO e il flag di attivazione viene
+     * impostato a false.</p>
+     *
+     * @param ptDaLicenziare Personal Trainer da disattivare logicamente
      */
     private void disattivaRecordPersonale(PersonalTrainer ptDaLicenziare) {
         ptDaLicenziare.setStatoContratto("LICENZIATO");
@@ -204,14 +240,18 @@ public class GestorePersonale {
     }
 
     /**
-     * Restituisce l'elenco dei Personal Trainer.
+     * Restituisce l'elenco dei Personal Trainer presenti nel sistema.
+     *
+     * @return lista dei Personal Trainer recuperati dal DAO
      */
     public List<PersonalTrainer> getElencoPersonalTrainer() {
         return trainerDAO.trovaTutti();
     }
 
     /**
-     * Calcola il totale mensile delle retribuzioni dei PT attivi.
+     * Calcola il totale mensile delle retribuzioni dei Personal Trainer attivi.
+     *
+     * @return totale mensile delle retribuzioni
      */
     public double calcolaTotaleStipendiMensili() {
         double totale = servizioRetribuzioni.calcolaTotaleRetribuzioniMensili();
@@ -220,6 +260,16 @@ public class GestorePersonale {
         return totale;
     }
 
+    /**
+     * Normalizza l'identificativo inserito in fase di assunzione.
+     *
+     * <p>Se l'ID non viene specificato, viene restituito il valore tecnico AUTO
+     * per indicare al DAO che l'identificativo deve essere generato automaticamente
+     * tramite l'inserimento dell'utente nel database.</p>
+     *
+     * @param idPT identificativo inserito nella view
+     * @return identificativo normalizzato oppure AUTO
+     */
     private String normalizzaIdAssunzione(String idPT) {
         if (idPT == null || idPT.trim().isEmpty()) {
             return "AUTO";
@@ -228,6 +278,14 @@ public class GestorePersonale {
         return idPT.trim();
     }
 
+    /**
+     * Normalizza un identificativo obbligatorio e verifica che sia presente.
+     *
+     * @param id identificativo da controllare
+     * @param nomeCampo nome logico del campo usato nel messaggio di errore
+     * @return identificativo ripulito dagli spazi iniziali e finali
+     * @throws SostitutoNonValidoException se l'identificativo è nullo o vuoto
+     */
     private String normalizzaIdObbligatorio(String id, String nomeCampo) throws SostitutoNonValidoException {
         if (id == null || id.trim().isEmpty()) {
             throw new SostitutoNonValidoException(
@@ -237,6 +295,14 @@ public class GestorePersonale {
         return id.trim();
     }
 
+    /**
+     * Recupera dal DAO il Personal Trainer da licenziare e ne verifica lo stato.
+     *
+     * @param idDaLicenziare identificativo del trainer da licenziare
+     * @return Personal Trainer recuperato dal sistema
+     * @throws SostitutoNonValidoException se il trainer non esiste
+     * @throws TrainerNonLicenziabileException se il trainer è già inattivo o licenziato
+     */
     private PersonalTrainer recuperaTrainerDaLicenziare(String idDaLicenziare)
             throws SostitutoNonValidoException, TrainerNonLicenziabileException {
 
@@ -247,8 +313,7 @@ public class GestorePersonale {
                     "OPERAZIONE ANNULLATA: Personal Trainer da licenziare non trovato.");
         }
 
-        if (!ptDaLicenziare.isAttivo()
-                || !"ATTIVO".equalsIgnoreCase(ptDaLicenziare.getStatoContratto())) {
+        if (!ptDaLicenziare.isAttivo()) {
             throw new TrainerNonLicenziabileException(
                     "OPERAZIONE ANNULLATA: il Personal Trainer risulta già inattivo o licenziato.");
         }
@@ -256,6 +321,13 @@ public class GestorePersonale {
         return ptDaLicenziare;
     }
 
+    /**
+     * Recupera dal DAO il Personal Trainer sostituto e verifica che sia attivo.
+     *
+     * @param idSostituto identificativo del trainer sostituto
+     * @return Personal Trainer sostituto recuperato dal sistema
+     * @throws SostitutoNonValidoException se il sostituto non esiste o non è attivo
+     */
     private PersonalTrainer recuperaTrainerSostituto(String idSostituto)
             throws SostitutoNonValidoException {
 
@@ -266,8 +338,7 @@ public class GestorePersonale {
                     "OPERAZIONE ANNULLATA: il sostituto indicato non esiste.");
         }
 
-        if (!ptSostituto.isAttivo()
-                || !"ATTIVO".equalsIgnoreCase(ptSostituto.getStatoContratto())) {
+        if (!ptSostituto.isAttivo()) {
             throw new SostitutoNonValidoException(
                     "OPERAZIONE ANNULLATA: il sostituto indicato non è attivo.");
         }
@@ -275,6 +346,16 @@ public class GestorePersonale {
         return ptSostituto;
     }
 
+    /**
+     * Verifica la compatibilità tra il trainer da licenziare e il sostituto.
+     *
+     * <p>Nel caso d'uso UC5 il sostituto è considerato valido solo se possiede
+     * la stessa specializzazione del Personal Trainer da licenziare.</p>
+     *
+     * @param ptDaLicenziare trainer che deve essere licenziato
+     * @param ptSostituto trainer candidato alla sostituzione
+     * @throws SostitutoNonValidoException se le specializzazioni non coincidono
+     */
     private void verificaCompatibilitaSostituto(
             PersonalTrainer ptDaLicenziare,
             PersonalTrainer ptSostituto) throws SostitutoNonValidoException {

@@ -1,5 +1,21 @@
 package it.unipv.posfw.controller;
 
+/**
+ * Classe Controller coordinatrice per il caso d'uso UC3 (Gestione Corsi).
+ * 
+ * Secondo l'architettura Model-View-Controller (MVC) definita nelle lezioni, questa componente 
+ * funge da mediatore tra lo strato di presentazione (Boundary) e il Modello di Dominio (Entity). 
+ * Implementa il pattern Singleton per garantire un unico punto di accesso globale alle operazioni 
+ * di sistema, mantenendo lo stato del coordinamento centralizzato.
+ * 
+ * Il controller applica il principio di delegazione: riceve i messaggi dalla UI, coordina 
+ * le verifiche di business (Expert) e interagisce con il Data Access Layer tramite 
+ * l'interfaccia CorsoDAO, realizzando così il Low Coupling e la Dependency Inversion.
+ * 
+ * @author Lorenzo
+ * @version 2.0
+ * @see CorsoDAO
+ */
 import it.unipv.posfw.dao.CorsoDAO;
 import it.unipv.posfw.domain.Corso;
 import it.unipv.posfw.domain.PersonalTrainer;
@@ -22,7 +38,6 @@ public class GestoreCorsi implements ServizioSwapCorsi {
     // --- DIPENDENZE (DEPENDENCY INVERSION) ---
     private CorsoDAO corsoDAO;
 
- // Spostati nella sezione del costruttore privato
     private GestoreCorsi() {
         /*
          * Raccordo UC3/MySQL: Disattiviamo il mock in memoria
@@ -228,9 +243,3 @@ public class GestoreCorsi implements ServizioSwapCorsi {
     }
 }
 
-/*
- * - GestoreCorsi mantiene le responsabilità del caso d'uso corsi: creare,
- *   annullare e consultare il palinsesto.
- * - La regola corretta è: PT licenziato -> corsi futuri ATTIVI riassegnati al
- *   sostituto -> solo dopo il PT viene disattivato tramite soft delete.
- */
