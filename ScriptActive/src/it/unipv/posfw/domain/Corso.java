@@ -32,7 +32,7 @@ public class Corso implements Subject {
     }
 
     // =========================================================
-    // UC3 - gestione posti del corso
+    // Gestione posti del corso
     // =========================================================
     public void decrementaPosti() {
         if (postiDisponibili > 0) {
@@ -72,16 +72,8 @@ public class Corso implements Subject {
         }
     }
 
-    // =========================================================
-    // UC5 - punto di merge con Gestione Personale
-    // =========================================================
     public void setTrainerAssegnato(PersonalTrainer trainerAssegnato) {
-        /*
-         * Merge UC5:
-         * quando un Personal Trainer viene licenziato, il corso NON deve essere
-         * cancellato. Lo swap cambia solo il trainer assegnato, preservando
-         * id corso, data, posti, iscritti e stato del corso.
-         */
+      
         this.trainerAssegnato = trainerAssegnato;
         notifyObservers();
     }
