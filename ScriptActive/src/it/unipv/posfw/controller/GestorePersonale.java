@@ -111,7 +111,7 @@ public class GestorePersonale {
 
         trainerDAO.salva(nuovoTrainer);
 
-        System.out.println("[UC5] Record creato e attivato per il PT: " + nuovoTrainer.getNomeCompleto());
+        System.out.println(" Record creato e attivato per il PT: " + nuovoTrainer.getNomeCompleto());
     }
 
     /**
@@ -183,7 +183,7 @@ public class GestorePersonale {
                             + "ma nessun corso è stato riassegnato. Verificare il palinsesto.");
         }
 
-        System.out.println("[UC5] Swap completato. Corsi riassegnati: " + corsiAggiornati);
+        System.out.println("Swap completato. Corsi riassegnati: " + corsiAggiornati);
 
         disattivaRecordPersonale(ptDaLicenziare);
     }
@@ -199,7 +199,7 @@ public class GestorePersonale {
 
         trainerDAO.aggiorna(ptDaLicenziare);
 
-        System.out.println("[UC5] Record di " + ptDaLicenziare.getNomeCompleto()
+        System.out.println("Record di " + ptDaLicenziare.getNomeCompleto()
                 + " disattivato con successo tramite soft delete.");
     }
 
@@ -216,7 +216,7 @@ public class GestorePersonale {
     public double calcolaTotaleStipendiMensili() {
         double totale = servizioRetribuzioni.calcolaTotaleRetribuzioniMensili();
 
-        System.out.println("[UC5] Totale retribuzioni mensili PT attivi: €" + totale);
+        System.out.println("Totale retribuzioni mensili PT attivi: €" + totale);
         return totale;
     }
 
