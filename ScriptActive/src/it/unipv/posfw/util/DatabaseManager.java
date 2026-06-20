@@ -7,20 +7,20 @@ import java.sql.SQLException;
 import java.util.Properties;
 
 /**
- * La classe {@code DatabaseManager} implementa rigorosamente il design pattern creazionale <b>Singleton</b> 
+ * La classe {@code DatabaseManager} implementa rigorosamente il design pattern creazionale Singleton 
  * introdotto dalla <i>Gang of Four (GoF)</i>.
- * <p>
- * <b>Motivazione Architetturale:</b> Nel contesto dello strato di accesso ai dati (Data Access Layer), 
+ * 
+ * Motivazione Architetturale: Nel contesto dello strato di accesso ai dati (Data Access Layer), 
  * è fondamentale gestire la persistenza in modo centralizzato. Il pattern Singleton risolve il problema 
  * di garantire che vi sia un'unica istanza della classe responsabile della lettura del file di configurazione 
- * e del caricamento del driver <b>JDBC (Java Database Connectivity)</b>, fornendo a tutti i Data Access Object (DAO) 
+ * e del caricamento del driver JDBC (Java Database Connectivity), fornendo a tutti i Data Access Object (DAO) 
  * un punto di accesso globale all'istanza. L'uso di un'istanza "normale" invece di soli metodi statici 
  * facilita l'evoluzione futura del sistema o il polimorfismo.
- * </p>
- * <p>
+ * 
+ * 
  * Le librerie di riferimento utilizzate appartengono a {@code java.sql}, implementando la connessione al DBMS 
  * tramite i Driver forniti dal produttore (specificamente un <i>Type 4: All Java JDBC Driver</i> per MySQL).
- * </p>
+ * 
  * 
  * @author Simone e Lorenzo 
  * @version 1.2
@@ -42,17 +42,17 @@ public class DatabaseManager {
     private final Properties prop = new Properties();
 
     /**
-     * Costruttore privato della classe {@code DatabaseManager}, fondamentale per imporre il vincolo del pattern <b>Singleton</b> 
+     * Costruttore privato della classe {@code DatabaseManager}, fondamentale per imporre il vincolo del pattern Singleton 
      * impedendo l'istanziazione diretta dall'esterno.
-     * <p>
-     * <b>Teoria delle Fonti:</b> Durante la fase di inizializzazione, il costruttore si occupa di:
+     * 
+     * Teoria delle Fonti: Durante la fase di inizializzazione, il costruttore si occupa di:
      * <ol>
      *   <li>Leggere il file strutturato {@code db.properties} contenente i parametri di connessione, applicando il costrutto {@code try-with-resources} per la gestione sicura dello stream di input.</li>
-     *   <li>Abilitare il driver JDBC in modo che la Java Virtual Machine (JVM) lo carichi in memoria. Questo avviene tramite la <b>Java Reflection</b> mediante l'istruzione {@code Class.forName("com.mysql.cj.jdbc.Driver")}.</li>
+     *   <li>Abilitare il driver JDBC in modo che la Java Virtual Machine (JVM) lo carichi in memoria. Questo avviene tramite la Java Reflection mediante l'istruzione {@code Class.forName("com.mysql.cj.jdbc.Driver")}.</li>
      * </ol>
      * Le eccezioni intercettate vengono gestite e propagate sotto forma di eccezioni <i>Unchecked</i> ({@link RuntimeException}) 
      * in caso di anomalie bloccanti (es. file non trovato o driver assente).
-     * </p>
+     * 
      * 
      * @throws IllegalStateException se il file di configurazione non viene localizzato nel classpath.
      * @throws RuntimeException se si verifica un errore durante il caricamento delle proprietà o della classe del Driver.
@@ -82,12 +82,12 @@ public class DatabaseManager {
 
     /**
      * Definisce il metodo statico (di classe) che fornisce il punto di accesso globale all'oggetto Singleton.
-     * <p>
-     * <b>Motivazione Architetturale:</b> Applica la logica dell'inizializzazione ritardata (<i>Lazy Initialization</i>). 
+     * 
+     * Motivazione Architetturale: Applica la logica dell'inizializzazione ritardata (<i>Lazy Initialization</i>). 
      * L'uso della parola chiave {@code synchronized} garantisce il mutuo scomparto: qualora molteplici thread 
      * tentassero simultaneamente di acquisire l'istanza per la prima volta, il blocco di codice verrà eseguito 
      * in modo sequenziale, prevenendo la creazione accidentale di istanze multiple che violerebbero il pattern.
-     * </p>
+     * 
      * 
      * @return L'unica istanza di {@link DatabaseManager} attiva nel sistema.
      */
@@ -101,16 +101,16 @@ public class DatabaseManager {
 
     /**
      * Stabilisce ed eroga una connessione fisica verso il Database Management System (DBMS).
-     * <p>
-     * <b>Teoria delle Fonti:</b> La connessione viene generata dal framework {@link java.sql.DriverManager} utilizzando 
+     * 
+     * Teoria delle Fonti: La connessione viene generata dal framework {@link java.sql.DriverManager} utilizzando 
      * la URL (connection string) precedentemente caricata, che astrae la locazione logica e di rete del database 
      * (es. {@code jdbc:mysql://localhost:3306/sample}).
-     * </p>
-     * <p>
+     * 
+     * 
      * Questo metodo maschera l'eccezione <i>Checked</i> {@link java.sql.SQLException} convertendola in una 
      * {@link RuntimeException}. Questo evita di accoppiare eccessivamente la logica di business e le firme dei 
      * metodi delegati al livello superiore con le tipologie di eccezioni specifiche dei servizi tecnici di persistenza.
-     * </p>
+     * 
      * 
      * @return Un oggetto {@link java.sql.Connection} attivo e pronto per eseguire operazioni SQL.
      * @throws RuntimeException in caso di fallimento della negoziazione della connessione col DBMS.
