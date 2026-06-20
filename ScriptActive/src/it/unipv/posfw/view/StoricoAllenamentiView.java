@@ -10,13 +10,39 @@ import it.unipv.posfw.domain.SessioneAllenamento;
 import it.unipv.posfw.exceptions.*;
 
 import java.awt.*;
+import java.awt.event.ActionListener;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * La classe {@code StoricoAllenamentiView} rappresenta il componente <b>View</b> all'interno del pattern architetturale <b>MVC (Model-View-Controller)</b>.
+ * <p>
+ * Estende {@link javax.swing.JFrame}, fungendo da <i>Top-level container</i> per l'interfaccia grafica sviluppata in <i>Swing</i>. 
+ * Nel rispetto rigoroso del <b>Principio di Separazione Modello-Vista</b>, questa classe si occupa unicamente della presentazione 
+ * dei dati e dell'inizializzazione degli elementi grafici (Component e Container), garantendo l'assenza di logica di business.
+ * Le interazioni dell'utente vengono catturate e delegate al Controller mediante l'<i>Event Delegation Model</i>.
+ * </p>
+ * <p>
+ * <b>Tracciabilità Requisiti:</b><br>
+ * Costituisce la GUI principale per lo <b>Use Case UC4: Registrazione e Monitoraggio Prestazioni</b>.
+ * Mette a disposizione del <i>Cliente Premium</i> i form per l'inserimento dei parametri quantitativi degli allenamenti 
+ * (Main Success Scenario) e visualizza l'aggregazione di tali dati nella vista riepilogativa. Gestisce inoltre il 
+ * rendering del <i>Flusso Alternativo 1</i>, bloccando l'accesso e proponendo l'upgrade qualora il sistema rilevi un Utente Base.
+ * </p>
+ * * @author Vilucchi
+ * @version 1.1
+ * @see javax.swing.JFrame
+ * @see it.unipv.posfw.controller.StoricoAllenamentiController
+ */
 public class StoricoAllenamentiView extends JFrame {
+
+    /**
+     * Riferimento al <b>Controller</b> associato a questa vista.
+     * Gestisce la logica applicativa disaccoppiando la View dal Modello.
+     */
     private StoricoAllenamentiController controller;
     
     private JPanel panelForm;
@@ -28,8 +54,13 @@ public class StoricoAllenamentiView extends JFrame {
     
     private JPanel panelStoricoContainer; 
     
-    public JButton btnSimulaAccesso; 
-    public JButton btnIndietro; 
+    /* * Risoluzione Violazione Architetturale: Information Hiding.
+     * I componenti UI sono stati resi privati. L'accesso dall'esterno (es. dal Controller) 
+     * avviene esclusivamente tramite i metodi pubblici di registrazione dei listener,
+     * garantendo un basso accoppiamento e incapsulando la struttura interna della View.
+     */
+    private JButton btnSimulaAccesso; 
+    private JButton btnIndietro; 
     
     private Cliente utenteCorrente; 
     
@@ -38,6 +69,14 @@ public class StoricoAllenamentiView extends JFrame {
     private final Font fontTitoli = new Font("SansSerif", Font.BOLD, 14);
     private final Font fontTesto = new Font("SansSerif", Font.PLAIN, 14);
 
+    /**
+     * Costruttore di default per la classe {@code StoricoAllenamentiView}.
+     * <p>
+     * Inizializza la struttura dati temporanea per il buffer della UI e configura i parametri 
+     * fondamentali del <i>Top-level container</i> (titolo, dimensioni, layout base). Delega 
+     * l'istanziazione del <i>Component Tree</i> a un metodo privato dedicato.
+     * </p>
+     */
     public StoricoAllenamentiView() {
         eserciziInBozza = new ArrayList<>(); 
         
@@ -52,37 +91,50 @@ public class StoricoAllenamentiView extends JFrame {
         inizializzaComponenti();
     }
 
+    /**
+     * Inietta la dipendenza del Controller in questa Vista.
+     * <p>
+     * Permette alla View di notificare gli eventi di input dell'utente al componente preposto 
+     * all'esecuzione della logica di business e alla comunicazione con il livello di persistenza.
+     * </p>
+     * * @param controller Istanza concreta del {@link StoricoAllenamentiController}.
+     */
     public void setController(StoricoAllenamentiController controller) {
         this.controller = controller;
     }
 
+    /**
+     * Costruisce l'albero dei componenti Swing (<i>Component Tree</i>).
+     * <p>
+     * Alloca e dispone i <i>General-purpose containers</i> (es. JPanel) e i componenti <i>lightweight</i> 
+     * atomici in base ai Layout Manager prescelti. Predispone l'architettura UI per gestire la 
+     * transizione di stato tra l'interfaccia Premium (inserimento dati) e la schermata di blocco per Utenti Base.
+     * </p>
+     */
     private void inizializzaComponenti() {
-     
         JPanel panelTop = new JPanel(new BorderLayout()); 
         
-        // 1. Bottone Indietro (A Sinistra)
         btnIndietro = new JButton("⬅ Indietro");
         btnIndietro.setFont(fontTesto);
         btnIndietro.setFocusPainted(false);
         btnIndietro.setBackground(new Color(230, 230, 230));
         panelTop.add(btnIndietro, BorderLayout.WEST);
 
-        // =====================================================================
-        // STILE DEL BOTTONE PREMIUM (Come il bottone "Accedi" Viola)
-        // =====================================================================
+        /* * Definizione del pulsante per la Call to Action (Upgrade Premium).
+         * Questo componente sarà utilizzato nel Flusso Alternativo 1 dello Use Case UC4.
+         */
         btnSimulaAccesso = new JButton("Sblocca la tua Area Premium");
         btnSimulaAccesso.setFont(fontTitoli);
-        btnSimulaAccesso.setBackground(new Color(77, 43, 107)); // Il viola di ScriptActive
-        btnSimulaAccesso.setForeground(Color.WHITE); // Testo bianco
+        btnSimulaAccesso.setBackground(new Color(77, 43, 107)); 
+        btnSimulaAccesso.setForeground(Color.WHITE); 
         btnSimulaAccesso.setFocusPainted(false);
-        btnSimulaAccesso.setOpaque(true); // Fondamentale per far vedere il colore su Mac/Windows
+        btnSimulaAccesso.setOpaque(true); 
         btnSimulaAccesso.setBorderPainted(false);
-        btnSimulaAccesso.setCursor(new Cursor(Cursor.HAND_CURSOR)); // Cursore a manina
-        // =====================================================================
+        btnSimulaAccesso.setCursor(new Cursor(Cursor.HAND_CURSOR)); 
         
         add(panelTop, BorderLayout.NORTH);
 
-        //  Form di Creazione Scheda 
+        /* Configurazione del Pannello Form (Main Success Scenario) */
         panelForm = new JPanel(new BorderLayout(10, 10));
         panelForm.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createTitledBorder(null, "Crea Nuova Sessione di Allenamento", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, fontTitoli),
@@ -98,7 +150,6 @@ public class StoricoAllenamentiView extends JFrame {
         txtData.setFont(fontTesto);
         panelInput.add(txtData);
 
-        // IL MENU A TENDINA
         JLabel lblCategoria = new JLabel("Gruppo Muscolare:");
         lblCategoria.setFont(fontTesto);
         panelInput.add(lblCategoria);
@@ -137,14 +188,13 @@ public class StoricoAllenamentiView extends JFrame {
         btnAggiungiEsercizio.setBorderPainted(false);
         btnAggiungiEsercizio.addActionListener(e -> clickAggiungiEsercizio());
 
-        //  Anteprima
+        /* Componente per il rendering testuale temporaneo dello stato in bozza */
         txtAnteprimaBozza = new JTextArea(5, 20);
         txtAnteprimaBozza.setEditable(false);
         txtAnteprimaBozza.setFont(new Font("Monospaced", Font.PLAIN, 13));
         JScrollPane scrollBozza = new JScrollPane(txtAnteprimaBozza);
         scrollBozza.setBorder(BorderFactory.createTitledBorder(null, "Esercizi in questa sessione", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, fontTesto));
 
-        // Salva Sessione
         btnSalvaSessione = new JButton("SALVA SESSIONE COMPLETA");
         btnSalvaSessione.setFont(fontTitoli);
         btnSalvaSessione.setBackground(new Color(46, 139, 87)); 
@@ -165,7 +215,7 @@ public class StoricoAllenamentiView extends JFrame {
 
         add(panelForm, BorderLayout.CENTER);
 
-        // Storico Allenamenti
+        /* Contenitore per lo Storico Allenamenti (Postcondition UC4) */
         panelStoricoContainer = new JPanel();
         panelStoricoContainer.setLayout(new BoxLayout(panelStoricoContainer, BoxLayout.Y_AXIS));
         JScrollPane scrollPane = new JScrollPane(panelStoricoContainer);
@@ -173,14 +223,57 @@ public class StoricoAllenamentiView extends JFrame {
         scrollPane.setPreferredSize(new Dimension(500, 250));
         add(scrollPane, BorderLayout.SOUTH);
 
+        // Stato iniziale UI di default
         panelForm.setVisible(false);
         impostaStatoForm(false);
     }
 
+    /**
+     * Registra un {@link java.awt.event.ActionListener} sul componente grafico delegato all'azione "Indietro".
+     * <p>
+     * Implementa rigorosamente il principio dell'<b>Information Hiding</b>. Mantenendo il componente 
+     * {@code btnIndietro} privato, la Vista nasconde la propria implementazione interna (basso accoppiamento).
+     * Il Controller funge da <i>Observer</i> registrandosi agli eventi UI tramite questo metodo pubblico,
+     * conformemente al pattern <i>Event Delegation Model</i>.
+     * </p>
+     * * @param listener L'ascoltatore degli eventi fornito dal Controller per gestire l'azione di ritorno.
+     */
+    public void addIndietroListener(ActionListener listener) {
+        this.btnIndietro.addActionListener(listener);
+    }
+
+    /**
+     * Registra un {@link java.awt.event.ActionListener} sul componente grafico delegato all'azione "Simula Accesso / Upgrade Premium".
+     * <p>
+     * Applicazione del principio di <b>Incapsulamento</b>: la Vista espone solo l'intento semantico dell'azione 
+     * (richiesta di upgrade), senza rivelare se l'evento è scaturito da un {@code JButton}, un menù o altro componente Swing.
+     * </p>
+     * * @param listener L'ascoltatore degli eventi fornito dal Controller per avviare il flusso di Upgrade.
+     */
+    public void addSimulaAccessoListener(ActionListener listener) {
+        this.btnSimulaAccesso.addActionListener(listener);
+    }
+
+    /**
+     * Mantiene in sessione locale il riferimento all'attore primario che sta operando sulla vista.
+     * <p>
+     * Garantisce che gli eventi scaturiti dai pulsanti possiedano il contesto di dominio necessario
+     * (es. identificazione del Cliente) da trasmettere al Controller.
+     * </p>
+     * * @param cliente L'oggetto {@link Cliente} in sessione (autenticato).
+     */
     public void setUtenteCorrente(Cliente cliente) {
         this.utenteCorrente = cliente;
     }
 
+    /**
+     * Avvia la richiesta di accesso al modulo di gestione allenamenti delegandola al Controller.
+     * <p>
+     * Cattura un'eventuale eccezione derivante da vincoli di dominio (mancanza privilegi Premium)
+     * e adegua l'interfaccia invocando il Flusso Alternativo (<i>Alternative Flow 1</i> dell'UC4).
+     * </p>
+     * * @param cliente Il {@link Cliente} che tenta di accedere al modulo.
+     */
     public void clickAccediStorico(Cliente cliente) {
         if (controller != null && cliente != null) {
             try {
@@ -191,6 +284,15 @@ public class StoricoAllenamentiView extends JFrame {
         }
     }
 
+    /**
+     * Gestisce la logica di presentazione relativa all'inserimento di un singolo esercizio in bozza.
+     * <p>
+     * Applica controlli UI preliminari per la validazione formale dell'input (es. formato numerico) 
+     * prima di aggiornare lo stato temporaneo della lista in memoria. Se i dati sono corretti,
+     * aggiorna il <i>Data Transfer Object</i> interno ({@link DatiFormPojo}) e forza un aggiornamento
+     * visivo sul <i>Event Dispatch Thread (EDT)</i>.
+     * </p>
+     */
     private void clickAggiungiEsercizio() {
         try {
             String categoria = (String) comboCategoria.getSelectedItem();
@@ -215,6 +317,7 @@ public class StoricoAllenamentiView extends JFrame {
             
             aggiornaAnteprimaBozza();
             
+            // Reset campi form dopo inserimento
             txtNomeEsercizio.setText("");
             txtCarichi.setText("");
             txtRipetizioni.setText("");
@@ -225,7 +328,14 @@ public class StoricoAllenamentiView extends JFrame {
         }
     }
 
-    // GESTIONE DELLE ECCEZIONI
+    /**
+     * Intercetta la richiesta utente di consolidamento della sessione di allenamento.
+     * <p>
+     * Raccoglie i dati temporanei della View e demanda l'onere dell'elaborazione di business al 
+     * {@link StoricoAllenamentiController}. Provvede al mapping delle eccezioni di dominio e di 
+     * persistenza, trasformandole in feedback visivi (<i>Dialog</i>) idonei alla comprensione dell'utente.
+     * </p>
+     */
     private void clickSalvaSessioneCompleta() {
         try {
             Date data = new SimpleDateFormat("dd/MM/yyyy").parse(txtData.getText());
@@ -250,6 +360,10 @@ public class StoricoAllenamentiView extends JFrame {
         }
     }
     
+    /**
+     * Provvede al data-binding unidirezionale dello stato temporaneo della sessione (Bozza) all'interno
+     * del componente di testo dedicato all'anteprima.
+     */
     private void aggiornaAnteprimaBozza() {
         StringBuilder sb = new StringBuilder();
         int i = 1;
@@ -260,36 +374,42 @@ public class StoricoAllenamentiView extends JFrame {
         txtAnteprimaBozza.setText(sb.toString());
     }
 
-    // =========================================================================
-    // INSERITO IL BOTTONE SBLOCCA PREMIUM NEL CONTAINER CENTRALE
-    // =========================================================================
+    /**
+     * Esegue il rendering grafico associato al <i>Flusso Alternativo 1</i> dell'UC4.
+     * <p>
+     * Se il sistema deduce l'assenza del livello di abbonamento "Premium", la View oscura dinamicamente
+     * il Modulo di inserimento e altera il <i>Component Tree</i> per esporre la <i>Call to Action</i> per l'upgrade.
+     * </p>
+     */
     public void mostraBloccoUpgradePremium() {
         panelForm.setVisible(false); 
         impostaStatoForm(false);
         
         panelStoricoContainer.removeAll();
         
-        // Creiamo la label col messaggio
         JLabel lblMessaggio = new JLabel("Accesso Negato: L'area allenamenti è riservata agli utenti Premium.");
         lblMessaggio.setFont(fontTesto);
-        lblMessaggio.setAlignmentX(Component.CENTER_ALIGNMENT); // Centra il testo
+        lblMessaggio.setAlignmentX(Component.CENTER_ALIGNMENT); 
         
-        // Centriamo anche il bottone
         btnSimulaAccesso.setAlignmentX(Component.CENTER_ALIGNMENT); 
-        // Dimensioni personalizzate per renderlo simile a un tasto "Accedi"
         btnSimulaAccesso.setMaximumSize(new Dimension(300, 45)); 
         
-        // Aggiungiamo un po' di spazio e poi i componenti
         panelStoricoContainer.add(Box.createVerticalStrut(30)); 
         panelStoricoContainer.add(lblMessaggio);
-        panelStoricoContainer.add(Box.createVerticalStrut(20)); // Spazio tra scritta e bottone
+        panelStoricoContainer.add(Box.createVerticalStrut(20)); 
         panelStoricoContainer.add(btnSimulaAccesso);
         
         this.revalidate();
         this.repaint();
     }
-    // =========================================================================
 
+    /**
+     * Esegue il rendering grafico associato al Main Success Scenario dell'UC4.
+     * <p>
+     * Ripristina la visibilità e l'interattività del Form di inserimento parametri, notificando visivamente
+     * lo stato applicativo sul Thread della GUI (EDT).
+     * </p>
+     */
     public void mostraModuloInserimento() {
         panelForm.setVisible(true); 
         impostaStatoForm(true);
@@ -298,6 +418,16 @@ public class StoricoAllenamentiView extends JFrame {
         this.repaint();
     }
 
+    /**
+     * Itera sulla collezione di oggetti di dominio {@link SessioneAllenamento} ricevuta per 
+     * costruire in runtime il contenitore storico.
+     * <p>
+     * Rappresenta la concretizzazione delle Postcondizioni dell'UC4 (<i>Il sistema aggrega i dati 
+     * e genera la vista riepilogativa</i>). Include pulsanti reattivi generati dinamicamente per
+     * intercettare comandi di eliminazione per ogni singola entità renderizzata.
+     * </p>
+     * * @param storico Lista degli allenamenti registrati dal dominio e recuperati dalla persistenza.
+     */
     public void mostraStorico(List<SessioneAllenamento> storico) {
         panelStoricoContainer.removeAll(); 
 
@@ -358,6 +488,7 @@ public class StoricoAllenamentiView extends JFrame {
                 btnElimina.setBackground(Color.WHITE);
                 btnElimina.setFocusPainted(false);
                 
+                /* Configurazione EventListener Inline per la rimozione dell'entità delegata al Controller */
                 btnElimina.addActionListener(e -> {
                     int conferma = JOptionPane.showConfirmDialog(this, "Vuoi eliminare questa sessione?", "Conferma", JOptionPane.YES_NO_OPTION);
                     if (conferma == JOptionPane.YES_OPTION) {
@@ -379,10 +510,23 @@ public class StoricoAllenamentiView extends JFrame {
         panelStoricoContainer.repaint();
     }
 
+    /**
+     * Metodo esposto di Utility per istanziare un Componente Modale standard (Dialog).
+     * * @param messaggio Il payload testuale informativo da mostrare all'utente.
+     * @param titolo L'intestazione descrittiva della finestra.
+     * @param tipoMessaggio La costante Swing che determina lo stile visivo e l'iconografia del modale (es. {@code JOptionPane.WARNING_MESSAGE}).
+     */
     public void mostraMessaggio(String messaggio, String titolo, int tipoMessaggio) {
         JOptionPane.showMessageDialog(this, messaggio, titolo, tipoMessaggio);
     }
 
+    /**
+     * Commuta programmaticamente lo stato di editabilità dei campi del form (es. TextField, ComboBox, Bottoni).
+     * <p>
+     * Adoperato per assecondare la logica condizionale dettata dal livello di abbonamento (UC4).
+     * </p>
+     * * @param abilitato Valore booleano per attivare o inibire l'interazione utente sui componenti.
+     */
     private void impostaStatoForm(boolean abilitato) {
         txtData.setEnabled(abilitato);
         comboCategoria.setEnabled(abilitato);
@@ -393,6 +537,14 @@ public class StoricoAllenamentiView extends JFrame {
         btnSalvaSessione.setEnabled(abilitato);
     }
     
+    /**
+     * Ripristina lo stato del contenitore storico mostrando un messaggio statico informativo.
+     * <p>
+     * Utilizzato per gestire l'<i>Empty State</i> (nessun allenamento presente) in conformità alle
+     * best practice architetturali UI.
+     * </p>
+     * * @param messaggio Il testo di cortesia generato per colmare il layout vuoto.
+     */
     private void mostraMessaggioNelContainer(String messaggio) {
         panelStoricoContainer.removeAll();
         JLabel lblMessaggio = new JLabel(messaggio);

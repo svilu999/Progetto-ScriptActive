@@ -16,42 +16,78 @@ import it.unipv.posfw.view.DashboardDirettoreView;
 import it.unipv.posfw.view.DashboardClienteView; 
 import it.unipv.posfw.view.PalinsestoCorsiView; 
 
+/**
+ * La classe {@code LoginController} incarna il ruolo di <b>Controller</b> all'interno del pattern architetturale <b>MVC (Model-View-Controller)</b>.
+ * <p>
+ * Presiede alla gestione della fase iniziale del ciclo di vita dell'applicazione (Autenticazione).
+ * Il suo compito è validare gli input della View, interrogare il Modello di persistenza (DAO) e governare 
+ * le transizioni di stato della Graphical User Interface (Routing).
+ * </p>
+ * <p>
+ * <b>Valenza Ingegneristica (Double Dispatch e Polimorfismo):</b><br>
+ * Risolve proattivamente l'anti-pattern algoritmico basato sull'introspezione dei tipi (RTTI) e sulle catene 
+ * decisionali (<i>Code Smell: Replace Conditional with Polymorphism</i>). Anziché utilizzare blocchi {@code if-else} 
+ * con operatori {@code instanceof} per determinare quale dashboard aprire, il controller avvia il meccanismo di 
+ * <b>Double Dispatch</b> delegando all'oggetto di dominio il compito di instradare il flusso chiamando a sua volta 
+ * il metodo appropriato su questo controller. Questo garantisce il rispetto del principio Open/Closed (OCP) dei principi SOLID.
+ * </p>
+ * * @author Vilucchi
+ * @version 1.2
+ * @see it.unipv.posfw.view.LoginView
+ * @see it.unipv.posfw.domain.Utente
+ */
 public class LoginController {
+    
     private LoginView view;
     private UtenteDAO dao;
+    private Utente utenteLoggato; 
 
+    /**
+     * Costruttore della classe {@code LoginController}.
+     */
     public LoginController(LoginView view, UtenteDAO dao) {
         this.view = view;
         this.dao = dao;
     }
 
+    /**
+     * Governa il flusso principale del caso d'uso di Autenticazione (Login).
+     */
     public void effettuaLogin(String email, String password) {
-        // 1. Controllo base
+        
+        /* 1. Validazione sintattica pre-condizionale */
         if (email.isEmpty() || password.isEmpty()) {
             view.mostraErrore("Inserisci sia email che password.");
             return;
         }
 
-        // 2. Chiedo al DAO di verificare nel DB
-        Utente utenteLoggato = dao.effettuaLogin(email, password);
+        /* 2. Delega al livello di persistenza */
+        Utente utente = dao.effettuaLogin(email, password);
 
-        // 3. Se l'utente non esiste, la password è sbagliata, o non è "Attivo"
-        if (utenteLoggato == null) {
+        /* 3. Gestione del Flusso Alternativo: fallimento dell'autenticazione */
+        if (utente == null) {
+            this.utenteLoggato = null; // Assicuriamo che sia nullo in caso di fallimento
             view.mostraErrore("Credenziali errate o utente non attivo.");
             return;
         }
+        
+        /* ASSEGNAZIONE PER IL TEST E PER IL DOMINIO */
+        this.utenteLoggato = utente;
 
-        // 4. Se il login ha successo, chiudiamo la schermata di login
+        /* 4. Smontaggio della View di Login */
         view.dispose();
 
-                // ROUTING  IN BASE ALLA TIPOLOGIA DI UTENTE
-                
-        // Questa singola riga chiama il metodo corretto 
+        /* 5. Innesco Double Dispatch */
         utenteLoggato.accediAreaRiservata(this); 
     }
 
-  
+    public Utente getUtenteLoggato() {
+        return this.utenteLoggato;
+    }
 
+    /**
+     * Punto di atterraggio del pattern Double Dispatch per il ruolo di attore <b>Cliente</b>.
+     */
     public void apriDashboardCliente(Cliente clienteLoggato) {
         DashboardClienteView dashboardView = new DashboardClienteView();
         dashboardView.impostaDatiCliente(clienteLoggato);
@@ -61,13 +97,12 @@ public class LoginController {
             List<Corso> corsiDelCliente = gestorePrenotazioni.getCorsiPrenotatiDalCliente(clienteLoggato);
             dashboardView.mostraCorsiPrenotati(corsiDelCliente);
         } catch (Exception e) {
-            System.err.println("Errore nel recupero dei corsi: " + e.getMessage());
+            System.err.println("Errore architetturale nel recupero dei corsi: " + e.getMessage());
         }
         
         dashboardView.setVisible(true);
         
-        
-        dashboardView.btnAreaPremium.addActionListener(e -> {
+        dashboardView.addAreaPremiumListener(e -> {
             dashboardView.dispose();
             
             StoricoAllenamentiView premiumView = new StoricoAllenamentiView();
@@ -80,8 +115,7 @@ public class LoginController {
             premiumView.clickAccediStorico(clienteLoggato);
         });
         
-     
-        dashboardView.btnPrenotaCorsi.addActionListener(e -> {
+        dashboardView.addPrenotaCorsiListener(e -> {
             dashboardView.dispose();
             PalinsestoCorsiView corsiView = new PalinsestoCorsiView(); 
             corsiView.setClienteLoggato(dashboardView.getUtenteCorrente());
