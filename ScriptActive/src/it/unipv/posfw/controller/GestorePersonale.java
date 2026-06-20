@@ -17,11 +17,11 @@ import java.util.List;
 /**
  * Controller applicativo del caso d'uso UC5 - Gestione dei Contratti del Personale.
  *
- * <p>La classe coordina le operazioni richieste dalla view e delega ai DAO e ai
+ * La classe coordina le operazioni richieste dalla view e delega ai DAO e ai
  * servizi applicativi le attività di persistenza, controllo dei corsi e calcolo
- * delle retribuzioni.</p>
+ * delle retribuzioni.
  *
- * <p>Responsabilità principali:</p>
+ * Responsabilità principali:
  * <ul>
  *   <li>assumere un nuovo Personal Trainer;</li>
  *   <li>impedire doppie registrazioni dello stesso PT;</li>
@@ -31,9 +31,9 @@ import java.util.List;
  *   <li>delegare il salvataggio dei dati al DAO MySQL.</li>
  * </ul>
  *
- * <p>Il controller non contiene query SQL: l'accesso al database è incapsulato in
+ * Il controller non contiene query SQL: l'accesso al database è incapsulato in
  * {@link PersonalTrainerDAOMySQL}, {@link ServizioSwapCorsiMySQL} e
- * {@link ServizioRetribuzioniMySQL}.</p>
+ * {@link ServizioRetribuzioniMySQL}.
  */
 public class GestorePersonale {
 
@@ -96,8 +96,8 @@ public class GestorePersonale {
     /**
      * Gestisce il flusso di assunzione di un nuovo Personal Trainer.
      *
-     * <p>Il metodo normalizza l'identificativo, controlla eventuali duplicati
-     * e delega al DAO il salvataggio del nuovo trainer.</p>
+     * Il metodo normalizza l'identificativo, controlla eventuali duplicati
+     * e delega al DAO il salvataggio del nuovo trainer.
      *
      * @param nome nome del Personal Trainer
      * @param cognome cognome del Personal Trainer
@@ -139,9 +139,9 @@ public class GestorePersonale {
     /**
      * Gestisce il licenziamento di un Personal Trainer senza sostituto.
      *
-     * <p>Il licenziamento senza sostituto è consentito solo se il trainer non ha
+     * Il licenziamento senza sostituto è consentito solo se il trainer non ha
      * corsi attivi o futuri assegnati. In caso contrario il metodo interrompe
-     * l'operazione lanciando un'eccezione applicativa.</p>
+     * l'operazione lanciando un'eccezione applicativa.
      *
      * @param idDaLicenziare identificativo del Personal Trainer da licenziare
      * @throws SostitutoNonValidoException se l'identificativo non è valido o il trainer non esiste
@@ -166,10 +166,10 @@ public class GestorePersonale {
     /**
      * Gestisce il licenziamento di un Personal Trainer con sostituzione.
      *
-     * <p>Il metodo valida gli identificativi ricevuti, recupera il trainer da
+     * Il metodo valida gli identificativi ricevuti, recupera il trainer da
      * licenziare e il trainer sostituto, verifica che il sostituto sia diverso,
      * attivo e compatibile per specializzazione, esegue lo swap dei corsi attivi
-     * o futuri e solo alla fine disattiva logicamente il trainer licenziato.</p>
+     * o futuri e solo alla fine disattiva logicamente il trainer licenziato.
      *
      * @param idDaLicenziare identificativo del Personal Trainer da licenziare
      * @param idSostituto identificativo del Personal Trainer sostituto
@@ -223,9 +223,9 @@ public class GestorePersonale {
     /**
      * Esegue il soft delete del Personal Trainer.
      *
-     * <p>Il trainer non viene eliminato fisicamente dal database: il suo stato
+     * Il trainer non viene eliminato fisicamente dal database: il suo stato
      * contrattuale viene impostato a LICENZIATO e il flag di attivazione viene
-     * impostato a false.</p>
+     * impostato a false.
      *
      * @param ptDaLicenziare Personal Trainer da disattivare logicamente
      */
@@ -263,9 +263,9 @@ public class GestorePersonale {
     /**
      * Normalizza l'identificativo inserito in fase di assunzione.
      *
-     * <p>Se l'ID non viene specificato, viene restituito il valore tecnico AUTO
+     * Se l'ID non viene specificato, viene restituito il valore tecnico AUTO
      * per indicare al DAO che l'identificativo deve essere generato automaticamente
-     * tramite l'inserimento dell'utente nel database.</p>
+     * tramite l'inserimento dell'utente nel database.
      *
      * @param idPT identificativo inserito nella view
      * @return identificativo normalizzato oppure AUTO
@@ -349,8 +349,8 @@ public class GestorePersonale {
     /**
      * Verifica la compatibilità tra il trainer da licenziare e il sostituto.
      *
-     * <p>Nel caso d'uso UC5 il sostituto è considerato valido solo se possiede
-     * la stessa specializzazione del Personal Trainer da licenziare.</p>
+     * Nel caso d'uso UC5 il sostituto è considerato valido solo se possiede
+     * la stessa specializzazione del Personal Trainer da licenziare.
      *
      * @param ptDaLicenziare trainer che deve essere licenziato
      * @param ptSostituto trainer candidato alla sostituzione
