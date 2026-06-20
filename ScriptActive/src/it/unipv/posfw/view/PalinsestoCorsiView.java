@@ -256,6 +256,13 @@ public class PalinsestoCorsiView extends JFrame {
         }
     }
     
+    /**
+     * Inietta l'utente loggato all'interno della vista.
+     * Utilizzato per mantenere l'integrità col sistema di Login senza alterare 
+     * il costruttore originale della View.
+     * * @param cliente Il cliente attualmente autenticato nel sistema.
+     */
+    
     public void setClienteLoggato(Cliente cliente) {
         this.clienteLoggato = cliente;
     }

@@ -9,7 +9,16 @@ import it.unipv.posfw.domain.Corso;
 import it.unipv.posfw.exceptions.CorsoAlCompletoException;
 import it.unipv.posfw.exceptions.PrenotazioneGiaEffettuataException;
 
-import java.util.List; // IMPORTANTE: Aggiunto per poter usare le liste!
+import java.util.List;
+
+/**
+ * Controller dedicato alla gestione delle prenotazioni dei corsi.
+ * Implementa la logica per l'iscrizione, la gestione della capienza 
+ * massima (Lista d'Attesa) e lo swap automatico in caso di annullamento.
+ * Utilizza il pattern DAO per comunicare con il database.
+ * * @author Matteo
+ * @version 1.0
+ */
 
 public class GestorePrenotazioni {
 
@@ -22,6 +31,18 @@ public class GestorePrenotazioni {
         this.corsoDAO = new CorsoDAOMySQL();
     }
 
+    
+    /**
+     * Registra un cliente a un corso specifico.
+     * Se il corso ha posti disponibili, la prenotazione viene confermata scalandone la disponibilità.
+     * Se il corso è al completo, il cliente viene inserito automaticamente in Lista d'Attesa.
+     * * @param cliente Il cliente loggato che richiede la prenotazione.
+     * @param corso Il corso a cui il cliente desidera iscriversi.
+     * @throws PrenotazioneGiaEffettuataException Se il cliente risulta già iscritto o già in lista d'attesa per questo corso.
+     * @throws CorsoAlCompletoException Se i posti sono esauriti (Notifica l'avvenuto inserimento in coda).
+     * @throws Exception In caso di errori generici di comunicazione con il database.
+     */
+    
     public void prenotaCorso(Cliente cliente, Corso corso) throws Exception { 
         
         it.unipv.posfw.dao.PrenotazioneDAO prenotazioneDB = new it.unipv.posfw.database.PrenotazioneDAOMySQL();
@@ -52,6 +73,18 @@ public class GestorePrenotazioni {
             }
         }
     }
+    
+    
+    /**
+     * Annulla una prenotazione esistente e gestisce l'avanzamento automatico della coda (Swap).
+     * Dopo l'eliminazione della prenotazione del cliente, il sistema verifica la presenza 
+     * di utenti in Lista d'Attesa. Se presenti, il primo utente in coda viene promosso 
+     * allo stato "Confermata"; altrimenti, viene liberato un posto nel corso.
+     * * @param cliente Il cliente che richiede l'annullamento.
+     * @param corso Il corso dal quale il cliente vuole disiscriversi.
+     * @throws PrenotazioneInesistenteException Se non viene trovata alcuna prenotazione attiva per la coppia Cliente-Corso.
+     * @throws Exception In caso di errori generici nel processo di cancellazione o di swap.
+     */
     
     public void annullaPrenotazione(Cliente cliente, Corso corso) throws it.unipv.posfw.exceptions.PrenotazioneInesistenteException {
         
