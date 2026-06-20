@@ -224,10 +224,11 @@ public class GestoreCorsi implements ServizioSwapCorsi {
         return idPT != null && !idPT.trim().isEmpty() && !idPT.toUpperCase().contains("ERR");
     }
 
+ 
     private boolean controllaSovrapposizioni(String idPT, LocalDateTime dataOra) {
         for (Corso corso : corsoDAO.findAll()) {
             if (corsoAssegnatoAlTrainer(corso, idPT)
-                    && corso.getDataOra().equals(dataOra)
+                    && corso.getDataOra().isEqual(dataOra)
                     && corso.getStato() == StatoCorso.ATTIVO) {
                 return true;
             }
@@ -235,11 +236,18 @@ public class GestoreCorsi implements ServizioSwapCorsi {
         return false;
     }
 
-    private boolean corsoAssegnatoAlTrainer(Corso corso, String idTrainer) {
-        return corso != null
-                && corso.getTrainerAssegnato() != null
-                && corso.getTrainerAssegnato().getIdTrainer() != null
-                && corso.getTrainerAssegnato().getIdTrainer().equals(idTrainer);
+    private boolean corsoAssegnatoAlTrainer(Corso corso, String idTrainerInput) {
+        // Prevenzione NullPointerException
+        if (corso == null || corso.getTrainerAssegnato() == null 
+                || corso.getTrainerAssegnato().getIdTrainer() == null || idTrainerInput == null) {
+            return false;
+        }
+        
+        // Estraiamo solo i numeri per bypassare il problema del prefisso "PT-" vs "10" del DB
+        String idDalDb = corso.getTrainerAssegnato().getIdTrainer().replaceAll("[^0-9]", "");
+        String idDallInput = idTrainerInput.replaceAll("[^0-9]", "");
+        
+        return idDalDb.equals(idDallInput);
     }
 }
 
