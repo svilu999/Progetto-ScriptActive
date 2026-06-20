@@ -17,26 +17,16 @@ public class GestorePrenotazioni {
     private CorsoDAO corsoDAO;
 
     public GestorePrenotazioni() {
-        /*
-         * PrenotazioneDAOMySQL resta nel package database,
-         * perché per ora stiamo correggendo solo il DAO dei corsi.
-         *
-         * CorsoDAOMySQL invece ora viene importato dal package dao:
-         * it.unipv.posfw.dao.CorsoDAOMySQL
-         */
+ 
         this.prenotazioneDAO = new PrenotazioneDAOMySQL();
         this.corsoDAO = new CorsoDAOMySQL();
     }
 
-    /**
-     * Tenta di prenotare un corso per un cliente.
-     */
     public void prenotaCorso(Cliente cliente, Corso corso) throws Exception { 
         
         it.unipv.posfw.dao.PrenotazioneDAO prenotazioneDB = new it.unipv.posfw.database.PrenotazioneDAOMySQL();
         it.unipv.posfw.dao.CorsoDAO corsoDB = new it.unipv.posfw.database.CorsoDAOMySQL();
 
-        // Prendiamo l'ID vero e lo trasformiamo in Stringa!
         String idCliente = String.valueOf(cliente.getId());
         String idCorso = corso.getIdCorso();
 
@@ -50,7 +40,7 @@ public class GestorePrenotazioni {
                 corso.setPostiDisponibili(corso.getPostiDisponibili() - 1);
                 corsoDB.updatePostiDisponibili(corso);
             } else {
-                // IL BLOCCO ANTIFREGATURA
+
                 throw new Exception("Errore interno: impossibile salvare la prenotazione nel Database!");
             }
         } else {
@@ -62,29 +52,27 @@ public class GestorePrenotazioni {
             }
         }
     }
-
-    //ANNULLAMENTO CON LISTA D'ATTESA ---
     
     public void annullaPrenotazione(Cliente cliente, Corso corso) throws it.unipv.posfw.exceptions.PrenotazioneInesistenteException {
         
-        // 1. ISTANZIAMO I DAO
+
         it.unipv.posfw.dao.PrenotazioneDAO prenotazioneDB = new it.unipv.posfw.database.PrenotazioneDAOMySQL();
         it.unipv.posfw.dao.CorsoDAO corsoDB = new it.unipv.posfw.database.CorsoDAOMySQL();
         
-        // 2. Recuperiamo gli ID
+
         String idCliente = String.valueOf(cliente.getId());
         String idCorso = corso.getIdCorso();
 
-        // 3. Controllo: L'utente è davvero iscritto?
+ 
         if (!prenotazioneDB.esistePrenotazione(idCliente, idCorso)) {
             throw new it.unipv.posfw.exceptions.PrenotazioneInesistenteException("Impossibile disiscriversi: non sei prenotato a questo corso!");
         }
 
-        // 4. Eliminiamo la prenotazione dal Database
+
         boolean eliminato = prenotazioneDB.eliminaPrenotazione(idCliente, idCorso);
         
         if (eliminato) {
-            // 5. Gestione della Lista d'Attesa
+
             String idPrimoInAttesa = prenotazioneDB.getPrimoInListaAttesa(idCorso);
             
             if (idPrimoInAttesa != null) {

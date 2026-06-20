@@ -1,15 +1,15 @@
 package it.unipv.posfw.dao;
 
-import java.util.List; // IMPORTANTE
-import it.unipv.posfw.domain.Corso; // IMPORTANTE
+import java.util.List;
+import it.unipv.posfw.domain.Corso;
 
 public interface PrenotazioneDAO {
     boolean esistePrenotazione(String idCliente, String idCorso);
     boolean inserisciPrenotazione(String idCliente, String idCorso);
     boolean eliminaPrenotazione(String idCliente, String idCorso);
     
-    // NUOVI METODI PER BLOCCO 2
-    boolean inserisciPrenotazione(String idCliente, String idCorso, String stato); // Sovraccarico del metodo
+
+    boolean inserisciPrenotazione(String idCliente, String idCorso, String stato);
     String getPrimoInListaAttesa(String idCorso);
     boolean aggiornaStatoPrenotazione(String idCliente, String idCorso, String nuovoStato);
     

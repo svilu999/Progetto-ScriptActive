@@ -148,9 +148,7 @@ public class PalinsestoCorsiView extends JFrame {
             return;
         }
 
-        /*
-         * Recupera il corso collegato alla riga selezionata.
-         */
+
         Corso corsoDaPrenotare = corsiAttuali.get(rigaSelezionata);
 
         
@@ -169,13 +167,11 @@ public class PalinsestoCorsiView extends JFrame {
                     JOptionPane.INFORMATION_MESSAGE
             );
 
-            /*
-             * Ricarica il palinsesto per mostrare i posti aggiornati.
-             */
+
             caricaDati();
 
         } catch (CorsoAlCompletoException ex) {
-            // POPUP GIALLO: L'utente è finito in lista d'attesa
+
             JOptionPane.showMessageDialog(
                     this,
                     ex.getMessage(),
@@ -184,7 +180,7 @@ public class PalinsestoCorsiView extends JFrame {
             );
 
         } catch (PrenotazioneGiaEffettuataException ex) {
-            // POPUP ROSSO: L'utente era già prenotato a questo corso
+
             JOptionPane.showMessageDialog(
                     this,
                     ex.getMessage(),
@@ -193,7 +189,7 @@ public class PalinsestoCorsiView extends JFrame {
             );
 
         } catch (Exception ex) {
-            // POPUP ROSSO: Qualsiasi altro errore generico o di database
+
             JOptionPane.showMessageDialog(
                     this,
                     "Errore di sistema: " + ex.getMessage(),
@@ -239,7 +235,7 @@ public class PalinsestoCorsiView extends JFrame {
                     JOptionPane.INFORMATION_MESSAGE
             );
 
-            // Ricarica la tabella per mostrare i posti aggiornati
+
             caricaDati();
 
         } catch (PrenotazioneInesistenteException ex) {
@@ -260,7 +256,6 @@ public class PalinsestoCorsiView extends JFrame {
         }
     }
     
- // Metodo per iniettare l'utente dopo che la finestra è stata creata
     public void setClienteLoggato(Cliente cliente) {
         this.clienteLoggato = cliente;
     }

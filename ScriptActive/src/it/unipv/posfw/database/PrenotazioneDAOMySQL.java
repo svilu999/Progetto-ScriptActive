@@ -69,8 +69,6 @@ public class PrenotazioneDAOMySQL implements PrenotazioneDAO {
             return false;
         }
     }
-    
-    // --- METODI AGGIUNTIVI PER LISTA D'ATTESA ---
 
     @Override
     public boolean inserisciPrenotazione(String idCliente, String idCorso, String stato) {
