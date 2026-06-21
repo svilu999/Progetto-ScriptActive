@@ -1,4 +1,4 @@
-package it.unipv.posfw.test;
+package it.unipv.posfw.test.unit;
 
 import static org.junit.Assert.*;
 import org.junit.Before;
@@ -31,7 +31,7 @@ import it.unipv.posfw.view.StoricoAllenamentiView;
  * <li><b>Exception Paths</b>: Protezione dell'integrità del dominio da input anomali (schede vuote, valori negativi).</li>
  * </ul>
  * </p>
- * * @author Studente
+ * * @author Vilucchi
  * @version 1.1
  */
 public class StoricoAllenamentiTest {
