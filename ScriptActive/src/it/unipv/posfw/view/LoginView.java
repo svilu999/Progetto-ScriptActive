@@ -22,7 +22,7 @@ import it.unipv.posfw.controller.LoginController;
  * delle credenziali, includendo altresì il punto di diramazione (Flusso Alternativo) verso lo Use Case 
  * di <b>Registrazione</b> per i nuovi utenti.
  * </p>
- * * @author Studente
+ * * @author Vilucchi
  * @version 1.1
  * @see javax.swing.JFrame
  * @see it.unipv.posfw.controller.LoginController

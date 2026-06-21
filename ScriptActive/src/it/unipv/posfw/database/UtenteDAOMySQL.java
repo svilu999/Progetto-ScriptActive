@@ -16,11 +16,31 @@ import it.unipv.posfw.dao.UtenteDAO;
 import it.unipv.posfw.domain.Abbonamento;
 import it.unipv.posfw.domain.LivelloAbbonamento;
 
+/**
+ * Implementazione concreta dell'interfaccia {@link UtenteDAO} per il DBMS MySQL.
+ * <p>
+ * Rappresenta il livello di <b>Persistenza (Model)</b> nell'architettura MVC.
+ * Questa classe è il fulcro della gestione dell'identità e degli accessi, 
+ * occupandosi di tradurre i record relazionali in entità polimorfiche di dominio.
+ * </p>
+ * <p>
+ * <b>Strategia di Mapping (Single Table Inheritance):</b><br>
+ * Utilizza la colonna discriminatrice {@code Ruolo} per istanziare dinamicamente 
+ * la corretta sottoclasse di {@link Utente} (es. {@code Cliente}, {@code Direttore}, 
+ * {@code PersonalTrainer}), garantendo il rispetto dei principi Object-Oriented.
+ * </p>
+ * * @author Arianna Padula
+ * @version 1.5
+ * @see it.unipv.posfw.dao.UtenteDAO
+ */
+
 public class UtenteDAOMySQL implements UtenteDAO {
 
-    // ==========================================
-    // 1. METODO PER IL LOGIN (AGGIORNATO CON TUTTI I RUOLI)
-    // ==========================================
+	/**
+     * Esegue l'autenticazione dell'utente e ne ricostruisce lo stato in memoria.
+     * <p>
+     */
+	
     @Override
     public Utente effettuaLogin(String email, String passwordInserita) {
         Utente utenteLoggato = null;
@@ -79,9 +99,6 @@ public class UtenteDAOMySQL implements UtenteDAO {
         return utenteLoggato;
     }
 
-    // ==========================================
-    // 2. METODO DI SUPPORTO PER L'ABBONAMENTO
-    // ==========================================
     private Abbonamento recuperaAbbonamentoCompleto(int idUtente, String cf, Connection conn) {
         // AGGIUNTO RinnovoAutomatico ALLA SELECT
         String queryAbbonamento = "SELECT Tipo, Livello, DataScadenza, RinnovoAutomatico FROM Abbonamento WHERE ID_Cliente = ?";
@@ -123,9 +140,7 @@ public class UtenteDAOMySQL implements UtenteDAO {
         
         return abbonamentoTrovato;
     }
-    // ==========================================
-    // 3. METODO DI SUPPORTO PER IL DIRETTORE
-    // ==========================================
+
     private String recuperaAutorizzazioneDirettore(int idUtente, Connection conn) {
         String queryAuth = "SELECT CodiceAutorizzazione FROM Direttore WHERE ID_Direttore = ?";
         String codiceTrovato = "Sconosciuto"; 
@@ -143,9 +158,6 @@ public class UtenteDAOMySQL implements UtenteDAO {
         return codiceTrovato;
     }
 
-    // ==========================================
-    // 4. METODO DI REGISTRAZIONE
-    // ==========================================
     @Override
     public void registraCliente(String cf, String nome, String cognome, String email, String passwordHash) {
         
@@ -199,18 +211,17 @@ public class UtenteDAOMySQL implements UtenteDAO {
             }
         }
     }
- // ==========================================
-    // METODO PER ESEGUIRE IL RINNOVO NEL DB
-    // ==========================================
- // ==========================================
-    // METODO PER ESEGUIRE IL RINNOVO NEL DB
-    // ==========================================
- // ==========================================
-    // METODO PER ESEGUIRE IL RINNOVO NEL DB
-    // ==========================================
+    
+    /**
+     * Esegue il rinnovo dell'abbonamento aggiornando il layer di persistenza.
+     * <p>
+     * Il metodo attua una sanitizzazione/traduzione dell'input (es. da "Annuale - €360.00" 
+     * a "ANNUALE") per allineare il dato proveniente dalla View al dominio MySQL.
+     * </p>
+     */
+
     public void eseguiRinnovo(String email, int mesiAggiuntivi, String nuovoPiano) {
         
-        // 1. TRADUTTORE: Puliamo la stringa per il database!
         // Se riceve "Annuale - €360.00", estrapola solo "ANNUALE"
         String livelloDB = "MENSILE"; // default
         if (nuovoPiano != null) {
@@ -222,7 +233,6 @@ public class UtenteDAOMySQL implements UtenteDAO {
             }
         }
         
-        // 2. LA QUERY SQL
         String queryUpdate = "UPDATE Abbonamento SET DataScadenza = DATE_ADD(CURRENT_DATE, INTERVAL ? MONTH), Livello = ? " +
                              "WHERE ID_Cliente = (SELECT ID_Utente FROM Utente WHERE Email = ?)";
                              
@@ -244,18 +254,16 @@ public class UtenteDAOMySQL implements UtenteDAO {
             e.printStackTrace();
         }
     }
- // ========================================================
-    // METODO PER LO SBLOCCO SILENZIOSO (Scavalca i controlli)
-    // ========================================================
- // ========================================================
-    // METODO PER LO SBLOCCO SILENZIOSO (Versione con Debug)
-    // ========================================================
- // ========================================================
-    // METODO PER LO SBLOCCO SILENZIOSO (Lettura Numerica)
-    // ========================================================
- // ========================================================
-    // METODO PER LO SBLOCCO SILENZIOSO (Versione Definitiva)
-    // ========================================================
+
+    /**
+     * Verifica l'idoneità dell'utente ed esegue il rinnovo in modalità batch (silenzioso).
+     * <p>
+     * Progettato per l'esecuzione tramite processi in background o Thread, scavalca 
+     * l'interazione utente andando a leggere direttamente i flag di rinnovo sul database.
+     * </p>
+     * * @return {@code true} se il rinnovo è stato innescato con successo.
+     */
+    
     public boolean tentaRinnovoSilenzioso(String email) {
         String query = "SELECT a.RinnovoAutomatico, a.Livello FROM Abbonamento a JOIN Utente u ON a.ID_Cliente = u.ID_Utente WHERE u.Email = ?";
         

@@ -10,11 +10,29 @@ import java.util.List;
 import it.unipv.posfw.domain.Sede;
 import it.unipv.posfw.util.DatabaseManager;
 
+/**
+ * Implementazione concreta per l'accesso ai dati (Data Access Object) dell'entità {@link Sede}.
+ * <p>
+ * <b>Contesto Architetturale:</b><br>
+ * Risiede nel livello di Persistenza e gestisce le operazioni 
+ * relative alle sedi geografiche del sistema. Nasconde la logica di accesso al DBMS MySQL 
+ * restituendo al livello superiore (Controller/View) collezioni di oggetti Java.
+ * </p>
+ * * @author Arianna Padula
+ * @version 1.0
+ */
+
 public class SedeDAOMySQL {
 
-    // ==========================================
-    // 1. METODO PER INSERIRE UNA NUOVA SEDE (CREATE)
-    // ==========================================
+	/**
+     * Inserisce un nuovo record fisico all'interno della tabella Sede (Operazione CREATE).
+     * <p>
+     * L'inserimento utilizza un {@code PreparedStatement} parametrico per blindare 
+     * il sistema contro i tentativi di SQL Injection sul campo testuale del nome.
+     * </p>
+     * * @param nomeSede La stringa descrittiva (es. indirizzo o città) della nuova filiale.
+     */
+	
 	public void aggiungiSede(String nomeSede) {
         String query = "INSERT INTO Sede (NomeSede) VALUES (?)";
 
@@ -35,9 +53,12 @@ public class SedeDAOMySQL {
         }
     }
 
-    // ==========================================
-    // 2. METODO PER LEGGERE LE SEDI (READ - TEST IN CONSOLE)
-    // ==========================================
+	/**
+     * Metodo che consente allo sviluppatore di verificare il popolamento del database senza 
+     * transitare per le interfacce grafiche.
+     */
+	
+
     public void stampaTutteLeSedi() {
         String query = "SELECT ID_Sede, NomeSede FROM Sede";
 
@@ -60,9 +81,17 @@ public class SedeDAOMySQL {
         }
     }
     
-    // ==========================================
-    // 3. METODO PER LA TUA VIEW (Il Menu a tendina usa questo)
-    // ==========================================
+    /**
+     * Estrae tutti i record presenti nella tabella 'Sede' e applica il pattern 
+     * Object-Relational Mapping (ORM) manuale.
+     * <p>
+     * Questo metodo è vitale per la logica di Presentazione (la View), in quanto 
+     * fornisce la lista tipizzata necessaria a popolare componenti UI come i Menu a tendina 
+     * (es. JComboBox) in fase di registrazione (Use Case UC1).
+     * </p>
+     * * @return Una collezione (List) di oggetti {@link Sede}. Se la tabella è vuota, restituisce una lista vuota.
+     */
+    
     public List<Sede> getTutteLeSedi() {
         List<Sede> listaSedi = new ArrayList<>();
         String query = "SELECT ID_Sede, NomeSede FROM Sede";
@@ -90,10 +119,8 @@ public class SedeDAOMySQL {
     public static void main(String[] args) {
         SedeDAOMySQL dao = new SedeDAOMySQL();
         
-        // Fai una prova con un nome sicuramente NUOVO per evitare il Duplicate Entry
         dao.aggiungiSede("Palestra Milano Nord");
         
-        // Leggiamo se l'ha salvata
         dao.stampaTutteLeSedi();
     }
 }
