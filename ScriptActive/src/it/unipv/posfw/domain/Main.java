@@ -2,10 +2,11 @@ package it.unipv.posfw.domain;
 
 import javax.swing.SwingUtilities;
 
+import it.unipv.posfw.controller.GestoreRinnovi;
 import it.unipv.posfw.controller.LoginController;
-import it.unipv.posfw.view.LoginView;
-import it.unipv.posfw.database.UtenteDAO;
+import it.unipv.posfw.dao.UtenteDAO;
 import it.unipv.posfw.database.UtenteDAOMySQL;
+import it.unipv.posfw.view.LoginView;
 
 /**
  * Classe di Bootstrap (<i>Entry Point</i>) dell'applicazione.
@@ -32,6 +33,8 @@ public class Main {
      * * @param args Array di parametri passati da riga di comando (attualmente non implementati).
      */
     public static void main(String[] args) {
+    	//GestoreRinnovi.getIstanza().avviaMotoreRinnovi();
+    	
         SwingUtilities.invokeLater(() -> {
             
             /* 1. Inizializzazione del Data Access Object (Persistenza) */

@@ -15,17 +15,18 @@ public class SedeDAOMySQL {
     // ==========================================
     // 1. METODO PER INSERIRE UNA NUOVA SEDE (CREATE)
     // ==========================================
-    public void aggiungiSede(String nomeSede) {
+	public void aggiungiSede(String nomeSede) {
         String query = "INSERT INTO Sede (NomeSede) VALUES (?)";
 
         try {
             // Prendiamo la connessione FUORI dal try-with-resources per NON farla chiudere!
-        	Connection conn = DatabaseManager.getInstance().getConnection();
+            Connection conn = DatabaseManager.getInstance().getConnection();
             
             // Mettiamo nel try-with-resources solo il PreparedStatement
             try (PreparedStatement pstmt = conn.prepareStatement(query)) {
                 pstmt.setString(1, nomeSede);
                 pstmt.executeUpdate();
+                
                 System.out.println("Sede '" + nomeSede + "' salvata con successo in MySQL!");
             }
             

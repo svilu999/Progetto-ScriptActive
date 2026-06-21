@@ -2,19 +2,20 @@ package it.unipv.posfw.controller;
 
 import java.util.List;
 
-import it.unipv.posfw.database.SessioneDAOMySQL;
-import it.unipv.posfw.database.UtenteDAO;
 import it.unipv.posfw.dao.SessioneDAO;
+import it.unipv.posfw.dao.UtenteDAO;
+import it.unipv.posfw.database.SessioneDAOMySQL;
+import it.unipv.posfw.database.UtenteDAOMySQL;
 import it.unipv.posfw.domain.Cliente;
-import it.unipv.posfw.domain.Corso; 
+import it.unipv.posfw.domain.Corso;
 import it.unipv.posfw.domain.Direttore;
 import it.unipv.posfw.domain.PersonalTrainer;
 import it.unipv.posfw.domain.Utente;
+import it.unipv.posfw.view.DashboardClienteView;
+import it.unipv.posfw.view.DashboardDirettoreView;
 import it.unipv.posfw.view.LoginView;
-import it.unipv.posfw.view.StoricoAllenamentiView;
-import it.unipv.posfw.view.DashboardDirettoreView; 
-import it.unipv.posfw.view.DashboardClienteView; 
-import it.unipv.posfw.view.PalinsestoCorsiView; 
+import it.unipv.posfw.view.PalinsestoCorsiView;
+import it.unipv.posfw.view.StoricoAllenamentiView; 
 
 /**
  * La classe {@code LoginController} incarna il ruolo di <b>Controller</b> all'interno del pattern architetturale <b>MVC (Model-View-Controller)</b>.
@@ -61,24 +62,56 @@ public class LoginController {
             return;
         }
 
-        /* 2. Delega al livello di persistenza */
-        Utente utente = dao.effettuaLogin(email, password);
+        try {
+            // 🛡️ SCUDO PROTETTIVO: Leggiamo l'1 PRIMA che i compagni lo cancellino!
+            UtenteDAOMySQL mDao = new UtenteDAOMySQL();
+            boolean sbloccatoInAutomatico = mDao.tentaRinnovoSilenzioso(email);
 
-        /* 3. Gestione del Flusso Alternativo: fallimento dell'autenticazione */
-        if (utente == null) {
-            this.utenteLoggato = null; // Assicuriamo che sia nullo in caso di fallimento
-            view.mostraErrore("Credenziali errate o utente non attivo.");
-            return;
+            // 🔐 Ora chiamiamo il login (la data è già al 2026, quindi non farà danni)
+            Utente utente = dao.effettuaLogin(email, password);
+
+            if (utente == null) {
+                throw new it.unipv.posfw.exceptions.CredenzialiErrateException("Email o password errate.");    
+            }
+            
+            if (!utente.puoAccedereAlSistema()) {
+                if (!utente.isAccountAbilitato()) {
+                    throw new it.unipv.posfw.exceptions.AccountInattivoException("Accesso negato: account sospeso.");
+                } else {
+                    if (utente instanceof Cliente) {
+                        if (!sbloccatoInAutomatico) {
+                            // ❌ Non aveva l'1 nel DB, scatta il blocco e il popup manuale!
+                            throw new it.unipv.posfw.exceptions.AbbonamentoScadutoException("Accesso negato: il tuo abbonamento è scaduto.");
+                        }
+                    }
+                }
+            }
+            
+            /* ASSEGNAZIONE PER IL TEST E PER IL DOMINIO */
+            this.utenteLoggato = utente;
+
+            /* 4. Smontaggio della View di Login */
+            view.dispose();
+
+            /* 5. Innesco Double Dispatch */
+            utenteLoggato.accediAreaRiservata(this); 
+            
+        } catch (it.unipv.posfw.exceptions.AbbonamentoScadutoException e) {
+            
+            /* ==========================================================
+             * CASO SPECIALE: L'abbonamento è scaduto!
+             * Invece del solito errore, chiamiamo il nostro nuovo popup
+             * ========================================================== */
+            this.utenteLoggato = null;
+            view.mostraPopupRinnovo(email, e.getMessage());
+
+        } catch (it.unipv.posfw.exceptions.CredenzialiErrateException | 
+                 it.unipv.posfw.exceptions.AccountInattivoException e) {
+           
+            /* Gestione unificata degli errori: puliamo l'utente loggato e mostriamo il messaggio specifico sulla View */
+            this.utenteLoggato = null;
+            view.mostraErrore(e.getMessage());
         }
-        
-        /* ASSEGNAZIONE PER IL TEST E PER IL DOMINIO */
-        this.utenteLoggato = utente;
-
-        /* 4. Smontaggio della View di Login */
-        view.dispose();
-
-        /* 5. Innesco Double Dispatch */
-        utenteLoggato.accediAreaRiservata(this); 
     }
 
     public Utente getUtenteLoggato() {
