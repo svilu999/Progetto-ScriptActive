@@ -23,13 +23,7 @@ public class Main {
     /**
      * Metodo esecutivo principale per l'avvio del software.
      * <p>
-     * La costruzione e la manipolazione dell'albero dei componenti grafici (<i>Component Tree</i>) 
-     * vengono delegate all'<b>Event Dispatch Thread (EDT)</b> tramite {@link SwingUtilities#invokeLater}. 
-     * Questa policy è un requisito mandatorio dell'architettura <i>Single-Thread Rule</i> di Java Swing, 
-     * indispensabile per garantire la <b>Thread Safety</b> e prevenire fenomeni di <i>deadlock</i> o 
-     * inconsistenze nel rendering grafico (<i>Race Conditions</i>).
-     * </p>
-     * * @param args Array di parametri passati da riga di comando (attualmente non implementati).
+     * 
      */
     public static void main(String[] args) {
     	//GestoreRinnovi.getIstanza().avviaMotoreRinnovi();
@@ -41,8 +35,8 @@ public class Main {
             
             /* 2. Inizializzazione del Top-Level Container (View) */
             LoginView loginView = new LoginView();
-            
-            /* 3. Inizializzazione del Controller tramite Dependency Injection (Constructor Injection) */
+                                   
+              /* 3. Inizializzazione del Controller tramite Dependency Injection (Constructor Injection) */
             LoginController loginController = new LoginController(loginView, loginDAO);
             
             /* 4. Completamento del binding bidirezionale MVC (Event Delegation) */
