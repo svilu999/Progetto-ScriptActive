@@ -9,7 +9,7 @@ import java.util.Properties;
 /**
  * La classe {@code DatabaseManager} implementa rigorosamente il design pattern creazionale Singleton 
  * 
- * Motivazione Architetturale: Nel contesto dello strato di accesso ai dati (Data Access Layer), 
+ *  Nel contesto dello strato di accesso ai dati (Data Access Layer), 
  * è fondamentale gestire la persistenza in modo centralizzato. Il pattern Singleton risolve il problema 
  * di garantire che vi sia un'unica istanza della classe responsabile della lettura del file di configurazione 
  * e del caricamento del driver JDBC (Java Database Connectivity), fornendo a tutti i Data Access Object (DAO) 
@@ -17,11 +17,10 @@ import java.util.Properties;
  * facilita l'evoluzione futura del sistema o il polimorfismo.
  * 
  * 
- * Le librerie di riferimento utilizzate appartengono a {@code java.sql}, implementando la connessione al DBMS 
- * tramite i Driver forniti dal produttore (specificamente un Type 4: All Java JDBC Driver per MySQL).
+ 
  * 
  * 
- * @author Simone e Lorenzo 
+ * @author Tutti 
  * @version 1.2
  * @see java.sql.Connection
  * @see java.sql.DriverManager
@@ -30,7 +29,7 @@ public class DatabaseManager {
 
     /**
      * Attributo statico che mantiene il riferimento all'unica istanza della classe.
-     * È inizializzato a {@code null} finché il metodo statico {@link #getInstance()} non viene chiamato (Inizializzazione Lazy).
+     * È inizializzato a {@code null} finché il metodo statico {@link #getInstance()} non viene chiamato.
      */
     private static DatabaseManager instance;
 
