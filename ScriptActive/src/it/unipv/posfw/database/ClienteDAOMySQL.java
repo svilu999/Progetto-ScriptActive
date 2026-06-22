@@ -36,7 +36,8 @@ public class ClienteDAOMySQL implements ClienteDAO {
      * * @param codiceFiscale La stringa che identifica univocamente l'utente.
      * @return L'oggetto {@link Cliente} popolato se trovato; {@code null} in caso di assenza o errore SQL.
      */
-    @Override
+    
+	@Override
     public Cliente getClienteByCF(String codiceFiscale) {
         String query = "SELECT * FROM Utente WHERE CodiceFiscale = ?";
 
@@ -54,27 +55,15 @@ public class ClienteDAOMySQL implements ClienteDAO {
                     rs.getString("Email"), 
                     rs.getString("CodiceFiscale")
                 );
-             // 2. Mappiamo la colonna 'Stato' e la password
+                
+                // Mappiamo la colonna 'Stato' e la password
                 c.setStato(rs.getString("Stato"));
                 c.setPasswordHash(rs.getString("PasswordHash"));
 
-                // 3. Controlliamo se ha un abbonamento (tramite la DataScadenza o il Tipo)
-                java.sql.Date dataScadenzaSQL = rs.getDate("DataScadenza");
-                if (dataScadenzaSQL != null) {
-                    Abbonamento abb = new Abbonamento(
-                        rs.getString("CodiceFiscale"),
-                        LivelloAbbonamento.valueOf(rs.getString("Livello")), // Converte stringa in Enum
-                        TipoAbbonamento.valueOf(rs.getString("Tipo")),       // Converte stringa in Enum
-                        rs.getBoolean("RinnovoAutomatico"),
-                        rs.getString("IBAN")
-                    );
-                    
-                    // Trasformiamo la data SQL in data Java e la assegniamo all'abbonamento
-                    java.util.Date dataJava = new java.util.Date(dataScadenzaSQL.getTime());
-                    abb.setDataScadenza(dataJava);
-                    
-                    c.setAbbonamentoAttivo(abb);
-                }
+                // NOTA: Abbiamo rimosso la lettura di DataScadenza, Livello, Tipo, ecc.
+                // perché la SELECT interroga solo la tabella 'Utente', dove queste colonne non esistono!
+                // Per il controllo dei duplicati in fase di registrazione, questo è perfetto e sufficiente.
+
                 rs.close();
                 ps.close();
                 return c;

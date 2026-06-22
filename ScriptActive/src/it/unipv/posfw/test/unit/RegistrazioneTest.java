@@ -25,30 +25,30 @@ public class RegistrazioneTest {
         sedeDiTest = new Sede(1, "Sede Centrale Milano");
     }
 
-    // TEST 1: Main Success Scenario (Happy Path)
+ // TEST 1: Main Success Scenario (Happy Path)
     @Test
     public void testRegistrazioneConSuccesso() {
-        // Arrange: Dati validi. L'IBAN NON contiene la parola "ERRORE"
+        // Arrange: Dati validi.
         String nome = "Mario";
         String cognome = "Rozzi";
-        String email = "mario.rozzi@email.it";
         String password = "PasswordSicura123!";
-        // Attenzione: cambia il Codice Fiscale ogni volta che fai girare il test, 
-        // o metti un codice che sai non essere nel database
-        String cf = "NUOVCF99Z01H501Z"; 
         String ibanValido = "IT99Z0123456789012345678901";
+        
+        // TRUCCO: Usiamo il timestamp per generare Email e CF sempre unici ad ogni esecuzione!
+        long timestamp = System.currentTimeMillis();
+        String emailUnivoca = "mario.rozzi" + timestamp + "@email.it";
+        String cfUnivoco = "CF" + timestamp; 
 
         try {
-            // Act: Chiamiamo il metodo
-            gestoreRegistrazione.registraNuovoCliente(nome, cognome, email, password, cf, 
+            // Act: Chiamiamo il metodo con i dati generati dinamicamente
+            gestoreRegistrazione.registraNuovoCliente(nome, cognome, emailUnivoca, password, cfUnivoco, 
                                                       sedeDiTest, TipoAbbonamento.BASE, 
                                                       LivelloAbbonamento.MENSILE, true, ibanValido);
             
-            // Assert: Se arriviamo a questa riga senza che sia stata lanciata un'eccezione, il test è passato!
+            // Assert: Se arriviamo a questa riga, tutto è andato liscio
             assertTrue("La registrazione è avvenuta con successo senza lanciare eccezioni", true);
             
         } catch (Exception e) {
-            // Se viene lanciata un'eccezione inaspettata, il test fallisce
             fail("La registrazione ha fallito inaspettatamente lanciando l'eccezione: " + e.getMessage());
         }
     }
@@ -74,5 +74,30 @@ public class RegistrazioneTest {
         
         // Il test passa SOLO se viene lanciata l'eccezione PagamentoFallitoException.
         // Ciò dimostra che il flusso alternativo funziona e blocca l'inserimento nel database!
+    }
+ // TEST 3: Flusso Alternativo 2 (Utente Già Esistente)
+    @Test
+    public void testRegistrazioneFallitaPerUtenteDuplicato() {
+        // Arrange: Inventiamo un Codice Fiscale specifico per questo test
+        String cfDuplicato = "CFDUPLICATO12345"; 
+
+        // 1. FORZATURA: Registriamo l'utente una prima volta per assicurarci che esista nel DB
+        try {
+            gestoreRegistrazione.registraNuovoCliente("Anna", "Verdi", "anna@email.it", 
+                                                      "Password123!", cfDuplicato, 
+                                                      sedeDiTest, TipoAbbonamento.BASE, 
+                                                      LivelloAbbonamento.MENSILE, true, "IT99Z0123456789012345678901");
+        } catch (Exception e) {
+            // Se esiste già da lanci precedenti, ignoriamo l'errore e andiamo avanti
+        }
+
+        // 2. Act & Assert: Ora che siamo CERTI che esista, proviamo a registrarlo di nuovo!
+        // Ci aspettiamo che il sistema blocchi la duplicazione lanciando l'eccezione
+        assertThrows(it.unipv.posfw.exceptions.UtenteGiaEsistenteException.class, () -> {
+            gestoreRegistrazione.registraNuovoCliente("Anna", "Verdi", "anna@email.it", 
+                                                      "Password123!", cfDuplicato, 
+                                                      sedeDiTest, TipoAbbonamento.BASE, 
+                                                      LivelloAbbonamento.MENSILE, true, "IT99Z0123456789012345678901");
+        });
     }
 }
