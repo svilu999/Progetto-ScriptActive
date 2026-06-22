@@ -29,6 +29,17 @@ public interface PersonalTrainerDAO {
      * @return Personal Trainer trovato, oppure null se non esiste
      */
     PersonalTrainer trovaPerId(String idPT);
+    
+    /**
+     * Cerca un Personal Trainer tramite la sua email.
+     *
+     * Il metodo viene usato in fase di assunzione per impedire
+     * la registrazione duplicata dello stesso Personal Trainer.
+     *
+     * @param email email del Personal Trainer da cercare
+     * @return Personal Trainer trovato, oppure null se non esiste
+     */
+    PersonalTrainer trovaPerEmail(String email);
 
     /**
      * Disattiva logicamente un Personal Trainer.

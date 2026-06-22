@@ -100,6 +100,26 @@ public class GestorePersonaleTest {
 
         assertEquals(1, trainerDAO.trainers.size());
     }
+    
+    /**
+     * Verifica che l'assunzione venga bloccata se esiste già
+     * un Personal Trainer registrato con la stessa email.
+     */
+    @Test
+    public void testAssumiPT_EmailGiaPresente_LanciaEccezione() {
+        trainerDAO.salva(creaTrainer("10", "Luca", "Bianchi", "Sala pesi", true));
+
+        assertThrows(TrainerGiaAssuntoException.class, () -> gestorePersonale.assumiPT(
+                "Luca",
+                "Bianchi",
+                "luca.bianchi@test.it",
+                "AUTO",
+                "Sala pesi",
+                new RetribuzioneFissa(1400.0)
+        ));
+
+        assertEquals(1, trainerDAO.trainers.size());
+    }
 
     /**
      * Verifica il licenziamento senza sostituto quando non ci sono corsi attivi.
@@ -248,6 +268,22 @@ public class GestorePersonaleTest {
         @Override
         public PersonalTrainer trovaPerId(String idPT) {
             return trainers.get(idPT);
+        }
+        
+        @Override
+        public PersonalTrainer trovaPerEmail(String email) {
+            if (email == null) {
+                return null;
+            }
+
+            for (PersonalTrainer trainer : trainers.values()) {
+                if (trainer.getEmail() != null
+                        && trainer.getEmail().equalsIgnoreCase(email.trim())) {
+                    return trainer;
+                }
+            }
+
+            return null;
         }
 
         @Override
