@@ -1,0 +1,154 @@
+@startuml
+title Modello di Dominio - ScriptActive
+
+left to right direction
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam nodesep 90
+skinparam ranksep 95
+skinparam padding 8
+hide circle
+
+abstract class Utente {
+  Id
+  Nome
+  Cognome
+  Email
+  Stato
+}
+
+class Cliente {
+  Codice Fiscale
+  Tipo Abbonamento
+}
+
+class "Personal Trainer" as PersonalTrainer {
+  Id Trainer
+  Specializzazione
+  Tipo Contratto
+  Stato Contratto
+  Attivo
+}
+
+class Direttore {
+  Codice Autorizzazione
+}
+
+class Abbonamento {
+  Id Abbonamento
+  Tipologia
+  Livello
+  Data Scadenza
+  Rinnovo Automatico
+  IBAN
+}
+
+class Pagamento {
+  Id Pagamento
+  Importo
+  Data Transazione
+  Esito
+  IBAN
+}
+
+class Prenotazione {
+  Id Prenotazione
+  Stato
+}
+
+class Corso {
+  Id
+  Nome
+  Data Ora
+  Tipologia
+  Posti Disponibili
+  Capienza Massima
+  Stato
+}
+
+class Sede {
+  Id
+  Nome
+}
+
+class "Sessione Allenamento" as SessioneAllenamento {
+  Id Sessione
+  Data
+  Id Cliente
+}
+
+class "Dati Form" as DatiFormPojo {
+  Nome Esercizio
+  Carichi
+  Ripetizioni
+}
+
+class "Retribuzione Totale" as RetribuzioneTotale {
+  Totale Mensile
+}
+
+enum TipoAbbonamento {
+  BASE
+  PREMIUM
+}
+
+enum LivelloAbbonamento {
+  MENSILE
+  SEMESTRALE
+  ANNUALE
+}
+
+enum StatoCorso {
+  ATTIVO
+  COMPLETO
+}
+
+interface StrategiaRetribuzione {
+  calcolaStipendio(numeroLezioni)
+  getTipoContratto()
+}
+
+class RetribuzioneFissa {
+  Stipendio Base
+}
+
+class RetribuzioneProvvigione {
+  Quota Per Lezione
+}
+
+Utente <|-- Cliente
+Utente <|-- PersonalTrainer
+Utente <|-- Direttore
+
+StrategiaRetribuzione <|.. RetribuzioneFissa
+StrategiaRetribuzione <|.. RetribuzioneProvvigione
+
+Cliente "1" --> "1" Abbonamento : sottoscrive
+Cliente "1" --> "0..*" Prenotazione : effettua
+Cliente "1" --> "0..*" SessioneAllenamento : registra
+Cliente "1" --> "0..*" Pagamento : effettua
+Cliente "1" --> "0..1" Sede : sede principale
+
+Abbonamento "1" --> "1" TipoAbbonamento : tipo
+Abbonamento "1" --> "1" LivelloAbbonamento : livello
+Pagamento "0..*" --> "1" Abbonamento : paga
+
+Prenotazione "0..*" --> "1" Corso : riserva
+Corso "1" --> "1" StatoCorso : stato
+
+PersonalTrainer "1" --> "0..*" Corso : insegna
+PersonalTrainer "1" --> "1" StrategiaRetribuzione : contratto
+
+Direttore "1" --> "0..*" PersonalTrainer : gestisce
+Direttore "1" --> "0..*" Corso : pianifica
+Direttore "1" --> "1" RetribuzioneTotale : calcola
+RetribuzioneTotale "1" --> "0..*" PersonalTrainer : somma
+
+Sede "1" --> "0..*" Corso : ospita
+
+SessioneAllenamento "1" *-- "1..*" DatiFormPojo : contiene
+
+
+@enduml
