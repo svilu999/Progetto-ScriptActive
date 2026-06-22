@@ -28,8 +28,8 @@ import it.unipv.posfw.exceptions.CredenzialiErrateException;
  * trasforma il controllo del flusso in una gestione basata sulle policy, migliorando la 
  * leggibilità e la manutenibilità (Separazione tra "Logica di autenticazione" e "Gestione degli errori").
  * </p>
- * * @author Vilucchi
- * @version 1.3
+ * * @author Vilucchi e Padula
+ * @version 2.1
  */
 public class LoginController {
     

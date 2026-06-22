@@ -105,4 +105,9 @@ public class Cliente extends Utente implements Observer {
     public TipoAbbonamento getTipoAbbonamento() {
         return this.abbonamento;
     }
+
+	public void setPremium(boolean b) {
+		
+		
+	}
 }
