@@ -88,15 +88,38 @@ public class AutenticazioneTest {
      * {@link org.junit.Assert#assertNotNull(String, Object)} e {@link org.junit.Assert#assertEquals(String, Object, Object)}.
      * </p>
      */
+
     @Test
     public void testEffettuaLogin_Successo() {
-        // Fase di SETUP: Configurazione dell'ambiente isolato per simulare l'identificazione positiva dell'utente nel DB.
-        utenteDaRestituire = new Cliente("Mario", "Rossi", "m@m.it", "CF1", null);
+        // Fase di SETUP: Creiamo un utente perfetto per evitare che il Controller lo blocchi
+        Cliente clientePerfetto = new Cliente("Mario", "Rossi", "m@m.it", "CF1", null);
         
-        // Fase di ACTION: Invocazione della logica di business simulando i flussi di input dell'attore primario.
+        // 1. Assicuriamoci che l'account sia attivo
+        clientePerfetto.setStato("Attivo"); 
+        
+        // 2. Creiamo un abbonamento valido (che scade l'anno prossimo)
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        cal.add(java.util.Calendar.YEAR, 1);
+        
+        it.unipv.posfw.domain.Abbonamento abbonamentoValido = new it.unipv.posfw.domain.Abbonamento(
+                "CF1", 
+                it.unipv.posfw.domain.LivelloAbbonamento.ANNUALE, 
+                null, 
+                false, 
+                "IBAN123"
+        );
+        abbonamentoValido.setDataScadenza(cal.getTime());
+        
+        // 3. Associamo l'abbonamento al cliente
+        clientePerfetto.setAbbonamentoAttivo(abbonamentoValido);
+        
+        // Diciamo al Mock di restituire questo utente inattaccabile
+        utenteDaRestituire = clientePerfetto;
+        
+        // Fase di ACTION: Tentiamo il login
         controller.effettuaLogin("m@m.it", "password123");
         
-        // Fase di ASSERTION: Validazione dello stato postcondizionale del sistema.
+        // Fase di ASSERTION: Ora l'utente non sarà null!
         assertNotNull("L'utente loggato deve essere presente in memoria dopo un'autenticazione riuscita", controller.getUtenteLoggato());
         assertEquals("m@m.it", controller.getUtenteLoggato().getEmail());
     }
