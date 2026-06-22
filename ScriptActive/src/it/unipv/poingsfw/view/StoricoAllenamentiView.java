@@ -18,9 +18,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * La classe {@code StoricoAllenamentiView} rappresenta il componente <b>View</b> all'interno del pattern architetturale <b>MVC (Model-View-Controller)</b>.
  * <p>
- * Estende {@link javax.swing.JFrame}, fungendo da <i>Top-level container</i> per l'interfaccia grafica sviluppata in <i>Swing</i>. 
  * Nel rispetto rigoroso del <b>Principio di Separazione Modello-Vista</b>, questa classe si occupa unicamente della presentazione 
  * dei dati e dell'inizializzazione degli elementi grafici (Component e Container), garantendo l'assenza di logica di business.
  * Le interazioni dell'utente vengono catturate e delegate al Controller mediante l'<i>Event Delegation Model</i>.
@@ -94,8 +92,7 @@ public class StoricoAllenamentiView extends JFrame {
     /**
      * Inietta la dipendenza del Controller in questa Vista.
      * <p>
-     * Permette alla View di notificare gli eventi di input dell'utente al componente preposto 
-     * all'esecuzione della logica di business e alla comunicazione con il livello di persistenza.
+     * Permette alla View di notificare gli eventi di input dell'utente al controller.
      * </p>
      * * @param controller Istanza concreta del {@link StoricoAllenamentiController}.
      */
@@ -103,17 +100,8 @@ public class StoricoAllenamentiView extends JFrame {
         this.controller = controller;
     }
 
-    /**
-     * Costruisce l'albero dei componenti Swing (<i>Component Tree</i>).
-     * <p>
-     * Alloca e dispone i <i>General-purpose containers</i> (es. JPanel) e i componenti <i>lightweight</i> 
-     * atomici in base ai Layout Manager prescelti. Predispone l'architettura UI per gestire la 
-     * transizione di stato tra l'interfaccia Premium (inserimento dati) e la schermata di blocco per Utenti Base.
-     * </p>
-     */
     private void inizializzaComponenti() {
         JPanel panelTop = new JPanel(new BorderLayout()); 
-        
         btnIndietro = new JButton("⬅ Indietro");
         btnIndietro.setFont(fontTesto);
         btnIndietro.setFocusPainted(false);
@@ -140,7 +128,6 @@ public class StoricoAllenamentiView extends JFrame {
             BorderFactory.createTitledBorder(null, "Crea Nuova Sessione di Allenamento", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, fontTitoli),
             BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
-
         JPanel panelInput = new JPanel(new GridLayout(5, 2, 10, 10));
         
         JLabel lblData = new JLabel("Data (dd/MM/yyyy):");
@@ -203,6 +190,7 @@ public class StoricoAllenamentiView extends JFrame {
         btnSalvaSessione.setFocusPainted(false);
         btnSalvaSessione.setOpaque(true);
         btnSalvaSessione.setBorderPainted(false); 
+        
         btnSalvaSessione.addActionListener(e -> clickSalvaSessioneCompleta());
 
         JPanel panelMiddleContainer = new JPanel(new BorderLayout(10, 10));
@@ -215,7 +203,7 @@ public class StoricoAllenamentiView extends JFrame {
 
         add(panelForm, BorderLayout.CENTER);
 
-        /* Contenitore per lo Storico Allenamenti (Postcondition UC4) */
+        /* Contenitore per lo Storico Allenamenti (Postcondition ) */
         panelStoricoContainer = new JPanel();
         panelStoricoContainer.setLayout(new BoxLayout(panelStoricoContainer, BoxLayout.Y_AXIS));
         JScrollPane scrollPane = new JScrollPane(panelStoricoContainer);
@@ -270,7 +258,7 @@ public class StoricoAllenamentiView extends JFrame {
      * Avvia la richiesta di accesso al modulo di gestione allenamenti delegandola al Controller.
      * <p>
      * Cattura un'eventuale eccezione derivante da vincoli di dominio (mancanza privilegi Premium)
-     * e adegua l'interfaccia invocando il Flusso Alternativo (<i>Alternative Flow 1</i> dell'UC4).
+     * e adegua l'interfaccia invocando il Flusso Alternativo.
      * </p>
      * * @param cliente Il {@link Cliente} che tenta di accedere al modulo.
      */
@@ -375,7 +363,7 @@ public class StoricoAllenamentiView extends JFrame {
     }
 
     /**
-     * Esegue il rendering grafico associato al <i>Flusso Alternativo 1</i> dell'UC4.
+     * Esegue il rendering grafico associato al <i>Flusso Alternativo 1</i> .
      * <p>
      * Se il sistema deduce l'assenza del livello di abbonamento "Premium", la View oscura dinamicamente
      * il Modulo di inserimento e altera il <i>Component Tree</i> per esporre la <i>Call to Action</i> per l'upgrade.
@@ -399,7 +387,7 @@ public class StoricoAllenamentiView extends JFrame {
         panelStoricoContainer.add(Box.createVerticalStrut(20)); 
         panelStoricoContainer.add(btnSimulaAccesso);
         
-        this.revalidate();
+        this.revalidate(); // funzioni swing per sistemare la schermata a video (ricalcolo geoetrico e pixell
         this.repaint();
     }
 
@@ -510,18 +498,13 @@ public class StoricoAllenamentiView extends JFrame {
         panelStoricoContainer.repaint();
     }
 
-    /**
-     * Metodo esposto di Utility per istanziare un Componente Modale standard (Dialog).
-     * * @param messaggio Il payload testuale informativo da mostrare all'utente.
-     * @param titolo L'intestazione descrittiva della finestra.
-     * @param tipoMessaggio La costante Swing che determina lo stile visivo e l'iconografia del modale (es. {@code JOptionPane.WARNING_MESSAGE}).
-     */
+ 
     public void mostraMessaggio(String messaggio, String titolo, int tipoMessaggio) {
         JOptionPane.showMessageDialog(this, messaggio, titolo, tipoMessaggio);
     }
 
     /**
-     * Commuta programmaticamente lo stato di editabilità dei campi del form (es. TextField, ComboBox, Bottoni).
+     * Commuta  lo stato di editabilità dei campi del form (es. TextField, ComboBox, Bottoni).
      * <p>
      * Adoperato per assecondare la logica condizionale dettata dal livello di abbonamento (UC4).
      * </p>

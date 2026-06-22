@@ -49,8 +49,6 @@ public class StoricoAllenamentiController {
      * Stabilisce il binding bidirezionale iniziale associando questo controller alla vista delegata,
      * e procede alla registrazione dei listener (Observer) per l'interazione utente.
      * </p>
-     * * @param view L'istanza del <i>Top-level container</i> grafico dedicato allo storico allenamenti.
-     * @param dao  L'oggetto di accesso ai dati (Data Access Object) per l'astrazione della persistenza.
      */
     public StoricoAllenamentiController(StoricoAllenamentiView view, SessioneDAO dao) {
         this.view = view;
