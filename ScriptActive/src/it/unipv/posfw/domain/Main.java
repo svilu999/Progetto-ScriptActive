@@ -2,7 +2,6 @@ package it.unipv.posfw.domain;
 
 import javax.swing.SwingUtilities;
 
-import it.unipv.posfw.controller.GestoreRinnovi;
 import it.unipv.posfw.controller.LoginController;
 import it.unipv.posfw.dao.UtenteDAO;
 import it.unipv.posfw.database.UtenteDAOMySQL;
