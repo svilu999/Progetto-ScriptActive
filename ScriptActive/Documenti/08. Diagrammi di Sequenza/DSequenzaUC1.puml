@@ -1,0 +1,120 @@
+@startuml DiagrammaSequenzaMain_UC1 
+skinparam maxMessageSize 200 
+skinparam monochrome false 
+skinparam linetype ortho 
+
+title UC1 - Registrazione (Flusso Principale) 
+
+actor "Cliente" as C 
+boundary "view : RegistrazioneView" as View 
+control "gestore : GestoreRegistrazione" as Controller 
+database "clienteDAO : ClienteDAO" as CDAO 
+control "GestorePagamenti" as GP 
+entity "nuovoCliente : Cliente" as Cliente 
+entity "ricevuta : Pagamento" as Pagamento
+entity "nuovoAbbonamento : Abbonamento" as Abbonamento 
+
+C -> View : compilaModulo(nome, cognome, email, password, CF, sedeScelta, tipo, livello, rinnovoAutomatico, iban)
+activate View 
+
+View -> Controller : registraNuovoCliente(nome, cognome, email, password, CF, sedeScelta, tipo, livello, rinnovoAutomatico, iban) 
+activate Controller 
+
+' Controllo duplicati
+Controller -> CDAO : getClienteByCF(codiceFiscale)
+activate CDAO
+CDAO --> Controller : null
+deactivate CDAO
+
+' Creazione entità Cliente
+create Cliente 
+Controller -> Cliente : <<create>> Cliente(nome, cognome, email, codiceFiscale, sedeScelta, tipo) 
+Controller -> Cliente : setPassword(password)
+
+' Invocazione Singleton e Pagamento
+Controller -> GP : getIstanza()
+activate GP
+GP --> Controller : banca
+deactivate GP
+
+Controller -> GP : elaboraPagamento(iban, importo) 
+activate GP 
+GP --> Controller : ok
+deactivate GP 
+
+' Creazione ricevuta Pagamento (presente nel codice)
+create Pagamento
+Controller -> Pagamento : <<create>> Pagamento(importo, "SUCCESS", iban)
+
+' Creazione e associazione Abbonamento
+create Abbonamento
+Controller -> Abbonamento : <<create>> Abbonamento(codiceFiscale, livello, tipo, rinnovoAutomatico, iban)
+Controller -> Abbonamento : setDataScadenza(dataScadenzaCalcolata)
+Controller -> Cliente : setAbbonamentoAttivo(nuovoAbbonamento)
+
+' Salvataggio nel DB
+Controller -> CDAO : inserisciCliente(nuovoCliente) 
+activate CDAO 
+CDAO --> Controller : ok
+deactivate CDAO 
+
+' Ritorno alla View
+Controller --> View : success
+View --> C : reindirizza("Form di Login") 
+deactivate Controller 
+deactivate View 
+@enduml
+
+
+FLUSSO ALTERNATIVO
+
+@startuml DiagrammaSequenzaAlt_UC1 
+skinparam maxMessageSize 200 
+skinparam monochrome false 
+skinparam linetype ortho 
+
+title UC1 - Registrazione (Flusso Alternativo: Errore Pagamento) 
+
+actor "Cliente" as C 
+boundary "view : RegistrazioneView" as View 
+control "gestore : GestoreRegistrazione" as Controller 
+database "clienteDAO : ClienteDAO" as CDAO 
+control "GestorePagamenti" as GP 
+entity "nuovoCliente : Cliente" as Cliente 
+
+C -> View : compilaModulo(nome, cognome, email, password, CF, sedeScelta, tipo, livello, rinnovoAutomatico, iban)
+activate View 
+
+View -> Controller : registraNuovoCliente(nome, cognome, email, password, CF, sedeScelta, tipo, livello, rinnovoAutomatico, iban) 
+activate Controller 
+
+' Controllo duplicati
+Controller -> CDAO : getClienteByCF(codiceFiscale)
+activate CDAO
+CDAO --> Controller : null
+deactivate CDAO
+
+' Creazione entità Cliente (solo in memoria)
+create Cliente 
+Controller -> Cliente : <<create>> Cliente(nome, cognome, email, codiceFiscale, sedeScelta, tipo) 
+Controller -> Cliente : setPassword(password)
+
+' Invocazione Singleton e Tentativo di Pagamento
+Controller -> GP : getIstanza()
+activate GP
+GP --> Controller : banca
+deactivate GP
+
+Controller -> GP : elaboraPagamento(iban, importo) 
+activate GP 
+GP --> Controller : throws PagamentoFallitoException 
+deactivate GP 
+
+' Interruzione immediata del flusso e propagazione eccezione alla View
+Controller --> View : throws PagamentoFallitoException 
+deactivate Controller 
+
+View --> C : mostraMessaggio("Errore nella transazione. Riprovare.") 
+deactivate View 
+@enduml
+
