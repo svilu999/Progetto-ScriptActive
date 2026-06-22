@@ -1,0 +1,1122 @@
+@startuml
+title Diagramma unico leggibile compatibile VS Code con Exception e dettagli - ScriptActive
+top to bottom direction
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+hide circle
+
+' Versione compatibile con VS Code, con Exception collegate.
+' Tutte le classi del progetto sono presenti.
+' Relazioni mostrate: ereditarieta, implementazioni, associazioni da attributi, gerarchia Exception, throws principali.
+
+package "view" {
+class DashboardClienteView {
+  - utenteCorrente : Cliente
+  - lblBenvenuto : JLabel
+  - lblAbbonamento : JLabel
+  - panelPrenotazioni : JPanel
+  - btnAreaPremium : JButton
+  - btnPrenotaCorsi : JButton
+  - {readOnly} fontTitolo : Font
+  - {readOnly} fontSottotitolo : Font
+  - {readOnly} fontBottoni : Font
+  --
+  + DashboardClienteView()
+  - inizializzaComponenti() : void
+  + impostaDatiCliente(cliente : Cliente) : void
+  + getUtenteCorrente() : Cliente
+  + mostraCorsiPrenotati(corsi : List<Corso>) : void
+  - mostraMessaggioPrenotazioni(messaggio : String) : void
+  + addAreaPremiumListener(listener : ActionListener) : void
+  + addPrenotaCorsiListener(listener : ActionListener) : void
+}
+
+class DashboardDirettoreView {
+  - txtIdAnnulla : JTextField txtNomeCorso, txtDataOra, txtCapienza, txtIdPT,
+  - btnGestionePersonale : JButton btnOrganizza, btnAnnulla, btnVediPalinsesto,
+  - areaLog : JTextArea
+  --
+  + DashboardDirettoreView()
+  - configuraEventi() : void
+  + {static} main(args : String[]) : void
+}
+
+class GestionePersonaleView {
+  - gestorePersonale : GestorePersonale
+  - tabellaPT : JTable
+  - modelloTabella : DefaultTableModel
+  - txtNome : JTextField
+  - txtCognome : JTextField
+  - txtEmail : JTextField
+  - txtIdTrainer : JTextField
+  - txtSpecializzazione : JTextField
+  - txtImportoRetribuzione : JTextField
+  - comboTipoRetribuzione : JComboBox<String>
+  - txtIdDaLicenziare : JTextField
+  - comboSostituto : JComboBox<String>
+  - btnAggiorna : JButton
+  - btnAssumi : JButton
+  - btnLicenziaConSostituto : JButton
+  - btnLicenziaSenzaSostituto : JButton
+  - btnCalcolaRetribuzioni : JButton
+  - lblStato : JLabel
+  - {readOnly} COLORE_SFONDO : Color
+  - {readOnly} COLORE_CARD : Color
+  - {readOnly} COLORE_TESTO : Color
+  - {readOnly} COLORE_TESTO_SECONDARIO : Color
+  - {readOnly} COLORE_BORDO : Color
+  - {readOnly} COLORE_HEADER_TABELLA : Color
+  - {readOnly} COLORE_RIGA_ALTERNATA : Color
+  - {readOnly} COLORE_SELEZIONE : Color
+  - {readOnly} FONT_TITOLO : Font
+  - {readOnly} FONT_SOTTOTITOLO : Font
+  - {readOnly} FONT_SEZIONE : Font
+  - {readOnly} FONT_BASE : Font
+  - {readOnly} FONT_BOTTONE : Font
+  --
+  + GestionePersonaleView()
+  - impostaLookAndFeel() : void
+  - inizializzaFinestra() : void
+  - inizializzaComponenti() : void
+  - creaHeader() : JPanel
+  - creaCardTabella() : JPanel
+  - creaTabella() : void
+  - configuraTabella() : void
+  - creaPannelloOperazioni() : JPanel
+  - creaFormAssunzione() : JPanel
+  - creaFormLicenziamento() : JPanel
+  - creaBarraAzioni() : JPanel
+  - creaCard(titoloSezione : String) : JPanel
+  - creaCampoTesto() : JTextField
+  - creaComboBox() : JComboBox<String>
+  - creaBottone(testo : String) : JButton
+  - aggiungiRigaForm(form : JPanel, riga : int, testoLabel : String, componenteInput : Component) : void
+  - caricaSostitutiCompatibili(idDaLicenziare : String, specializzazioneRichiesta : String) : void
+  - caricaPersonalTrainer() : void
+  - assumiPersonalTrainer() : void
+  - licenziaPersonalTrainerConSostituto() : void
+  - licenziaPersonalTrainerSenzaSostituto() : void
+  - calcolaRetribuzioniMensili() : void
+  - pulisciCampiAssunzione() : void
+  - resetCampiLicenziamento() : void
+  - mostraErrore(messaggio : String) : void
+  - aggiornaStato(messaggio : String) : void
+  + {static} main(args : String[]) : void
+}
+
+class LoginView {
+  - txtEmail : JTextField
+  - txtPassword : JPasswordField
+  - btnAccedi : JButton
+  - btnRegistrati : JButton
+  - controller : LoginController
+  --
+  + LoginView()
+  + setController(controller : LoginController) : void
+  - inizializzaComponenti() : void
+  + mostraErrore(messaggio : String) : void
+  + mostraPopupRinnovo(email : String, messaggio : String) : void
+}
+
+class PalinsestoCorsiView {
+  - tabellaCorsi : JTable
+  - modelloTabella : DefaultTableModel
+  - btnAggiorna : JButton
+  - btnIndietro : JButton
+  - btnPrenota : JButton
+  - btnAnnulla : JButton
+  - corsiAttuali : List<Corso>
+  - clienteLoggato : Cliente
+  --
+  + PalinsestoCorsiView()
+  + caricaDati() : void
+  - prenotaCorsoCliccato() : void
+  + {static} main(args : String[]) : void
+  - annullaCorsoCliccato() : void
+  + setClienteLoggato(cliente : Cliente) : void
+}
+
+class RegistrazioneView {
+  - cardLayout : CardLayout
+  - mainPanel : JPanel
+  - gestore : GestoreRegistrazione
+  - txtEmail : JTextField txtNome, txtCognome, txtCF,
+  - txtPassword : JPasswordField
+  - comboSede : JComboBox<Sede>
+  - comboTipo : JComboBox<TipoAbbonamento>
+  - comboLivello : JComboBox<LivelloAbbonamento>
+  - txtIBAN : JTextField
+  - chkRinnovo : JCheckBox
+  - {readOnly} fieldSize : Dimension
+  - {readOnly} buttonSize : Dimension
+  --
+  + RegistrazioneView()
+  - initUI() : void
+  - creaStep1() : JPanel
+  - creaStep2() : JPanel
+  - creaStep3() : JPanel
+  - handleFinalRegistration(e : ActionEvent) : void
+  - creaBasePanel(titolo : String) : JPanel
+  - aggiungiLabelEInput(panel : JPanel, labelText : String, inputField : JComponent) : void
+  - configuresComponenteFixed(comp : JComponent) : void
+  - creaBlueButton(testo : String) : JButton
+  - creaCenteredButtonPanel(button : JButton) : JPanel
+  + mostraModuloRegistrazione() : void
+  + {static} main(args : String[]) : void
+}
+
+class RinnovoView {
+  - comboPiani : JComboBox<String>
+  - btnPaga : JButton
+  - lblMessaggio : JLabel
+  - emailUtente : String
+  --
+  + RinnovoView(emailUtente : String)
+  - effettuaRinnovo() : void
+}
+
+class StoricoAllenamentiView {
+  - controller : StoricoAllenamentiController
+  - panelForm : JPanel
+  - txtRipetizioni : JTextField txtData, txtNomeEsercizio, txtCarichi,
+  - comboCategoria : JComboBox<String>
+  - btnAggiungiEsercizio : JButton
+  - btnSalvaSessione : JButton
+  - txtAnteprimaBozza : JTextArea
+  - panelStoricoContainer : JPanel
+  - btnSimulaAccesso : JButton
+  - btnIndietro : JButton
+  - utenteCorrente : Cliente
+  - eserciziInBozza : List<DatiFormPojo>
+  - {readOnly} fontTitoli : Font
+  - {readOnly} fontTesto : Font
+  --
+  + StoricoAllenamentiView()
+  + setController(controller : StoricoAllenamentiController) : void
+  - inizializzaComponenti() : void
+  + addIndietroListener(listener : ActionListener) : void
+  + addSimulaAccessoListener(listener : ActionListener) : void
+  + setUtenteCorrente(cliente : Cliente) : void
+  + clickAccediStorico(cliente : Cliente) : void
+  - clickAggiungiEsercizio() : void
+  - clickSalvaSessioneCompleta() : void
+  - aggiornaAnteprimaBozza() : void
+  + mostraBloccoUpgradePremium() : void
+  + mostraModuloInserimento() : void
+  + mostraStorico(storico : List<SessioneAllenamento>) : void
+  + mostraMessaggio(messaggio : String, titolo : String, tipoMessaggio : int) : void
+  - impostaStatoForm(abilitato : boolean) : void
+  - mostraMessaggioNelContainer(messaggio : String) : void
+}
+
+}
+
+package "controller" {
+class GestoreCorsi {
+  - {static} istanza : GestoreCorsi
+  - corsoDAO : CorsoDAO
+  --
+  - GestoreCorsi()
+  + {static} {synchronized} getInstance() : GestoreCorsi
+  + {synchronized} getPalinsestoCorsi() : List<Corso>
+  + {synchronized} organizzaNuovoCorso(nome : String, orario : LocalDateTime, capienza : int, idPT : String) : void
+  + {synchronized} annullaCorso(idCorso : String) : void
+  + {synchronized} getElencoCorsi() : List<Corso>
+  + {synchronized} haCorsiAttiviOFuturi(idTrainer : String) : boolean
+  + {synchronized} haCorsiImminenti(idTrainer : String) : boolean
+  + {synchronized} sostituisciTrainerNeiCorsi(idTrainerDaSostituire : String, idTrainerSostituto : String) : int
+  + {synchronized} sostituisciPtNeiCorsi(ptDaLicenziare : PersonalTrainer, ptSostituto : PersonalTrainer) : int
+  - sostituisciPtNeiCorsi(idTrainerDaSostituire : String, ptSostituto : PersonalTrainer) : int
+  - convalidaTrainer(idPT : String) : boolean
+  - controllaSovrapposizioni(idPT : String, dataOra : LocalDateTime) : boolean
+  - corsoAssegnatoAlTrainer(corso : Corso, idTrainerInput : String) : boolean
+}
+
+class GestorePagamenti {
+  - {static} istanza : GestorePagamenti
+  --
+  - GestorePagamenti()
+  + {static} getIstanza() : GestorePagamenti
+  + elaboraPagamento(ibanCliente : String, importo : double) : boolean
+}
+
+class GestorePersonale {
+  - {static} istanza : GestorePersonale
+  - trainerDAO : PersonalTrainerDAO
+  - servizioSwapCorsi : ServizioSwapCorsi
+  - servizioRetribuzioni : ServizioRetribuzioni
+  --
+  - GestorePersonale()
+  + GestorePersonale(trainerDAO : PersonalTrainerDAO, servizioSwapCorsi : ServizioSwapCorsi)
+  + GestorePersonale(trainerDAO : PersonalTrainerDAO, servizioSwapCorsi : ServizioSwapCorsi, servizioRetribuzioni : ServizioRetribuzioni)
+  + {static} getInstance() : GestorePersonale
+  + assumiPT(nome : String, cognome : String, email : String, idPT : String, specializzazione : String, contratto : StrategiaRetribuzione) : void
+  + licenziaPT(idDaLicenziare : String) : void
+  + licenziaPT(idDaLicenziare : String, idSostituto : String) : void
+  - disattivaRecordPersonale(ptDaLicenziare : PersonalTrainer) : void
+  + getElencoPersonalTrainer() : List<PersonalTrainer>
+  + calcolaTotaleStipendiMensili() : double
+  - normalizzaIdAssunzione(idPT : String) : String
+  - normalizzaIdObbligatorio(id : String, nomeCampo : String) : String
+  - recuperaTrainerDaLicenziare(idDaLicenziare : String) : PersonalTrainer
+  - recuperaTrainerSostituto(idSostituto : String) : PersonalTrainer
+  - verificaCompatibilitaSostituto(ptDaLicenziare : PersonalTrainer, ptSostituto : PersonalTrainer) : void
+}
+
+class GestorePrenotazioni {
+  - prenotazioneDAO : PrenotazioneDAO
+  - corsoDAO : CorsoDAO
+  --
+  + GestorePrenotazioni()
+  + prenotaCorso(cliente : Cliente, corso : Corso) : void
+  + annullaPrenotazione(cliente : Cliente, corso : Corso) : void
+  + getCorsiPrenotatiDalCliente(cliente : Cliente) : List<Corso>
+}
+
+class GestoreRegistrazione {
+  - {static} istanza : GestoreRegistrazione
+  - clienteDAO : ClienteDAO
+  --
+  - GestoreRegistrazione()
+  + {static} getIstanza() : GestoreRegistrazione
+  + registraNuovoCliente(nome : String, cognome : String, email : String, password : String, codiceFiscale : String, sedeScelta : Sede, tipo : TipoAbbonamento, livello : LivelloAbbonamento, rinnovoAutomatico : boolean, iban : String) : void
+}
+
+class GestoreRinnovi {
+  - {static} istanza : GestoreRinnovi
+  - clienteDAO : ClienteDAOMySQL
+  - scheduler : ScheduledExecutorService
+  --
+  - GestoreRinnovi()
+  + {static} getIstanza() : GestoreRinnovi
+  + avviaMotoreRinnovi() : void
+  - elaboraRinnovi() : void
+  - calcolaNuovaScadenza(vecchiaScadenza : Date, livello : LivelloAbbonamento) : Date
+}
+
+class LoginController {
+  - view : LoginView
+  - dao : UtenteDAO
+  - utenteLoggato : Utente
+  --
+  + LoginController(view : LoginView, dao : UtenteDAO)
+  + effettuaLogin(email : String, password : String) : void
+  + getUtenteLoggato() : Utente
+  + apriDashboardCliente(clienteLoggato : Cliente) : void
+  + apriDashboardDirettore(direttoreLoggato : Direttore) : void
+  + apriDashboardTrainer(trainerLoggato : PersonalTrainer) : void
+}
+
+class SistemaPagamento {
+  + SistemaPagamento()
+  + autorizzaTransazione(iban : String, importo : double) : boolean
+  + registraAddebitoPeriodico(iban : String, importo : double) : void
+}
+
+class StoricoAllenamentiController {
+  - view : StoricoAllenamentiView
+  - dao : SessioneDAO
+  - clienteLoggato : Cliente
+  --
+  + StoricoAllenamentiController(view : StoricoAllenamentiView, dao : SessioneDAO)
+  - inizializzaBottoniNavigazione() : void
+  + gestisciAccessoSezione(cliente : Cliente) : void
+  + salvaSessioneCompleta(data : Date, esercizi : List<DatiFormPojo>, cliente : Cliente) : void
+  + eliminaSessioneSelezionata(sessione : SessioneAllenamento, cliente : Cliente) : void
+  - caricaStorico(cliente : Cliente) : void
+}
+
+class TestPrenotazione {
+  + {static} main(args : String[]) : void
+}
+
+}
+
+package "service" {
+interface ServizioRetribuzioni {
+  ~ calcolaTotaleRetribuzioniMensili() : double
+}
+
+class ServizioRetribuzioniMySQL {
+  + calcolaTotaleRetribuzioniMensili() : double
+}
+
+interface ServizioSwapCorsi {
+  ~ haCorsiAttiviOFuturi(idTrainer : String) : boolean
+  ~ haCorsiImminenti(idTrainer : String) : boolean
+  ~ sostituisciTrainerNeiCorsi(idTrainerDaSostituire : String, idTrainerSostituto : String) : int
+}
+
+class ServizioSwapCorsiMySQL {
+  + haCorsiAttiviOFuturi(idTrainer : String) : boolean
+  + haCorsiImminenti(idTrainer : String) : boolean
+  + sostituisciTrainerNeiCorsi(idTrainerDaSostituire : String, idTrainerSostituto : String) : int
+  - esisteTrainerAttivo(conn : Connection, idTrainer : int) : boolean
+  - sostitutoHaSovrapposizioni(conn : Connection, idTrainerDaSostituire : int, idTrainerSostituto : int) : boolean
+  - estraiIdNumerico(id : String) : Integer
+}
+
+}
+
+package "dao" {
+interface ClienteDAO {
+  + inserisciCliente(c : Cliente) : boolean
+  + getClienteByCF(codiceFiscale : String) : Cliente
+  + updateCliente(c : Cliente) : void
+  + deleteCliente(codiceFiscale : String) : void
+}
+
+interface CorsoDAO {
+  ~ insert(c : Corso) : void
+  ~ delete(idCorso : String) : void
+  ~ findById(idCorso : String) : Corso
+  ~ findAll() : List<Corso>
+  ~ getPalinsesto() : List<Corso>
+  ~ updatePostiDisponibili(c : Corso) : void
+}
+
+interface LoginDAO {
+  ~ verificaCredenziali(email : String, password : String) : Utente
+}
+
+interface PersonalTrainerDAO {
+  ~ salva(pt : PersonalTrainer) : void
+  ~ trovaPerId(idPT : String) : PersonalTrainer
+  ~ elimina(idPT : String) : void
+  ~ aggiorna(pt : PersonalTrainer) : void
+  ~ trovaTutti() : List<PersonalTrainer>
+}
+
+interface PrenotazioneDAO {
+  ~ esistePrenotazione(idCliente : String, idCorso : String) : boolean
+  ~ inserisciPrenotazione(idCliente : String, idCorso : String) : boolean
+  ~ eliminaPrenotazione(idCliente : String, idCorso : String) : boolean
+  ~ inserisciPrenotazione(idCliente : String, idCorso : String, stato : String) : boolean
+  ~ getPrimoInListaAttesa(idCorso : String) : String
+  ~ aggiornaStatoPrenotazione(idCliente : String, idCorso : String, nuovoStato : String) : boolean
+  ~ getCorsiPerCliente(idCliente : String) : List<Corso>
+}
+
+interface SedeDAO {
+  ~ aggiungiSede(nomeSede : String) : void
+  ~ stampaTutteLeSedi() : void
+  ~ getTutteLeSedi() : List<Sede>
+}
+
+interface SessioneDAO {
+  ~ salvaSessione(sessione : SessioneAllenamento) : boolean
+  ~ getStorico(idCliente : String) : List<SessioneAllenamento>
+  ~ eliminaSessioneSpecifica(sessione : SessioneAllenamento) : boolean
+}
+
+interface UtenteDAO {
+  ~ effettuaLogin(email : String, password : String) : Utente
+  ~ registraCliente(cf : String, nome : String, cognome : String, email : String, passwordHash : String) : void
+}
+
+}
+
+package "database" {
+class ClienteDAOMySQL {
+  + getClienteByCF(codiceFiscale : String) : Cliente
+  + inserisciCliente(c : Cliente) : boolean
+  + updateCliente(c : Cliente) : void
+  + deleteCliente(codiceFiscale : String) : void
+  + getAbbonamentiInScadenzaConRinnovo() : List<Abbonamento>
+  + aggiornaScadenzaAbbonamento(idAbbonamento : int, nuovaData : Date) : void
+  + disattivaRinnovoAutomatico(idAbbonamento : int) : void
+}
+
+class CorsoDAOMySQL {
+  + insert(c : Corso) : void
+  + delete(idCorso : String) : void
+  + findById(idCorso : String) : Corso
+  + findAll() : List<Corso>
+  + getPalinsesto() : List<Corso>
+  + updatePostiDisponibili(corso : Corso) : void
+  - esisteCorso(conn : Connection, idCorso : int) : boolean
+  - aggiornaCorso(conn : Connection, c : Corso, idCorso : int) : void
+  - inserisciCorso(conn : Connection, c : Corso, idCorso : Integer) : void
+  - eseguiLista(sql : String) : List<Corso>
+  - queryBase() : String
+  - creaCorsoDaResultSet(rs : ResultSet) : Corso
+  - statoDbToJava(statoDb : String) : StatoCorso
+  - statoJavaToDb(statoJava : StatoCorso) : String
+  - idTrainerObbligatorio(c : Corso) : int
+  - estraiIdNumerico(id : String) : Integer
+  - recuperaOCreaSedePredefinita(conn : Connection) : int
+  - recuperaOCreaDirettorePredefinito(conn : Connection) : int
+}
+
+class LoginDAOMySQL {
+  + verificaCredenziali(email : String, password : String) : Utente
+}
+
+class PersonalTrainerDAOMySQL {
+  + salva(pt : PersonalTrainer) : void
+  + trovaPerId(idPT : String) : PersonalTrainer
+  + aggiorna(pt : PersonalTrainer) : void
+  + elimina(idPT : String) : void
+  + trovaTutti() : List<PersonalTrainer>
+  - salvaOAggiornaUtente(conn : Connection, pt : PersonalTrainer) : int
+  - aggiornaUtente(conn : Connection, idUtente : int, pt : PersonalTrainer) : void
+  - trovaIdUtenteDaEmail(conn : Connection, email : String) : Integer
+  - recuperaOCreaDirettorePredefinito(conn : Connection) : int
+  - creaPersonalTrainerDaResultSet(rs : ResultSet) : PersonalTrainer
+  - calcolaDatiRetribuzione(pt : PersonalTrainer) : DatiRetribuzione
+  - normalizzaStatoContratto(statoContratto : String) : String
+  - estraiIdNumerico(id : String) : Integer
+  - generaCodiceFiscaleTecnico(pt : PersonalTrainer) : String
+}
+
+class PersonalTrainerDAOMySQL_DatiRetribuzione {
+  - {readOnly} tipoContratto : String
+  - {readOnly} tipoRetribuzione : String
+  - {readOnly} stipendioMensile : double
+  - {readOnly} compensoPerLezione : Double
+  --
+  - DatiRetribuzione(tipoContratto : String, tipoRetribuzione : String, stipendioMensile : double, compensoPerLezione : Double)
+}
+
+class PrenotazioneDAOMySQL {
+  + esistePrenotazione(idCliente : String, idCorso : String) : boolean
+  + inserisciPrenotazione(idCliente : String, idCorso : String) : boolean
+  + eliminaPrenotazione(idCliente : String, idCorso : String) : boolean
+  + inserisciPrenotazione(idCliente : String, idCorso : String, stato : String) : boolean
+  + getPrimoInListaAttesa(idCorso : String) : String
+  + aggiornaStatoPrenotazione(idCliente : String, idCorso : String, nuovoStato : String) : boolean
+  + getCorsiPerCliente(idCliente : String) : List<Corso>
+}
+
+class SedeDAOMySQL {
+  + aggiungiSede(nomeSede : String) : void
+  + stampaTutteLeSedi() : void
+  + getTutteLeSedi() : List<Sede>
+  + {static} main(args : String[]) : void
+}
+
+class SessioneDAOMySQL {
+  + SessioneDAOMySQL()
+  + salvaSessione(sessione : SessioneAllenamento) : boolean
+  + getStorico(idCliente : String) : List<SessioneAllenamento>
+  + eliminaSessioneSpecifica(sessione : SessioneAllenamento) : boolean
+}
+
+class UtenteDAOMySQL {
+  + effettuaLogin(email : String, passwordInserita : String) : Utente
+  - recuperaAbbonamentoCompleto(idUtente : int, cf : String, conn : Connection) : Abbonamento
+  - recuperaAutorizzazioneDirettore(idUtente : int, conn : Connection) : String
+  + registraCliente(cf : String, nome : String, cognome : String, email : String, passwordHash : String) : void
+  + eseguiRinnovo(email : String, mesiAggiuntivi : int, nuovoPiano : String) : void
+  + tentaRinnovoSilenzioso(email : String) : boolean
+}
+
+}
+
+package "util" {
+class DatabaseManager {
+  - {static} instance : DatabaseManager
+  - {readOnly} prop : Properties
+  --
+  - DatabaseManager()
+  + {static} {synchronized} getInstance() : DatabaseManager
+  + getConnection() : Connection
+}
+
+class TestConnessione {
+  + {static} main(args : String[]) : void
+}
+
+}
+
+package "domain" {
+class Abbonamento {
+  - idAbbonamento : int
+  - codiceFiscale : String
+  - livello : LivelloAbbonamento
+  - tipo : TipoAbbonamento
+  - dataScadenza : Date
+  - rinnovoAutomatico : boolean
+  - iban : String
+  --
+  + Abbonamento(codiceFiscale : String, livello : LivelloAbbonamento, tipo : TipoAbbonamento, rinnovoAutomatico : boolean, iban : String)
+  + getIdAbbonamento() : int
+  + setIdAbbonamento(idAbbonamento : int) : void
+  + getCodiceFiscale() : String
+  + setCodiceFiscale(codiceFiscale : String) : void
+  + getLivello() : LivelloAbbonamento
+  + setLivello(livello : LivelloAbbonamento) : void
+  + getTipo() : TipoAbbonamento
+  + setTipo(tipo : TipoAbbonamento) : void
+  + getDataScadenza() : Date
+  + setDataScadenza(dataScadenza : Date) : void
+  + isRinnovoAutomatico() : boolean
+  + setRinnovoAutomatico(rinnovoAutomatico : boolean) : void
+  + getIban() : String
+  + setIban(iban : String) : void
+  + isValidoOggi() : boolean
+}
+
+class Cliente {
+  - codiceFiscale : String
+  - abbonamento : TipoAbbonamento
+  - sedePrincipale : Sede
+  - abbonamentoAttivo : Abbonamento
+  --
+  + Cliente(nome : String, cognome : String, email : String, codiceFiscale : String)
+  + Cliente(nome : String, cognome : String, email : String, codiceFiscale : String, abbonamento : TipoAbbonamento)
+  + Cliente(nome : String, cognome : String, email : String, codiceFiscale : String, sedePrincipale : Sede, abbonamento : TipoAbbonamento)
+  + update(messaggio : String) : void
+  + accediAreaRiservata(router : LoginController) : void
+  + puoAccedereAlSistema() : boolean
+  + isPremium() : boolean
+  + getIdCliente() : String
+  + getCodiceFiscale() : String
+  + setCodiceFiscale(codiceFiscale : String) : void
+  + getSedePrincipale() : Sede
+  + setSedePrincipale(sedePrincipale : Sede) : void
+  + getAbbonamentoAttivo() : Abbonamento
+  + setAbbonamentoAttivo(abbonamentoAttivo : Abbonamento) : void
+  + getAbbonamento() : TipoAbbonamento
+  + setAbbonamento(abbonamento : TipoAbbonamento) : void
+  + getTipoAbbonamento() : TipoAbbonamento
+}
+
+class Corso {
+  - idCorso : String
+  - nome : String
+  - dataOra : LocalDateTime
+  - postiDisponibili : int
+  - capienzaMassima : int
+  - stato : StatoCorso
+  - trainerAssegnato : PersonalTrainer
+  - iscritti : List<Observer>
+  - prenotazioni : List<Prenotazione>
+  --
+  + Corso(idCorso : String, nome : String, orario : LocalDateTime, capienzaMassima : int, trainerAssegnato : PersonalTrainer)
+  + decrementaPosti() : void
+  + incrementaPosti() : void
+  + alCompleto() : boolean
+  + attach(o : Observer) : void
+  + detach(o : Observer) : void
+  + notifyObservers() : void
+  + setTrainerAssegnato(trainerAssegnato : PersonalTrainer) : void
+  + getIdCorso() : String
+  + getNome() : String
+  + getDataOra() : LocalDateTime
+  + getPostiDisponibili() : int
+  + setPostiDisponibili(postiDisponibili : int) : void
+  + getCapienzaMassima() : int
+  + setCapienzaMassima(capienzaMassima : int) : void
+  + getStato() : StatoCorso
+  + setStato(stato : StatoCorso) : void
+  + getTrainerAssegnato() : PersonalTrainer
+}
+
+class DatiFormPojo {
+  - nomeEsercizio : String
+  - carichi : double
+  - ripetizioni : int
+  --
+  + DatiFormPojo(nomeEsercizio : String, carichi : double, ripetizioni : int)
+  + getNomeEsercizio() : String
+  + getCarichi() : double
+  + getRipetizioni() : int
+}
+
+class Direttore {
+  - codiceAutorizzazione : String
+  --
+  + Direttore(nome : String, cognome : String, email : String, codiceAutorizzazione : String)
+  + accediAreaRiservata(router : LoginController) : void
+  + getCodiceAutorizzazione() : String
+  + setCodiceAutorizzazione(codiceAutorizzazione : String) : void
+}
+
+enum LivelloAbbonamento {
+  MENSILE
+  SEMESTRALE
+  ANNUALE
+}
+
+class Main {
+  + {static} main(args : String[]) : void
+}
+
+interface Observer {
+  ~ update(messaggio : String) : void
+}
+
+class Pagamento {
+  - idPagamento : int
+  - importo : double
+  - dataTransazione : Date
+  - esito : String
+  - iban : String
+  --
+  + Pagamento(importo : double, esito : String, iban : String)
+  + getIdPagamento() : int
+  + setIdPagamento(idPagamento : int) : void
+  + getImporto() : double
+  + setImporto(importo : double) : void
+  + getDataTransazione() : Date
+  + setDataTransazione(dataTransazione : Date) : void
+  + getEsito() : String
+  + setEsito(esito : String) : void
+  + getIban() : String
+  + setIban(iban : String) : void
+}
+
+class PersonalTrainer {
+  - idTrainer : String
+  - specializzazione : String
+  - tipoContratto : String
+  - strategia : StrategiaRetribuzione
+  - statoContratto : String
+  - isAttivo : boolean
+  --
+  + PersonalTrainer(nome : String, cognome : String, email : String, idTrainer : String, specializzazione : String, strategia : StrategiaRetribuzione)
+  + PersonalTrainer(nome : String, cognome : String, email : String, idTrainer : String)
+  + getIdTrainer() : String
+  + setIdTrainer(idTrainer : String) : void
+  + getSpecializzazione() : String
+  + setSpecializzazione(specializzazione : String) : void
+  + getTipoContratto() : String
+  + setTipoContratto(tipoContratto : String) : void
+  + getStrategia() : StrategiaRetribuzione
+  + setStrategia(strategia : StrategiaRetribuzione) : void
+  + getStatoContratto() : String
+  + setStatoContratto(statoContratto : String) : void
+  + isAttivo() : boolean
+  + setAttivo(isAttivo : boolean) : void
+  + accediAreaRiservata(router : LoginController) : void
+  + calcolaStipendioMensile(corsi : int) : double
+}
+
+class Prenotazione {
+  - idPrenotazione : int
+  - stato : String
+}
+
+class Sede {
+  - idSede : int
+  - nomeSede : String
+  --
+  + Sede()
+  + Sede(idSede : int, nomeSede : String)
+  + getIdSede() : int
+  + setIdSede(idSede : int) : void
+  + getNomeSede() : String
+  + setNomeSede(nomeSede : String) : void
+  + toString() : String
+}
+
+class SessioneAllenamento {
+  - idSessione : int
+  - data : Date
+  - idCliente : String
+  - esercizi : List<DatiFormPojo>
+  --
+  + SessioneAllenamento(data : Date, idCliente : String)
+  + setIdSessione(idSessione : int) : void
+  + getIdSessione() : int
+  + aggiungiEsercizio(esercizio : DatiFormPojo) : void
+  + getData() : Date
+  + getIdCliente() : String
+  + getEsercizi() : List<DatiFormPojo>
+}
+
+enum StatoCorso {
+  ATTIVO
+  CANCELLATO
+  COMPLETO
+}
+
+interface Subject {
+  ~ attach(o : Observer) : void
+  ~ detach(o : Observer) : void
+  ~ notifyObservers() : void
+}
+
+enum TipoAbbonamento {
+  BASE
+  PREMIUM
+}
+
+abstract class Utente {
+  # nome : String
+  # cognome : String
+  # email : String
+  - id : int
+  # passwordHash : String
+  # password : String
+  # stato : String
+  --
+  + Utente(nome : String, cognome : String, email : String)
+  + {abstract} accediAreaRiservata(router : LoginController) : void
+  + isAccountAbilitato() : boolean
+  + puoAccedereAlSistema() : boolean
+  + getId() : int
+  + setId(id : int) : void
+  + getNomeCompleto() : String
+  + getNome() : String
+  + setNome(nome : String) : void
+  + getCognome() : String
+  + setCognome(cognome : String) : void
+  + getEmail() : String
+  + setEmail(email : String) : void
+  + getPassword() : String
+  + setPassword(password : String) : void
+  + getPasswordHash() : String
+  + setPasswordHash(passwordHash : String) : void
+  + getStato() : String
+  + setStato(stato : String) : void
+}
+
+}
+
+package "strategy" {
+class RetribuzioneFissa {
+  - stipendioBase : double
+  --
+  + RetribuzioneFissa(stipendioBase : double)
+  + calcolaStipendio(numeroLezioni : int) : double
+  + getTipoContratto() : String
+}
+
+class RetribuzioneProvvigione {
+  - quotaPerLezione : double
+  --
+  + RetribuzioneProvvigione(quotaPerLezione : double)
+  + calcolaStipendio(numeroLezioni : int) : double
+  + getTipoContratto() : String
+}
+
+interface StrategiaRetribuzione {
+  ~ calcolaStipendio(numeroLezioni : int) : double
+  ~ getTipoContratto() : String
+}
+
+}
+
+package "exceptions" {
+class AbbonamentoScadutoException {
+  + AbbonamentoScadutoException(messaggio : String)
+}
+
+class AccountInattivoException {
+  + AccountInattivoException(messaggio : String)
+}
+
+class CorsoAlCompletoException {
+  - {static} {readOnly} serialVersionUID : long
+  --
+  + CorsoAlCompletoException(messaggio : String)
+}
+
+class CorsoNonTrovatoException {
+  + CorsoNonTrovatoException(message : String)
+}
+
+class CredenzialiErrateException {
+  + CredenzialiErrateException(messaggio : String)
+}
+
+class DatiAllenamentoNonValidiException {
+  + DatiAllenamentoNonValidiException(messaggio : String)
+}
+
+class DatiRegistrazioneNonValidiException {
+  + DatiRegistrazioneNonValidiException(messaggio : String)
+}
+
+class PagamentoFallitoException {
+  + PagamentoFallitoException(messaggio : String)
+}
+
+class PrenotazioneGiaEffettuataException {
+  - {static} {readOnly} serialVersionUID : long
+  --
+  + PrenotazioneGiaEffettuataException(messaggio : String)
+}
+
+class PrenotazioneInesistenteException {
+  + PrenotazioneInesistenteException(message : String)
+}
+
+class SalvataggioFallitoException {
+  + SalvataggioFallitoException()
+  + SalvataggioFallitoException(messaggio : String)
+}
+
+class SchedaVuotaException {
+  + SchedaVuotaException()
+  + SchedaVuotaException(messaggio : String)
+}
+
+class SostitutoNonValidoException {
+  + SostitutoNonValidoException(messaggio : String)
+}
+
+class SovrapposizioneOrarioException {
+  + SovrapposizioneOrarioException(message : String)
+}
+
+class TrainerGiaAssuntoException {
+  + TrainerGiaAssuntoException(messaggio : String)
+}
+
+class TrainerNonLicenziabileException {
+  + TrainerNonLicenziabileException(message : String)
+}
+
+class TrainerNonValidoException {
+  + TrainerNonValidoException(message : String)
+}
+
+class UtenteGiaEsistenteException {
+  + UtenteGiaEsistenteException(messaggio : String)
+}
+
+class UtenteNonPremiumException {
+  + UtenteNonPremiumException()
+  + UtenteNonPremiumException(messaggio : String)
+}
+
+}
+
+package "test.unit" {
+class AutenticazioneTest {
+  - controller : LoginController
+  - view : LoginView
+  - testDao : UtenteDAO
+  - utenteDaRestituire : Utente
+  --
+  + setUp() : void
+  + testEffettuaLogin_Successo() : void
+  + testEffettuaLogin_CredenzialiErrate() : void
+  + testEffettuaLogin_AccountDisabilitato() : void
+}
+
+class GestoreCorsiTest {
+  - gestore : GestoreCorsi
+  --
+  + setUp() : void
+  + tearDown() : void
+  + testOrganizzaNuovoCorso_Successo() : void
+  + testSovrapposizioneOrario_LanciaEccezione() : void
+  + testOrganizzaNuovoCorso_TrainerInesistente_LanciaEccezione() : void
+  + testAnnullaCorso_Successo() : void
+}
+
+class GestorePersonaleTest {
+  - trainerDAO : FakePersonalTrainerDAO
+  - servizioSwapCorsi : FakeServizioSwapCorsi
+  - servizioRetribuzioni : FakeServizioRetribuzioni
+  - gestorePersonale : GestorePersonale
+  --
+  + setUp() : void
+  + testAssumiPT_SuccessoConIdAutomatico() : void
+  + testAssumiPT_IdGiaPresente_LanciaEccezione() : void
+  + testLicenziaPT_SenzaCorsiAttivi_DisattivaTrainer() : void
+  + testLicenziaPT_SenzaSostitutoMaConCorsiAttivi_LanciaEccezione() : void
+  + testLicenziaPT_ConSostitutoCompatibile_EsegueSwapEDisattiva() : void
+  + testLicenziaPT_ConStessoIdComeSostituto_LanciaEccezione() : void
+  + testLicenziaPT_SostitutoNonCompatibile_LanciaEccezione() : void
+  + testCalcolaTotaleStipendiMensili_DelegaAlServizioRetribuzioni() : void
+  - creaTrainer(id : String, nome : String, cognome : String, specializzazione : String, attivo : boolean) : PersonalTrainer
+}
+
+class GestorePrenotazioniTest {
+  - gestore : GestorePrenotazioni
+  - utenteTest : Cliente
+  - corsoTest : Corso
+  --
+  + setUp() : void
+  + testPrenotazioneSuccesso() : void
+  + testListaAttesaEccezione() : void
+  + testPrenotazioneDoppiaEccezione() : void
+}
+
+class PalinsestoCorsiTest {
+  + {static} main(args : String[]) : void
+}
+
+class RegistrazioneTest {
+  - gestoreRegistrazione : GestoreRegistrazione
+  - sedeDiTest : Sede
+  --
+  + setUp() : void
+  + testRegistrazioneConSuccesso() : void
+  + testRegistrazioneFallitaPerPagamentoRespinto() : void
+}
+
+class SistemaPagamentoTest {
+  - sistemaPagamento : SistemaPagamento
+  --
+  + setUp() : void
+  + testAutorizzaTransazioneValida() : void
+  + testAutorizzaTransazioneConErrore() : void
+}
+
+class StoricoAllenamentiTest {
+  - controller : StoricoAllenamentiController
+  - utenteBase : Cliente
+  - utentePremium : Cliente
+  --
+  + initTest() : void
+  + testUtenteBaseBloccato() : void
+  + testUtentePremiumConsentito() : void
+  + testSalvataggioSchedaVuota() : void
+  + testCasiLimiteDatiAllenamento() : void
+}
+
+}
+
+package "test.system" {
+class AutenticazioneSystemTest {
+  - controller : LoginController
+  - view : LoginView
+  --
+  + setUp() : void
+  + testLoginSuccesso() : void
+  + testLoginFallito_CredenzialiErrate() : void
+}
+
+class RegistrazioniPrestazioniSystemTest {
+  - controller : StoricoAllenamentiController
+  - view : StoricoAllenamentiView
+  --
+  + setUp() : void
+  + testMainSuccessScenario_AccessoPremiumConsentito() : void
+  + testAlternativeFlow1_UtenteBaseBloccato() : void
+}
+
+}
+
+package "java.lang" {
+class Exception {
+}
+}
+
+' Relazioni strutturali con molteplicità
+Abbonamento "1" --> "1" LivelloAbbonamento : livello
+Abbonamento "1" --> "1" TipoAbbonamento : tipo
+AutenticazioneSystemTest "1" --> "1" LoginController : controller
+AutenticazioneSystemTest "1" --> "1" LoginView : view
+AutenticazioneTest "1" --> "1" LoginController : controller
+AutenticazioneTest "1" --> "1" LoginView : view
+AutenticazioneTest "1" --> "1" Utente : utenteDaRestituire
+AutenticazioneTest "1" --> "1" UtenteDAO : testDao
+Cliente "1" --> "0..1" Abbonamento : abbonamentoAttivo
+Cliente "1" --> "0..1" Sede : sedePrincipale
+Cliente "1" --> "1" TipoAbbonamento : abbonamento
+ClienteDAO <|.. ClienteDAOMySQL
+Corso "1" --> "0..*" Observer : iscritti
+Corso "1" --> "1" PersonalTrainer : trainerAssegnato
+Corso "1" --> "0..*" Prenotazione : prenotazioni
+Corso "1" --> "1" StatoCorso : stato
+CorsoDAO <|.. CorsoDAOMySQL
+DashboardClienteView "1" --> "1" Cliente : utenteCorrente
+GestionePersonaleView "1" --> "1" GestorePersonale : gestorePersonale
+GestoreCorsi "1" --> "1" CorsoDAO : corsoDAO
+GestoreCorsiTest "1" --> "1" GestoreCorsi : gestore
+GestorePersonale "1" --> "1" PersonalTrainerDAO : trainerDAO
+GestorePersonale "1" --> "1" ServizioRetribuzioni : servizioRetribuzioni
+GestorePersonale "1" --> "1" ServizioSwapCorsi : servizioSwapCorsi
+GestorePersonaleTest "1" --> "1" GestorePersonale : gestorePersonale
+GestorePrenotazioni "1" --> "1" CorsoDAO : corsoDAO
+GestorePrenotazioni "1" --> "1" PrenotazioneDAO : prenotazioneDAO
+GestorePrenotazioniTest "1" --> "1" Cliente : utenteTest
+GestorePrenotazioniTest "1" --> "1" Corso : corsoTest
+GestorePrenotazioniTest "1" --> "1" GestorePrenotazioni : gestore
+GestoreRegistrazione "1" --> "1" ClienteDAO : clienteDAO
+GestoreRinnovi "1" --> "1" ClienteDAOMySQL : clienteDAO
+LoginController "1" --> "1" LoginView : view
+LoginController "1" --> "1" Utente : utenteLoggato
+LoginController "1" --> "1" UtenteDAO : dao
+LoginDAO <|.. LoginDAOMySQL
+LoginView "1" --> "1" LoginController : controller
+Observer <|.. Cliente
+PalinsestoCorsiView "1" --> "1" Cliente : clienteLoggato
+PalinsestoCorsiView "1" --> "0..*" Corso : corsiAttuali
+PersonalTrainer "1" --> "1" StrategiaRetribuzione : strategia
+PersonalTrainerDAO <|.. PersonalTrainerDAOMySQL
+PersonalTrainerDAOMySQL "1" *-- "1" PersonalTrainerDAOMySQL_DatiRetribuzione : inner
+PrenotazioneDAO <|.. PrenotazioneDAOMySQL
+RegistrazioneTest "1" --> "1" GestoreRegistrazione : gestoreRegistrazione
+RegistrazioneTest "1" --> "1" Sede : sedeDiTest
+RegistrazioneView "1" --> "1" GestoreRegistrazione : gestore
+RegistrazioneView "1" --> "1" LivelloAbbonamento : comboLivello
+RegistrazioneView "1" --> "1" Sede : comboSede
+RegistrazioneView "1" --> "1" TipoAbbonamento : comboTipo
+RegistrazioniPrestazioniSystemTest "1" --> "1" StoricoAllenamentiController : controller
+RegistrazioniPrestazioniSystemTest "1" --> "1" StoricoAllenamentiView : view
+SedeDAO <|.. SedeDAOMySQL
+ServizioRetribuzioni <|.. ServizioRetribuzioniMySQL
+ServizioSwapCorsi <|.. GestoreCorsi
+ServizioSwapCorsi <|.. ServizioSwapCorsiMySQL
+SessioneAllenamento "1" --> "0..*" DatiFormPojo : esercizi
+SessioneDAO <|.. SessioneDAOMySQL
+SistemaPagamentoTest "1" --> "1" SistemaPagamento : sistemaPagamento
+StoricoAllenamentiController "1" --> "1" Cliente : clienteLoggato
+StoricoAllenamentiController "1" --> "1" SessioneDAO : dao
+StoricoAllenamentiController "1" --> "1" StoricoAllenamentiView : view
+StoricoAllenamentiTest "1" --> "1" Cliente : utenteBase
+StoricoAllenamentiTest "1" --> "1" Cliente : utentePremium
+StoricoAllenamentiTest "1" --> "1" StoricoAllenamentiController : controller
+StoricoAllenamentiView "1" --> "1" Cliente : utenteCorrente
+StoricoAllenamentiView "1" --> "0..*" DatiFormPojo : eserciziInBozza
+StoricoAllenamentiView "1" --> "1" StoricoAllenamentiController : controller
+StrategiaRetribuzione <|.. RetribuzioneFissa
+StrategiaRetribuzione <|.. RetribuzioneProvvigione
+Subject <|.. Corso
+Utente <|-- Cliente
+Utente <|-- Direttore
+Utente <|-- PersonalTrainer
+UtenteDAO <|.. UtenteDAOMySQL
+
+' Gerarchia delle exception custom
+Exception <|-- AbbonamentoScadutoException
+Exception <|-- AccountInattivoException
+Exception <|-- CorsoAlCompletoException
+Exception <|-- CorsoNonTrovatoException
+Exception <|-- CredenzialiErrateException
+Exception <|-- DatiAllenamentoNonValidiException
+Exception <|-- DatiRegistrazioneNonValidiException
+Exception <|-- PagamentoFallitoException
+Exception <|-- PrenotazioneGiaEffettuataException
+Exception <|-- PrenotazioneInesistenteException
+Exception <|-- SalvataggioFallitoException
+Exception <|-- SchedaVuotaException
+Exception <|-- SostitutoNonValidoException
+Exception <|-- SovrapposizioneOrarioException
+Exception <|-- TrainerGiaAssuntoException
+Exception <|-- TrainerNonLicenziabileException
+Exception <|-- TrainerNonValidoException
+Exception <|-- UtenteGiaEsistenteException
+Exception <|-- UtenteNonPremiumException
+
+' Dipendenze throws principali verso le exception
+GestoreCorsi ..> CorsoNonTrovatoException : throws
+GestoreCorsi ..> SostitutoNonValidoException : throws
+GestoreCorsi ..> SovrapposizioneOrarioException : throws
+GestoreCorsi ..> TrainerNonValidoException : throws
+GestorePagamenti ..> PagamentoFallitoException : throws
+GestorePersonale ..> SostitutoNonValidoException : throws
+GestorePersonale ..> TrainerGiaAssuntoException : throws
+GestorePersonale ..> TrainerNonLicenziabileException : throws
+GestorePersonaleTest ..> SostitutoNonValidoException : throws
+GestorePersonaleTest ..> TrainerGiaAssuntoException : throws
+GestorePersonaleTest ..> TrainerNonLicenziabileException : throws
+GestoreRegistrazione ..> DatiRegistrazioneNonValidiException : throws
+GestoreRegistrazione ..> PagamentoFallitoException : throws
+GestoreRegistrazione ..> UtenteGiaEsistenteException : throws
+ServizioSwapCorsi ..> SostitutoNonValidoException : throws
+ServizioSwapCorsiMySQL ..> SostitutoNonValidoException : throws
+StoricoAllenamentiController ..> DatiAllenamentoNonValidiException : throws
+StoricoAllenamentiController ..> SalvataggioFallitoException : throws
+StoricoAllenamentiController ..> SchedaVuotaException : throws
+StoricoAllenamentiController ..> UtenteNonPremiumException : throws
+StoricoAllenamentiTest ..> UtenteNonPremiumException : throws
+@enduml
