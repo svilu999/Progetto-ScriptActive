@@ -245,9 +245,9 @@ public class UtenteDAOMySQL implements UtenteDAO {
             
             int righeModificate = stmt.executeUpdate();
             if(righeModificate > 0) {
-                System.out.println("✅ Rinnovo completato con successo per: " + email);
+                System.out.println("Rinnovo completato con successo per: " + email);
             } else {
-                System.out.println("❌ Nessuna riga modificata. Sicura che l'email sia giusta?");
+                System.out.println("Nessuna riga modificata. Sicura che l'email sia giusta?");
             }
         } catch (SQLException e) {
             System.err.println("Errore SQL durante l'aggiornamento dell'abbonamento.");
@@ -265,7 +265,13 @@ public class UtenteDAOMySQL implements UtenteDAO {
      */
     
     public boolean tentaRinnovoSilenzioso(String email) {
-        String query = "SELECT a.RinnovoAutomatico, a.Livello FROM Abbonamento a JOIN Utente u ON a.ID_Cliente = u.ID_Utente WHERE u.Email = ?";
+    	   
+    	    String query = "SELECT a.RinnovoAutomatico, a.Livello " +
+    	                   "FROM Abbonamento a " +
+    	                   "JOIN Utente u ON a.ID_Cliente = u.ID_Utente " +
+    	                   "WHERE u.Email = ? AND a.DataScadenza < CURRENT_DATE";
+    	    
+    	    // ... il resto del metodo rimane identico ...
         
         try {
             java.sql.Connection conn = DatabaseManager.getInstance().getConnection();
