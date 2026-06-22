@@ -19,7 +19,7 @@ import it.unipv.poingsfw.util.DatabaseManager;
  * Implementazione concreta dell'interfaccia {@link SessioneDAO} per il DBMS MySQL.
  * <p>
  * Sfrutta il pattern <b>Data Access Object (DAO)</b> per astrarre la logica di memorizzazione persistente 
- * dello storico allenamenti. La classe incapsula le istruzioni SQL (DML e DQL) e si appoggia 
+ * dello storico allenamenti. La classe incapsula le istruzioni SQL (DML e SQL) e si appoggia 
  * al Singleton {@link DatabaseManager} per l'acquisizione delle connessioni JDBC.
  * </p>
  * <p>
@@ -55,7 +55,7 @@ public class SessioneDAOMySQL implements SessioneDAO {
 
         try (Connection conn = DatabaseManager.getInstance().getConnection()) {
             conn.setAutoCommit(false); 
-
+// NO SQL Injection
             try (PreparedStatement pstmtSess = conn.prepareStatement(sqlSessione, Statement.RETURN_GENERATED_KEYS)) {
                 
                 pstmtSess.setDate(1, new java.sql.Date(sessione.getData().getTime()));
@@ -153,7 +153,6 @@ public class SessioneDAOMySQL implements SessioneDAO {
     }
 
     /**
-     * Rimuove una sessione di allenamento (e in cascata i relativi esercizi, se previsto dai vincoli FK del DB).
      * <p>
      * Sfrutta il blocco <i>try-with-resources</i> per automatizzare la chiusura dei flussi JDBC (Connection e Statement).
      * </p>

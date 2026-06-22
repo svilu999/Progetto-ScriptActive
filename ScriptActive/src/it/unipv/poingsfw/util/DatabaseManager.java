@@ -63,7 +63,7 @@ public class DatabaseManager {
                 throw new IllegalStateException("File db.properties non trovato nella cartella src.");
             }
 
-            // Caricamento dei parametri di connessione in memoria.
+         
             prop.load(input);
 
             // Abilitazione del Driver JDBC specifico per MySQL tramite Java Reflection.
@@ -81,7 +81,7 @@ public class DatabaseManager {
     /**
      * Definisce il metodo statico (di classe) che fornisce il punto di accesso globale all'oggetto Singleton.
      * 
-     * Motivazione Architetturale: Applica la logica dell'inizializzazione ritardata (Lazy Initialization). 
+    
      * L'uso della parola chiave {@code synchronized} garantisce il mutuo scomparto: qualora molteplici thread 
      * tentassero simultaneamente di acquisire l'istanza per la prima volta, il blocco di codice verrà eseguito 
      * in modo sequenziale, prevenendo la creazione accidentale di istanze multiple che violerebbero il pattern.
