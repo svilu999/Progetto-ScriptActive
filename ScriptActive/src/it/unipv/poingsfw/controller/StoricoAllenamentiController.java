@@ -17,7 +17,6 @@ import it.unipv.poingsfw.view.PalinsestoCorsiView;
 import it.unipv.poingsfw.view.StoricoAllenamentiView;
 
 /**
- * La classe {@code StoricoAllenamentiController} rappresenta il componente <b>Controller</b> nel pattern architetturale <b>MVC (Model-View-Controller)</b>.
  * <p>
  * Agisce come intermediario direzionale tra la logica di presentazione ({@link StoricoAllenamentiView}) e 
  * il livello di accesso ai dati ({@link SessioneDAO}). Assorbe la logica di business e il coordinamento 
@@ -31,7 +30,7 @@ import it.unipv.poingsfw.view.StoricoAllenamentiView;
  * valida i parametri quantitativi in input (precondizioni dell'UC4) e coordina il consolidamento del tracciato 
  * storico richiamando il livello di persistenza.
  * </p>
- * * @author Vilucchi
+ * * @author Vilucchi Prina
  * @version 1.2
  * @see it.unipv.poingsfw.view.StoricoAllenamentiView
  * @see it.unipv.poingsfw.dao.SessioneDAO
@@ -62,7 +61,7 @@ public class StoricoAllenamentiController {
      * Coordina la registrazione dei listener (<i>Event Delegation Model</i>) sui componenti della Vista.
      * <p>
      * <b>Risoluzione Information Hiding:</b> Conformemente al principio di basso accoppiamento, il Controller 
-     * non manipola più direttamente i componenti grafici atomici (es. i {@code JButton} che ora sono privati), 
+     * non manipola più direttamente i componenti grafici atomici (es. i {@code JButton} che  sono privati), 
      * ma invoca i metodi pubblici di servizio esposti dalla Vista per iniettare i propri {@link java.awt.event.ActionListener}.
      * Questo incapsula la struttura dell'interfaccia e separa la "reazione" (Controller) dall'"azione" (View).
      * </p>
@@ -87,9 +86,9 @@ public class StoricoAllenamentiController {
                 System.err.println("Errore architetturale nel recupero dei corsi: " + ex.getMessage());
             }
             
-            /* * Risoluzione Violazione Architetturale: Information Hiding.
+            /* *  Information Hiding.
              * I bottoni della DashboardClienteView sono stati resi privati. 
-             * L'inserimento dei listener avviene ora tramite metodi setter dedicati esposti dalla Vista.
+             * L'inserimento dei listener avviene tramite metodi setter dedicati esposti dalla Vista.
              */
             dashboardView.addAreaPremiumListener(ev -> {
                 dashboardView.dispose();
@@ -122,10 +121,8 @@ public class StoricoAllenamentiController {
             System.out.println("Routing verso il Modulo Pagamenti per il Cliente: " + clienteLoggato.getNome());
             
             /*
-             * Punto di Estensione Architetturale.
              * L'integrazione con il modulo di Billing (Payment Gateway) o la logica di 
              * mutazione del livello di abbonamento nel dominio avverrà in questo blocco,
-             * delegando l'operazione a un controller o servizio dedicato ai pagamenti.
              */
         });
     }

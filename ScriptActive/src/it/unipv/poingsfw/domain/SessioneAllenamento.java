@@ -12,7 +12,6 @@ import java.util.List;
  * </p>
  * <p>
  * <b>Tracciabilità Requisiti:</b><br>
- * Rappresenta il concetto centrale dello <b>Use Case UC4: Registrazione e Monitoraggio Prestazioni</b>. 
  * Costituisce l'aggregato popolato dalla Vista, validato dal Controller e reso persistente 
  * dal DAO per materializzare la postcondizione dello storico attività.
  * </p>
