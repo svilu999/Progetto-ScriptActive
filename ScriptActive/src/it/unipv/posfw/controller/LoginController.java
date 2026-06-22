@@ -1,13 +1,9 @@
 package it.unipv.posfw.controller;
 
-import java.util.List;
-
-import it.unipv.posfw.dao.SessioneDAO;
 import it.unipv.posfw.dao.UtenteDAO;
 import it.unipv.posfw.database.SessioneDAOMySQL;
 import it.unipv.posfw.database.UtenteDAOMySQL;
 import it.unipv.posfw.domain.Cliente;
-import it.unipv.posfw.domain.Corso;
 import it.unipv.posfw.domain.Direttore;
 import it.unipv.posfw.domain.PersonalTrainer;
 import it.unipv.posfw.domain.Utente;
@@ -17,25 +13,23 @@ import it.unipv.posfw.view.LoginView;
 import it.unipv.posfw.view.PalinsestoCorsiView;
 import it.unipv.posfw.view.StoricoAllenamentiView; 
 
+import it.unipv.posfw.exceptions.AbbonamentoScadutoException;
+import it.unipv.posfw.exceptions.AccountInattivoException;
+import it.unipv.posfw.exceptions.CredenzialiErrateException;
+
 /**
- * La classe {@code LoginController} incarna il ruolo di <b>Controller</b> all'interno del pattern architetturale <b>MVC (Model-View-Controller)</b>.
+ * Controller di autenticazione avanzato con gestione del ciclo di vita della sessione.
  * <p>
- * Presiede alla gestione della fase iniziale del ciclo di vita dell'applicazione (Autenticazione).
- * Il suo compito è validare gli input della View, interrogare il Modello di persistenza (DAO) e governare 
- * le transizioni di stato della Graphical User Interface (Routing).
+ * Questa classe orchestra il flusso di login non solo validando le credenziali, ma applicando 
+ * policy di dominio dinamiche (rinnovo abbonamento, verifica stato account). 
  * </p>
  * <p>
- * <b>Valenza Ingegneristica (Double Dispatch e Polimorfismo):</b><br>
- * Risolve proattivamente l'anti-pattern algoritmico basato sull'introspezione dei tipi (RTTI) e sulle catene 
- * decisionali (<i>Code Smell: Replace Conditional with Polymorphism</i>). Anziché utilizzare blocchi {@code if-else} 
- * con operatori {@code instanceof} per determinare quale dashboard aprire, il controller avvia il meccanismo di 
- * <b>Double Dispatch</b> delegando all'oggetto di dominio il compito di instradare il flusso chiamando a sua volta 
- * il metodo appropriato su questo controller. Questo garantisce il rispetto del principio Open/Closed (OCP) dei principi SOLID.
+ * <b>Nota Architetturale:</b> L'uso di eccezioni specifiche ({@link AbbonamentoScadutoException}, ecc.)
+ * trasforma il controllo del flusso in una gestione basata sulle policy, migliorando la 
+ * leggibilità e la manutenibilità (Separazione tra "Logica di autenticazione" e "Gestione degli errori").
  * </p>
  * * @author Vilucchi
- * @version 1.2
- * @see it.unipv.posfw.view.LoginView
- * @see it.unipv.posfw.domain.Utente
+ * @version 1.3
  */
 public class LoginController {
     
@@ -43,72 +37,60 @@ public class LoginController {
     private UtenteDAO dao;
     private Utente utenteLoggato; 
 
-    /**
-     * Costruttore della classe {@code LoginController}.
-     */
     public LoginController(LoginView view, UtenteDAO dao) {
         this.view = view;
         this.dao = dao;
     }
 
     /**
-     * Governa il flusso principale del caso d'uso di Autenticazione (Login).
+     * Esegue il login coordinando il rinnovo automatico e la validazione dei privilegi.
      */
     public void effettuaLogin(String email, String password) {
         
-        /* 1. Validazione sintattica pre-condizionale */
         if (email.isEmpty() || password.isEmpty()) {
             view.mostraErrore("Inserisci sia email che password.");
             return;
         }
 
         try {
-            // 🛡️ SCUDO PROTETTIVO: Leggiamo l'1 PRIMA che i compagni lo cancellino!
+            /* 1. Logica di dominio proattiva: Tenta un rinnovo silenzioso prima dell'autenticazione */
             UtenteDAOMySQL mDao = new UtenteDAOMySQL();
             boolean sbloccatoInAutomatico = mDao.tentaRinnovoSilenzioso(email);
 
-            // 🔐 Ora chiamiamo il login (la data è già al 2026, quindi non farà danni)
+            /* 2. Verifica delle credenziali nel layer di persistenza */
             Utente utente = dao.effettuaLogin(email, password);
 
             if (utente == null) {
-                throw new it.unipv.posfw.exceptions.CredenzialiErrateException("Email o password errate.");    
+                throw new CredenzialiErrateException("Email o password errate.");    
             }
             
+            /* 3. Validazione delle policy di accesso (stato account e abbonamento) */
             if (!utente.puoAccedereAlSistema()) {
                 if (!utente.isAccountAbilitato()) {
-                    throw new it.unipv.posfw.exceptions.AccountInattivoException("Accesso negato: account sospeso.");
+                    throw new AccountInattivoException("Accesso negato: account sospeso.");
                 } else {
-                    if (utente instanceof Cliente) {
-                        if (!sbloccatoInAutomatico) {
-                            // ❌ Non aveva l'1 nel DB, scatta il blocco e il popup manuale!
-                            throw new it.unipv.posfw.exceptions.AbbonamentoScadutoException("Accesso negato: il tuo abbonamento è scaduto.");
-                        }
+                    /* Se il cliente è bloccato e non è stato sbloccato dal rinnovo silenzioso */
+                    if (utente instanceof Cliente && !sbloccatoInAutomatico) {
+                        throw new AbbonamentoScadutoException("Accesso negato: il tuo abbonamento è scaduto.");
                     }
                 }
             }
             
-            /* ASSEGNAZIONE PER IL TEST E PER IL DOMINIO */
             this.utenteLoggato = utente;
 
-            /* 4. Smontaggio della View di Login */
+            /* 4. Transizione di stato della UI */
             view.dispose();
 
-            /* 5. Innesco Double Dispatch */
+            /* 5. Trigger Double Dispatch per l'instradamento polimorfico */
             utenteLoggato.accediAreaRiservata(this); 
             
-        } catch (it.unipv.posfw.exceptions.AbbonamentoScadutoException e) {
-            
-            /* ==========================================================
-             * CASO SPECIALE: L'abbonamento è scaduto!
-             * Invece del solito errore, chiamiamo il nostro nuovo popup
-             * ========================================================== */
+        } catch (AbbonamentoScadutoException e) {
+            /* Gestione del flusso di rinnovo: intercettazione dello stato di dominio "Scaduto" */
             this.utenteLoggato = null;
             view.mostraPopupRinnovo(email, e.getMessage());
 
-        } catch (it.unipv.posfw.exceptions.CredenzialiErrateException | 
-                 it.unipv.posfw.exceptions.AccountInattivoException e) {
-           
-            /* Gestione unificata degli errori: puliamo l'utente loggato e mostriamo il messaggio specifico sulla View */
+        } catch (CredenzialiErrateException | AccountInattivoException e) {
+            /* Gestione unificata degli errori di sicurezza */
             this.utenteLoggato = null;
             view.mostraErrore(e.getMessage());
         }
@@ -118,29 +100,25 @@ public class LoginController {
         return this.utenteLoggato;
     }
 
-    /**
-     * Punto di atterraggio del pattern Double Dispatch per il ruolo di attore <b>Cliente</b>.
-     */
+    /* --- Metodi di Dispatch (Routing) --- */
+
     public void apriDashboardCliente(Cliente clienteLoggato) {
         DashboardClienteView dashboardView = new DashboardClienteView();
         dashboardView.impostaDatiCliente(clienteLoggato);
         
         try {
             GestorePrenotazioni gestorePrenotazioni = new GestorePrenotazioni();
-            List<Corso> corsiDelCliente = gestorePrenotazioni.getCorsiPrenotatiDalCliente(clienteLoggato);
-            dashboardView.mostraCorsiPrenotati(corsiDelCliente);
+            dashboardView.mostraCorsiPrenotati(gestorePrenotazioni.getCorsiPrenotatiDalCliente(clienteLoggato));
         } catch (Exception e) {
-            System.err.println("Errore architetturale nel recupero dei corsi: " + e.getMessage());
+            System.err.println("Errore nel recupero corsi: " + e.getMessage());
         }
         
         dashboardView.setVisible(true);
         
         dashboardView.addAreaPremiumListener(e -> {
             dashboardView.dispose();
-            
             StoricoAllenamentiView premiumView = new StoricoAllenamentiView();
-            SessioneDAO sessioneDAO = new SessioneDAOMySQL();
-            StoricoAllenamentiController clienteController = new StoricoAllenamentiController(premiumView, sessioneDAO);
+            StoricoAllenamentiController clienteController = new StoricoAllenamentiController(premiumView, new SessioneDAOMySQL());
             
             premiumView.setController(clienteController);
             premiumView.setUtenteCorrente(clienteLoggato); 
@@ -157,13 +135,10 @@ public class LoginController {
     }
 
     public void apriDashboardDirettore(Direttore direttoreLoggato) {
-        DashboardDirettoreView direttoreView = new DashboardDirettoreView();
-        direttoreView.setVisible(true);
+        new DashboardDirettoreView().setVisible(true);
     }
 
     public void apriDashboardTrainer(PersonalTrainer trainerLoggato) {
-        PalinsestoCorsiView trainerView = new PalinsestoCorsiView();
-        GestoreCorsi controllerCorsi = GestoreCorsi.getInstance();
-        trainerView.setVisible(true);
+        new PalinsestoCorsiView().setVisible(true);
     }
 }

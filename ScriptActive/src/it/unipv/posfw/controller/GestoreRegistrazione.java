@@ -9,7 +9,6 @@ import it.unipv.posfw.database.ClienteDAOMySQL;
 import it.unipv.posfw.domain.Abbonamento;
 import it.unipv.posfw.domain.Cliente;
 import it.unipv.posfw.domain.LivelloAbbonamento;
-import it.unipv.posfw.domain.Pagamento;
 import it.unipv.posfw.domain.Sede;
 import it.unipv.posfw.domain.TipoAbbonamento;
 // Imports delle Eccezioni
@@ -115,7 +114,6 @@ public class GestoreRegistrazione {
         GestorePagamenti banca = GestorePagamenti.getIstanza();
         banca.elaboraPagamento(iban, importo); 
 
-        Pagamento ricevuta = new Pagamento(importo, "SUCCESS", iban);
 
        
         System.out.println("[DEBUG GESTORE] Il parametro arrivato al gestore vale: " + rinnovoAutomatico);

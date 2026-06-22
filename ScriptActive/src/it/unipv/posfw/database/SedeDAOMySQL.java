@@ -9,6 +9,7 @@ import java.util.List;
 
 import it.unipv.posfw.domain.Sede;
 import it.unipv.posfw.util.DatabaseManager;
+import it.unipv.posfw.dao.SedeDAO;
 
 /**
  * Implementazione concreta per l'accesso ai dati (Data Access Object) dell'entità {@link Sede}.
@@ -22,7 +23,7 @@ import it.unipv.posfw.util.DatabaseManager;
  * @version 1.0
  */
 
-public class SedeDAOMySQL {
+public class SedeDAOMySQL implements SedeDAO {
 
 	/**
      * Inserisce un nuovo record fisico all'interno della tabella Sede (Operazione CREATE).
