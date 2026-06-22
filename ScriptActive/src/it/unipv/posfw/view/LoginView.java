@@ -10,20 +10,20 @@ import it.unipv.posfw.controller.LoginController;
  * La classe {@code LoginView} rappresenta il componente <b>View</b> nel pattern architetturale <b>MVC (Model-View-Controller)</b>
  * demandato alla gestione del ciclo di vita iniziale dell'applicazione (Autenticazione).
  * <p>
- * Estende {@link javax.swing.JFrame}, agendo come <i>Top-level container</i> per l'interfaccia grafica Swing.
+ * Estende {@link javax.swing.JFrame} per l'interfaccia grafica Swing.
  * Aderendo al <b>Principio di Separazione Modello-Vista</b>, la classe isola il rendering grafico e l'acquisizione 
  * degli input (User Actions), demandando la logica di validazione delle credenziali e il routing applicativo 
  * al {@link LoginController}.
  * </p>
  * <p>
  * <b>Tracciabilità Requisiti:</b><br>
- * Risponde allo Use Case primario di <b>Login / Autenticazione</b>. Fornisce all'utente (indipendentemente 
+ * Risponde allo Use Case di <b>Login / Autenticazione</b>. Fornisce all'utente (indipendentemente 
  * dal suo ruolo finale di Cliente, Direttore o Personal Trainer) il modulo di ingresso per l'immissione 
- * delle credenziali, includendo altresì il punto di diramazione (Flusso Alternativo) verso lo Use Case 
+ * delle credenziali, includendo il punto di diramazione (Flusso Alternativo) verso lo Use Case 
  * di <b>Registrazione</b> per i nuovi utenti.
  * </p>
  * * @author Vilucchi
- * @version 1.1
+ * @version 1.3
  * @see javax.swing.JFrame
  * @see it.unipv.posfw.controller.LoginController
  */
@@ -45,8 +45,8 @@ public class LoginView extends JFrame {
      * Costruttore di default per la classe {@code LoginView}.
      * <p>
      * Inizializza il <i>Top-level container</i> definendo i vincoli spaziali e di comportamento 
-     * della finestra (es. inibizione del ridimensionamento tramite {@code setResizable(false)} 
-     * per preservare l'integrità del layout del form). Delega la costruzione del <i>Component Tree</i> 
+     * della finestra.
+     * Per preservare l'integrità del layout del form. Delega la costruzione del <i>Component Tree</i> 
      * al metodo dedicato.
      * </p>
      */
@@ -62,9 +62,9 @@ public class LoginView extends JFrame {
     }
 
     /**
-     * Inietta la dipendenza del Controller in questa Vista (<i>Dependency Injection</i> setter-based).
+     * Inietta la dipendenza del Controller in questa Vista (<i>Dependency Injection</i>).
      * <p>
-     * Stabilisce il canale di comunicazione unidirezionale (Vista &rarr; Controller) necessario 
+     * Stabilisce il canale di comunicazione unidirezionale (Vista ; Controller) necessario 
      * per notificare i tentativi di accesso.
      * </p>
      * * @param controller L'istanza concreta del {@link LoginController} preposta alla validazione.
@@ -82,18 +82,15 @@ public class LoginView extends JFrame {
      */
     private void inizializzaComponenti() {
         
-        /* Modulo di acquisizione credenziali (Input Form) */
+        
         JPanel panelForm = new JPanel(new GridLayout(2, 2, 10, 10));
         panelForm.setBorder(BorderFactory.createEmptyBorder(20, 20, 10, 20));
-
         panelForm.add(new JLabel("Email:"));
         txtEmail = new JTextField();
         panelForm.add(txtEmail);
-
         panelForm.add(new JLabel("Password:"));
         txtPassword = new JPasswordField();
         panelForm.add(txtPassword);
-
         add(panelForm, BorderLayout.CENTER);
 
         /* Contenitore direzionale per le Call to Action (Accedi / Registrati) */
@@ -101,7 +98,6 @@ public class LoginView extends JFrame {
         panelBottoni.setLayout(new BoxLayout(panelBottoni, BoxLayout.Y_AXIS));
         panelBottoni.setBorder(BorderFactory.createEmptyBorder(0, 20, 20, 20));
 
-        /* Rendering visivo e strutturale del pulsante primario (Login) */
         btnAccedi = new JButton("Accedi");
         btnAccedi.setAlignmentX(Component.CENTER_ALIGNMENT);
         btnAccedi.setBackground(new Color(77, 43, 107)); 
