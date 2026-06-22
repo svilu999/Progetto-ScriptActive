@@ -1,4 +1,4 @@
-package it.unipv.posfw.database; // Assicurati che il package sia lo stesso di UtenteDAOMySQL!
+package it.unipv.posfw.dao; // Assicurati che il package sia lo stesso di UtenteDAOMySQL!
 
 import it.unipv.posfw.domain.Utente;
 

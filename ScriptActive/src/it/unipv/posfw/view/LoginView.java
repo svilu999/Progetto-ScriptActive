@@ -22,7 +22,7 @@ import it.unipv.posfw.controller.LoginController;
  * delle credenziali, includendo altresì il punto di diramazione (Flusso Alternativo) verso lo Use Case 
  * di <b>Registrazione</b> per i nuovi utenti.
  * </p>
- * * @author Studente
+ * * @author Vilucchi
  * @version 1.1
  * @see javax.swing.JFrame
  * @see it.unipv.posfw.controller.LoginController
@@ -157,5 +157,28 @@ public class LoginView extends JFrame {
      */
     public void mostraErrore(String messaggio) {
         JOptionPane.showMessageDialog(this, messaggio, "Errore di Accesso", JOptionPane.ERROR_MESSAGE);
+    }
+    /**
+     * Mostra un dialog interattivo per il rinnovo dell'abbonamento.
+     * Se l'utente accetta, chiude il login e apre la View di rinnovo.
+     * * @param email L'email dell'utente bloccato, da passare alla schermata di rinnovo
+     * @param messaggio Il messaggio di errore catturato dall'eccezione
+     */
+    public void mostraPopupRinnovo(String email, String messaggio) {
+        int scelta = JOptionPane.showConfirmDialog(
+            this,
+            messaggio + "\n\nVuoi procedere subito al rinnovo?",
+            "Abbonamento Scaduto",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.WARNING_MESSAGE
+        );
+
+        if (scelta == JOptionPane.YES_OPTION) {
+            this.dispose(); // Chiude la schermata di login
+            
+            // Apre la tua nuova schermata passando l'email
+            RinnovoView schermataRinnovo = new RinnovoView(email);
+            schermataRinnovo.setVisible(true);
+        }
     }
 }

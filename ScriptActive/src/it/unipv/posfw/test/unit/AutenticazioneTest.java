@@ -5,7 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import it.unipv.posfw.controller.LoginController;
-import it.unipv.posfw.database.UtenteDAO;
+import it.unipv.posfw.dao.UtenteDAO;
 import it.unipv.posfw.domain.Utente;
 import it.unipv.posfw.domain.Cliente;
 import it.unipv.posfw.view.LoginView;
@@ -120,5 +120,29 @@ public class AutenticazioneTest {
         
         // Fase di ASSERTION: Verifica della solidità del sistema e del mantenimento delle barriere di autenticazione.
         assertNull("Il controller non deve registrare alcun utente in stato di loggato a fronte di credenziali errate", controller.getUtenteLoggato());
+    }
+    /**
+     * Verifica il Flusso Alternativo 2 (Account disabilitato o sospeso).
+     * Sviluppato da [Tuo Nome].
+     */
+    @Test
+    public void testEffettuaLogin_AccountDisabilitato() {
+        // Fase di SETUP: Creo un utente con credenziali corrette, MA con stato "Inattivo"
+        Cliente clienteSospeso = new Cliente("Luigi", "Verdi", "luigi@email.it", "CF2", null);
+        
+        // ATTENZIONE: Usa il metodo corretto della vostra classe Cliente/Utente per disabilitarlo!
+        clienteSospeso.setStato("Inattivo"); 
+        
+        // Dico al finto DAO di restituire questo utente (le credenziali sono giuste, lui esiste!)
+        utenteDaRestituire = clienteSospeso;
+        
+        // Fase di ACTION: Provo a fare il login
+        controller.effettuaLogin("luigi@email.it", "password123");
+        
+        // Fase di ASSERTION: Il controller DEVE rifiutare l'accesso perché è inattivo
+        assertNull("Il controller non deve far accedere un utente con stato Inattivo", controller.getUtenteLoggato());
+        
+        // NOTA: Se il vostro LoginController lancia un'eccezione (es. AccountSospesoException) 
+        // invece di lasciare semplicemente vuoto l'utente, dovrai usare assertThrows come abbiamo fatto prima!
     }
 }

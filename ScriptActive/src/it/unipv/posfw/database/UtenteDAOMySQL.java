@@ -6,22 +6,41 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-// Importiamo tutte le classi del dominio necessarie!
 import it.unipv.posfw.domain.Utente;
 import it.unipv.posfw.util.DatabaseManager;
 import it.unipv.posfw.domain.Cliente;
 import it.unipv.posfw.domain.TipoAbbonamento;
 import it.unipv.posfw.domain.PersonalTrainer; 
 import it.unipv.posfw.domain.Direttore;
-// Nuovi import per l'abbonamento completo!
+import it.unipv.posfw.dao.UtenteDAO;
 import it.unipv.posfw.domain.Abbonamento;
 import it.unipv.posfw.domain.LivelloAbbonamento;
 
+/**
+ * Implementazione concreta dell'interfaccia {@link UtenteDAO} per il DBMS MySQL.
+ * <p>
+ * Rappresenta il livello di <b>Persistenza (Model)</b> nell'architettura MVC.
+ * Questa classe è il fulcro della gestione dell'identità e degli accessi, 
+ * occupandosi di tradurre i record relazionali in entità polimorfiche di dominio.
+ * </p>
+ * <p>
+ * <b>Strategia di Mapping (Single Table Inheritance):</b><br>
+ * Utilizza la colonna discriminatrice {@code Ruolo} per istanziare dinamicamente 
+ * la corretta sottoclasse di {@link Utente} (es. {@code Cliente}, {@code Direttore}, 
+ * {@code PersonalTrainer}), garantendo il rispetto dei principi Object-Oriented.
+ * </p>
+ * * @author Arianna Padula
+ * @version 1.5
+ * @see it.unipv.posfw.dao.UtenteDAO
+ */
+
 public class UtenteDAOMySQL implements UtenteDAO {
 
-    // ==========================================
-    // METODO PER IL LOGIN (AGGIORNATO CON TUTTI I RUOLI)
-    // ==========================================
+	/**
+     * Esegue l'autenticazione dell'utente e ne ricostruisce lo stato in memoria.
+     * <p>
+     */
+	
     @Override
     public Utente effettuaLogin(String email, String passwordInserita) {
         Utente utenteLoggato = null;
@@ -36,7 +55,6 @@ public class UtenteDAOMySQL implements UtenteDAO {
             
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    // 1. Estraiamo i dati base comuni a tutti gli utenti
                     int idUtente = rs.getInt("ID_Utente");
                     String ruolo = rs.getString("Ruolo");
                     String nome = rs.getString("Nome");
@@ -45,42 +63,31 @@ public class UtenteDAOMySQL implements UtenteDAO {
                     String cf = rs.getString("CodiceFiscale");
                     String stato = rs.getString("Stato");
 
-                    // Controllo di sicurezza: se l'utente non è attivo, blocchiamo l'accesso
-                    if (!"Attivo".equalsIgnoreCase(stato)) {
-                        System.out.println("Utente trovato ma non attivo (" + stato + ")!");
-                        return null; 
-                    }
-
-                    // 2. Creiamo l'oggetto specifico in base al ruolo
                     if (ruolo.equals("Cliente")) {
-                        
-                        // ECCO LA MODIFICA: Recuperiamo l'abbonamento COMPLETO dal DB
                         Abbonamento abbCompleto = recuperaAbbonamentoCompleto(idUtente, cf, conn);
-                        
-                        // Estraiamo solo il Tipo per il costruttore base
                         TipoAbbonamento tipoAbb = (abbCompleto != null) ? abbCompleto.getTipo() : null;
                         
-                        // Creiamo il cliente con il costruttore completo
                         Cliente cliente = new Cliente(nome, cognome, emailDb, cf, tipoAbb);
                         cliente.setId(idUtente); 
-                        
-                        // AGGANCIAMO L'ABBONAMENTO INTERO AL CLIENTE (Così la View troverà la durata!)
                         cliente.setAbbonamentoAttivo(abbCompleto);
                         
                         utenteLoggato = cliente;
 
                     } else if (ruolo.equals("PersonalTrainer")) {
-                        // Creiamo il Trainer usando il costruttore sicuro (da 4 parametri)
                         PersonalTrainer trainer = new PersonalTrainer(nome, cognome, emailDb, cf);
                         trainer.setId(idUtente);
                         utenteLoggato = trainer;
 
                     } else if (ruolo.equals("Direttore")) {
-                        // Recuperiamo il Codice Autorizzazione dalla tabella Direttore
                         String codiceAuth = recuperaAutorizzazioneDirettore(idUtente, conn);
                         Direttore direttore = new Direttore(nome, cognome, emailDb, codiceAuth);
                         direttore.setId(idUtente);
                         utenteLoggato = direttore;
+                    }
+
+                    // Impostiamo lo stato nell'oggetto Java
+                    if (utenteLoggato != null) {
+                        utenteLoggato.setStato(stato);
                     }
                 }
             }
@@ -92,12 +99,9 @@ public class UtenteDAOMySQL implements UtenteDAO {
         return utenteLoggato;
     }
 
-    // ==========================================
-    // METODO DI SUPPORTO PER L'ABBONAMENTO (POTENZIATO)
-    // ==========================================
     private Abbonamento recuperaAbbonamentoCompleto(int idUtente, String cf, Connection conn) {
-        // Attenzione: assicurati che la colonna per Mese/Semestre/Anno su MySQL si chiami "Livello"
-        String queryAbbonamento = "SELECT Tipo, Livello FROM Abbonamento WHERE ID_Cliente = ?";
+        // AGGIUNTO RinnovoAutomatico ALLA SELECT
+        String queryAbbonamento = "SELECT Tipo, Livello, DataScadenza, RinnovoAutomatico FROM Abbonamento WHERE ID_Cliente = ?";
         Abbonamento abbonamentoTrovato = null;
         
         try (PreparedStatement stmtAbb = conn.prepareStatement(queryAbbonamento)) {
@@ -106,7 +110,10 @@ public class UtenteDAOMySQL implements UtenteDAO {
             try (ResultSet rsAbb = stmtAbb.executeQuery()) {
                 if (rsAbb.next()) {
                     String tipoDB = rsAbb.getString("Tipo"); 
-                    String livelloDB = rsAbb.getString("Livello"); // Peschiamo la durata!
+                    String livelloDB = rsAbb.getString("Livello"); 
+                    java.sql.Date dataScadenzaDB = rsAbb.getDate("DataScadenza");
+                    // LEGGIAMO IL VALORE REALE DAL DB (0 o 1 diventa false o true)
+                    boolean rinnovoAutoDB = rsAbb.getBoolean("RinnovoAutomatico");
                     
                     TipoAbbonamento tipoEnum = null;
                     LivelloAbbonamento livelloEnum = null;
@@ -118,8 +125,12 @@ public class UtenteDAOMySQL implements UtenteDAO {
                         livelloEnum = LivelloAbbonamento.valueOf(livelloDB.toUpperCase());
                     }
                     
-                    // Costruiamo l'oggetto completo (metto false e stringa vuota per IBAN che non servono qui)
-                    abbonamentoTrovato = new Abbonamento(cf, livelloEnum, tipoEnum, false, "");
+                    // PASSIAMO IL VALORE REALE AL COSTRUTTORE
+                    abbonamentoTrovato = new Abbonamento(cf, livelloEnum, tipoEnum, rinnovoAutoDB, "");
+                    
+                    if (dataScadenzaDB != null) {
+                        abbonamentoTrovato.setDataScadenza(new java.util.Date(dataScadenzaDB.getTime()));
+                    }
                 }
             }
         } catch (SQLException | IllegalArgumentException e) {
@@ -129,7 +140,6 @@ public class UtenteDAOMySQL implements UtenteDAO {
         
         return abbonamentoTrovato;
     }
-
 
     private String recuperaAutorizzazioneDirettore(int idUtente, Connection conn) {
         String queryAuth = "SELECT CodiceAutorizzazione FROM Direttore WHERE ID_Direttore = ?";
@@ -148,7 +158,6 @@ public class UtenteDAOMySQL implements UtenteDAO {
         return codiceTrovato;
     }
 
-  
     @Override
     public void registraCliente(String cf, String nome, String cognome, String email, String passwordHash) {
         
@@ -202,6 +211,84 @@ public class UtenteDAOMySQL implements UtenteDAO {
             }
         }
     }
+    
+    /**
+     * Esegue il rinnovo dell'abbonamento aggiornando il layer di persistenza.
+     * <p>
+     * Il metodo attua una sanitizzazione/traduzione dell'input (es. da "Annuale - €360.00" 
+     * a "ANNUALE") per allineare il dato proveniente dalla View al dominio MySQL.
+     * </p>
+     */
 
-   
+    public void eseguiRinnovo(String email, int mesiAggiuntivi, String nuovoPiano) {
+        
+        // Se riceve "Annuale - €360.00", estrapola solo "ANNUALE"
+        String livelloDB = "MENSILE"; // default
+        if (nuovoPiano != null) {
+            String pianoUpper = nuovoPiano.toUpperCase();
+            if (pianoUpper.contains("ANNUALE")) {
+                livelloDB = "ANNUALE";
+            } else if (pianoUpper.contains("SEMESTRALE")) {
+                livelloDB = "SEMESTRALE";
+            }
+        }
+        
+        String queryUpdate = "UPDATE Abbonamento SET DataScadenza = DATE_ADD(CURRENT_DATE, INTERVAL ? MONTH), Livello = ? " +
+                             "WHERE ID_Cliente = (SELECT ID_Utente FROM Utente WHERE Email = ?)";
+                             
+        Connection conn = DatabaseManager.getInstance().getConnection();
+        
+        try (PreparedStatement stmt = conn.prepareStatement(queryUpdate)) {
+            stmt.setInt(1, mesiAggiuntivi);
+            stmt.setString(2, livelloDB); // <-- Usiamo la parola pulita e perfetta per MySQL!
+            stmt.setString(3, email);
+            
+            int righeModificate = stmt.executeUpdate();
+            if(righeModificate > 0) {
+                System.out.println("✅ Rinnovo completato con successo per: " + email);
+            } else {
+                System.out.println("❌ Nessuna riga modificata. Sicura che l'email sia giusta?");
+            }
+        } catch (SQLException e) {
+            System.err.println("Errore SQL durante l'aggiornamento dell'abbonamento.");
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Verifica l'idoneità dell'utente ed esegue il rinnovo in modalità batch (silenzioso).
+     * <p>
+     * Progettato per l'esecuzione tramite processi in background o Thread, scavalca 
+     * l'interazione utente andando a leggere direttamente i flag di rinnovo sul database.
+     * </p>
+     * * @return {@code true} se il rinnovo è stato innescato con successo.
+     */
+    
+    public boolean tentaRinnovoSilenzioso(String email) {
+        String query = "SELECT a.RinnovoAutomatico, a.Livello FROM Abbonamento a JOIN Utente u ON a.ID_Cliente = u.ID_Utente WHERE u.Email = ?";
+        
+        try {
+            java.sql.Connection conn = DatabaseManager.getInstance().getConnection();
+            java.sql.PreparedStatement stmt = conn.prepareStatement(query);
+            stmt.setString(1, email);
+            java.sql.ResultSet rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                int rinnovoAuto = rs.getInt("RinnovoAutomatico");
+                String livello = rs.getString("Livello");
+                
+                if (rinnovoAuto == 1) { 
+                    int mesi = 1;
+                    if (livello != null && livello.toUpperCase().contains("SEMESTRALE")) mesi = 6;
+                    if (livello != null && livello.toUpperCase().contains("ANNUALE")) mesi = 12;
+                    
+                    eseguiRinnovo(email, mesi, livello);
+                    return true; 
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false; 
+    }
 }

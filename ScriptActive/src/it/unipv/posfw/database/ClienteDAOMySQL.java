@@ -52,10 +52,29 @@ public class ClienteDAOMySQL implements ClienteDAO {
                     rs.getString("Nome"), 
                     rs.getString("Cognome"), 
                     rs.getString("Email"), 
-                    rs.getString("CodiceFiscale"), 
-                    null, 
-                    TipoAbbonamento.BASE 
+                    rs.getString("CodiceFiscale")
                 );
+             // 2. Mappiamo la colonna 'Stato' e la password
+                c.setStato(rs.getString("Stato"));
+                c.setPasswordHash(rs.getString("PasswordHash"));
+
+                // 3. Controlliamo se ha un abbonamento (tramite la DataScadenza o il Tipo)
+                java.sql.Date dataScadenzaSQL = rs.getDate("DataScadenza");
+                if (dataScadenzaSQL != null) {
+                    Abbonamento abb = new Abbonamento(
+                        rs.getString("CodiceFiscale"),
+                        LivelloAbbonamento.valueOf(rs.getString("Livello")), // Converte stringa in Enum
+                        TipoAbbonamento.valueOf(rs.getString("Tipo")),       // Converte stringa in Enum
+                        rs.getBoolean("RinnovoAutomatico"),
+                        rs.getString("IBAN")
+                    );
+                    
+                    // Trasformiamo la data SQL in data Java e la assegniamo all'abbonamento
+                    java.util.Date dataJava = new java.util.Date(dataScadenzaSQL.getTime());
+                    abb.setDataScadenza(dataJava);
+                    
+                    c.setAbbonamentoAttivo(abb);
+                }
                 rs.close();
                 ps.close();
                 return c;
@@ -204,5 +223,80 @@ public class ClienteDAOMySQL implements ClienteDAO {
      */
     @Override
     public void deleteCliente(String codiceFiscale) {
+    }
+    
+ // =======================================================
+    // METODI PER IL THREAD DI RINNOVO AUTOMATICO
+    // =======================================================
+
+    /**
+     * Recupera tutti gli abbonamenti scaduti (o in scadenza oggi) che hanno il rinnovo automatico attivo.
+     */
+    public java.util.List<Abbonamento> getAbbonamentiInScadenzaConRinnovo() {
+        java.util.List<Abbonamento> lista = new java.util.ArrayList<>();
+        // CURDATE() prende la data di oggi dal server MySQL
+        String query = "SELECT * FROM Abbonamento WHERE RinnovoAutomatico = 1 AND DataScadenza <= CURDATE()";
+
+        try {
+            Connection conn = DatabaseManager.getInstance().getConnection();
+            PreparedStatement ps = conn.prepareStatement(query);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                Abbonamento abb = new Abbonamento(
+                    rs.getString("ID_Cliente"), // Attenzione: usiamo ID_Cliente per mappare temporaneamente il CF
+                    LivelloAbbonamento.valueOf(rs.getString("Livello")),
+                    TipoAbbonamento.valueOf(rs.getString("Tipo")),
+                    rs.getBoolean("RinnovoAutomatico"),
+                    rs.getString("IBAN")
+                );
+                abb.setIdAbbonamento(rs.getInt("ID_Abbonamento"));
+                
+                java.sql.Date dataScadenzaSQL = rs.getDate("DataScadenza");
+                if (dataScadenzaSQL != null) {
+                    abb.setDataScadenza(new java.util.Date(dataScadenzaSQL.getTime()));
+                }
+                
+                lista.add(abb);
+            }
+            rs.close();
+            ps.close();
+        } catch (SQLException e) {
+            System.err.println("Errore in getAbbonamentiInScadenzaConRinnovo: " + e.getMessage());
+        }
+        return lista;
+    }
+
+    /**
+     * Aggiorna la data di scadenza di un abbonamento a seguito di un rinnovo avvenuto con successo.
+     */
+    public void aggiornaScadenzaAbbonamento(int idAbbonamento, java.util.Date nuovaData) {
+        String query = "UPDATE Abbonamento SET DataScadenza = ? WHERE ID_Abbonamento = ?";
+        try {
+            Connection conn = DatabaseManager.getInstance().getConnection();
+            PreparedStatement ps = conn.prepareStatement(query);
+            ps.setDate(1, new java.sql.Date(nuovaData.getTime()));
+            ps.setInt(2, idAbbonamento);
+            ps.executeUpdate();
+            ps.close();
+        } catch (SQLException e) {
+            System.err.println("Errore in aggiornaScadenzaAbbonamento: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Disattiva il rinnovo automatico se la carta/IBAN viene rifiutata.
+     */
+    public void disattivaRinnovoAutomatico(int idAbbonamento) {
+        String query = "UPDATE Abbonamento SET RinnovoAutomatico = 0 WHERE ID_Abbonamento = ?";
+        try {
+            Connection conn = DatabaseManager.getInstance().getConnection();
+            PreparedStatement ps = conn.prepareStatement(query);
+            ps.setInt(1, idAbbonamento);
+            ps.executeUpdate();
+            ps.close();
+        } catch (SQLException e) {
+            System.err.println("Errore in disattivaRinnovoAutomatico: " + e.getMessage());
+        }
     }
 }

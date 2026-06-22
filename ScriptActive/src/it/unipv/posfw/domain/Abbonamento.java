@@ -6,13 +6,13 @@ public class Abbonamento {
 
     private int idAbbonamento;
     private String codiceFiscale;
-    private LivelloAbbonamento livello;    // SOSTITUITO: Mese / Semestre / Anno
+    private LivelloAbbonamento livello;    // Mese / Semestre / Anno
     private TipoAbbonamento tipo;          // Base / Premium 
     private Date dataScadenza;             
     private boolean rinnovoAutomatico;     
     private String iban;
 
-    // Costruttore aggiornato
+    // Costruttore
     public Abbonamento(String codiceFiscale, LivelloAbbonamento livello, TipoAbbonamento tipo, 
                        boolean rinnovoAutomatico, String iban) {
         this.codiceFiscale = codiceFiscale;
@@ -21,6 +21,8 @@ public class Abbonamento {
         this.rinnovoAutomatico = rinnovoAutomatico;
         this.iban = iban;
     }
+
+    // --- GETTER E SETTER ---
 
     public int getIdAbbonamento() { 
         return idAbbonamento; 
@@ -36,7 +38,6 @@ public class Abbonamento {
         this.codiceFiscale = codiceFiscale; 
     }
 
-    // Nuovi Getter e Setter per il Livello
     public LivelloAbbonamento getLivello() {
         return livello; 
     }
@@ -70,5 +71,24 @@ public class Abbonamento {
     }
     public void setIban(String iban) { 
         this.iban = iban; 
+    }
+
+    // --- METODI DI LOGICA DI BUSINESS ---
+
+    /**
+     * Controlla se l'abbonamento è ancora in corso di validità rispetto alla data odierna.
+     * @return true se valido, false se scaduto.
+     */
+    public boolean isValidoOggi() {
+        // Controllo di sicurezza: se la data manca nel database, l'abbonamento non è valido
+        if (this.dataScadenza == null) {
+            return false; 
+        }
+        
+        // Prendiamo la data e l'ora esatta di questo momento
+        Date oggi = new Date();
+        
+        // Il metodo .after() restituisce true solo se la scadenza viene DOPO oggi
+        return this.dataScadenza.after(oggi);
     }
 }

@@ -3,7 +3,6 @@ package it.unipv.posfw.domain;
 
 public class Cliente extends Utente implements Observer {
     
-
     private String codiceFiscale; 
     private TipoAbbonamento abbonamento;
     private Sede sedePrincipale;
@@ -30,16 +29,37 @@ public class Cliente extends Utente implements Observer {
         this.abbonamento = abbonamento;
     }
 
-
     @Override
     public void update(String messaggio) {
-                System.out.println("[NOTIFICA a " + this.getNomeCompleto() + "]: " + messaggio);
+        System.out.println("[NOTIFICA a " + this.getNomeCompleto() + "]: " + messaggio);
     }
 
     @Override
     public void accediAreaRiservata(it.unipv.posfw.controller.LoginController router) {
         router.apriDashboardCliente(this);
     }
+    
+    // =======================================================
+    // NUOVO METODO AGGIUNTO: LOGICA DI ACCESSO
+    // =======================================================
+
+    /**
+     * Sovrascrive (Override) la regola base di accesso definita nella classe Utente.
+     * Il Cliente può accedere SOLO SE l'account è "Attivo" (regola del padre) 
+     * E l'abbonamento non è scaduto (regola specifica del figlio).
+     * @return true se l'utente ha i permessi e un abbonamento valido per loggarsi.
+     */
+    @Override
+    public boolean puoAccedereAlSistema() {
+        // 1. super.puoAccedereAlSistema() verifica se lo stato dell'account è "Attivo"
+        // 2. Aggiungiamo il controllo di sicurezza su abbonamentoAttivo
+        // 3. Chiamiamo il metodo isValidoOggi() che abbiamo aggiunto in Abbonamento
+        return super.puoAccedereAlSistema() && 
+               this.abbonamentoAttivo != null && 
+               this.abbonamentoAttivo.isValidoOggi();
+    }
+
+    // =======================================================
     
     public boolean isPremium() {
         return this.abbonamento == TipoAbbonamento.PREMIUM;
@@ -54,7 +74,6 @@ public class Cliente extends Utente implements Observer {
         return codiceFiscale; 
     }
     
-
     public void setCodiceFiscale(String codiceFiscale) {
         this.codiceFiscale = codiceFiscale;
     }
