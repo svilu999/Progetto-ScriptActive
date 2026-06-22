@@ -1,4 +1,4 @@
-package it.unipv.posfw.test;
+package it.unipv.posfw.test.unit;
 
 import static org.junit.Assert.*;
 import org.junit.Before;
