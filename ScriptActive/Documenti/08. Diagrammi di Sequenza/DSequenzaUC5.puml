@@ -1,0 +1,505 @@
+' ============================================================
+' UC5 - Gestione dei Contratti del Personale
+' Diagrammi di sequenza PlantUML
+' Ordine: flussi di successo, poi flussi alternativi
+' ============================================================
+
+' ------------------------------------------------------------
+' 01 - SS1 - Assunzione Personal Trainer
+' ------------------------------------------------------------
+@startuml SS1_AssunzionePT
+title UC5 - Main Success Scenario: Assunzione Personal Trainer
+
+autonumber
+
+actor "Direttore" as Direttore
+boundary "GestionePersonaleView\n<<Boundary>>" as View
+control "GestorePersonale\n<<Controller>>" as Controller
+entity "nuovoPT: PersonalTrainer\n<<Entity>>" as NuovoPT
+entity "dao: PersonalTrainerDAO\n<<Interface>>" as PTDAO
+database "scriptactive_db" as DB
+
+Direttore -> View : inserisce dati PT
+Direttore -> View : clicca "Assumi"
+
+View -> Controller : getInstance()
+note right of Controller
+Pattern Singleton
+end note
+
+create NuovoPT
+View -> NuovoPT : <<create>> PersonalTrainer(...)
+NuovoPT --> View : istanza PT
+
+View -> Controller : assumiPT(nuovoPT)
+activate Controller
+
+Controller -> PTDAO : trovaPerId(idTrainer)
+activate PTDAO
+
+PTDAO -> DB : SELECT PT WHERE idTrainer = ?
+activate DB
+DB --> PTDAO : nessun PT attivo trovato
+deactivate DB
+
+PTDAO --> Controller : null
+deactivate PTDAO
+
+Controller -> PTDAO : salva(nuovoPT)
+activate PTDAO
+
+PTDAO -> DB : INSERT INTO PersonalTrainer
+activate DB
+DB --> PTDAO : salvataggio confermato
+deactivate DB
+
+PTDAO --> Controller : ok
+deactivate PTDAO
+
+Controller --> View : successo
+deactivate Controller
+
+View -> View : aggiornaTabella()
+View --> Direttore : mostra conferma assunzione
+
+@enduml
+
+' ------------------------------------------------------------
+' 02 - SS2 - Licenziamento senza sostituto
+' ------------------------------------------------------------
+@startuml SS2_LicenziamentoSenzaSostituto
+title UC5 - Main Success Scenario: Licenziamento senza sostituto
+
+autonumber
+
+actor "Direttore" as Direttore
+boundary "GestionePersonaleView\n<<Boundary>>" as View
+control "GestorePersonale\n<<Controller>>" as Controller
+entity "dao: PersonalTrainerDAO\n<<Interface>>" as PTDAO
+control "ServizioSwapCorsiMySQL\n<<Service>>" as SwapService
+database "scriptactive_db" as DB
+
+Direttore -> View : seleziona PT da licenziare
+Direttore -> View : clicca "Licenzia senza sostituto"
+
+View -> Controller : getInstance()
+note right of Controller
+Pattern Singleton
+end note
+
+View -> Controller : licenziaSenzaSostituto(idTrainer)
+activate Controller
+
+Controller -> PTDAO : trovaPerId(idTrainer)
+activate PTDAO
+
+PTDAO -> DB : SELECT PT WHERE idTrainer = ?
+activate DB
+DB --> PTDAO : dati PT
+deactivate DB
+
+PTDAO --> Controller : personalTrainer
+deactivate PTDAO
+
+Controller -> SwapService : haCorsiAttiviOFuturi(idTrainer)
+activate SwapService
+
+SwapService -> DB : SELECT corsi attivi/futuri del PT
+activate DB
+DB --> SwapService : nessun corso trovato
+deactivate DB
+
+SwapService --> Controller : false
+deactivate SwapService
+
+Controller -> PTDAO : elimina(personalTrainer)
+activate PTDAO
+
+PTDAO -> DB : UPDATE PersonalTrainer\nSET Attivo = false,\nStatoContratto = 'LICENZIATO'
+activate DB
+DB --> PTDAO : aggiornamento confermato
+deactivate DB
+
+PTDAO --> Controller : ok
+deactivate PTDAO
+
+Controller --> View : licenziamento completato
+deactivate Controller
+
+View -> View : aggiornaTabella()
+View --> Direttore : mostra conferma licenziamento
+
+@enduml
+
+' ------------------------------------------------------------
+' 03 - SS3 - Licenziamento con sostituto
+' ------------------------------------------------------------
+@startuml SS3_LicenziamentoConSostituto
+title UC5 - Main Success Scenario: Licenziamento con sostituto
+
+autonumber
+
+actor "Direttore" as Direttore
+boundary "GestionePersonaleView\n<<Boundary>>" as View
+control "GestorePersonale\n<<Controller>>" as Controller
+entity "dao: PersonalTrainerDAO\n<<Interface>>" as PTDAO
+control "ServizioSwapCorsiMySQL\n<<Service>>" as SwapService
+database "scriptactive_db" as DB
+
+Direttore -> View : seleziona PT da licenziare
+Direttore -> View : seleziona PT sostituto
+Direttore -> View : clicca "Licenzia con sostituto"
+
+View -> Controller : getInstance()
+note right of Controller
+Pattern Singleton
+end note
+
+View -> Controller : licenziaConSostituto(idDaLicenziare, idSostituto)
+activate Controller
+
+Controller -> PTDAO : trovaPerId(idDaLicenziare)
+activate PTDAO
+
+PTDAO -> DB : SELECT PT da licenziare
+activate DB
+DB --> PTDAO : dati PT da licenziare
+deactivate DB
+
+PTDAO --> Controller : ptDaLicenziare
+deactivate PTDAO
+
+Controller -> PTDAO : trovaPerId(idSostituto)
+activate PTDAO
+
+PTDAO -> DB : SELECT PT sostituto
+activate DB
+DB --> PTDAO : dati PT sostituto
+deactivate DB
+
+PTDAO --> Controller : ptSostituto
+deactivate PTDAO
+
+Controller -> SwapService : swapCorsiPerLicenziamento(ptDaLicenziare, ptSostituto)
+activate SwapService
+
+SwapService -> DB : SELECT corsi attivi/futuri del PT da licenziare
+activate DB
+DB --> SwapService : corsi da riassegnare
+deactivate DB
+
+SwapService -> SwapService : verifica stessa specializzazione
+SwapService -> SwapService : verifica sostituto attivo
+SwapService -> SwapService : verifica PT diversi
+
+SwapService -> DB : verifica conflitti orari del sostituto
+activate DB
+DB --> SwapService : nessun conflitto trovato
+deactivate DB
+
+SwapService -> DB : UPDATE Corso\nSET idTrainer = idSostituto
+activate DB
+DB --> SwapService : corsi aggiornati
+deactivate DB
+
+SwapService --> Controller : swap completato
+deactivate SwapService
+
+Controller -> PTDAO : elimina(ptDaLicenziare)
+activate PTDAO
+
+PTDAO -> DB : UPDATE PersonalTrainer\nSET Attivo = false,\nStatoContratto = 'LICENZIATO'
+activate DB
+DB --> PTDAO : licenziamento registrato
+deactivate DB
+
+PTDAO --> Controller : ok
+deactivate PTDAO
+
+Controller --> View : licenziamento con sostituto completato
+deactivate Controller
+
+View -> View : aggiornaTabella()
+View --> Direttore : mostra conferma operazione
+
+@enduml
+
+' ------------------------------------------------------------
+' 04 - SS4 - Calcolo retribuzioni
+' ------------------------------------------------------------
+@startuml SS4_CalcoloRetribuzioni
+title UC5 - Main Success Scenario: Calcolo retribuzioni
+
+autonumber
+
+actor "Direttore" as Direttore
+boundary "GestionePersonaleView\n<<Boundary>>" as View
+control "GestorePersonale\n<<Controller>>" as Controller
+control "ServizioRetribuzioniMySQL\n<<Service>>" as RetribuzioniService
+entity "dao: PersonalTrainerDAO\n<<Interface>>" as PTDAO
+participant "StrategiaRetribuzione\n<<Strategy>>" as Strategia
+database "scriptactive_db" as DB
+
+Direttore -> View : clicca "Calcola retribuzioni"
+
+View -> Controller : getInstance()
+note right of Controller
+Pattern Singleton
+end note
+
+View -> Controller : calcolaRetribuzioni(mese, anno)
+activate Controller
+
+Controller -> RetribuzioniService : calcolaRetribuzioni(mese, anno)
+activate RetribuzioniService
+
+RetribuzioniService -> PTDAO : trovaTutti()
+activate PTDAO
+
+PTDAO -> DB : SELECT PersonalTrainer attivi
+activate DB
+DB --> PTDAO : elenco PT attivi
+deactivate DB
+
+PTDAO --> RetribuzioniService : lista PT attivi
+deactivate PTDAO
+
+loop per ogni PersonalTrainer attivo
+    RetribuzioniService -> Strategia : calcolaRetribuzione(pt)
+
+    alt TipoRetribuzione = FISSA_MENSILE
+        Strategia --> RetribuzioniService : stipendio mensile
+    else TipoRetribuzione = A_LEZIONE
+        RetribuzioniService -> DB : SELECT corsi completati nel mese
+        activate DB
+        DB --> RetribuzioniService : numero lezioni completate
+        deactivate DB
+
+        Strategia --> RetribuzioniService : compenso per lezione * lezioni
+    end
+end
+
+RetribuzioniService --> Controller : mappa retribuzioni
+deactivate RetribuzioniService
+
+Controller --> View : risultato calcolo
+deactivate Controller
+
+View -> View : mostraRetribuzioni()
+View --> Direttore : visualizza retribuzioni calcolate
+
+@enduml
+
+' ------------------------------------------------------------
+' 05 - A1 - TrainerGiaAssuntoException
+' ------------------------------------------------------------
+@startuml A1_TrainerGiaAssuntoException
+title UC5 - Alternative Flow A1: PT già assunto
+
+actor "Direttore" as Direttore
+boundary "GestionePersonaleView\n<<Boundary>>" as View
+control "GestorePersonale\n<<Controller>>" as Controller
+entity "dao: PersonalTrainerDAO\n<<Interface>>" as PTDAO
+database "scriptactive_db" as DB
+
+Direttore -> View : 1 inserisce dati PT
+Direttore -> View : 2 clicca "Assumi"
+
+View -> Controller : 3 assumiPT(personalTrainer)
+activate Controller
+
+Controller -> PTDAO : 4 trovaPerId(idTrainer)
+activate PTDAO
+
+PTDAO -> DB : 5 SELECT PT WHERE idTrainer = ?
+activate DB
+DB --> PTDAO : 6 PT già presente
+deactivate DB
+
+PTDAO --> Controller : 7 personalTrainer esistente
+deactivate PTDAO
+
+Controller -> Controller : 8 verifica che il PT risulti già assunto
+
+Controller --> View : 9 throw TrainerGiaAssuntoException
+deactivate Controller
+
+View --> Direttore : 10 mostra errore: PT già assunto
+
+@enduml
+
+' ------------------------------------------------------------
+' 06 - A2 - TrainerNonLicenziabileException
+' ------------------------------------------------------------
+@startuml A2_TrainerNonLicenziabileException
+title UC5 - Alternative Flow A2: PT non licenziabile
+
+actor "Direttore" as Direttore
+boundary "GestionePersonaleView\n<<Boundary>>" as View
+control "GestorePersonale\n<<Controller>>" as Controller
+entity "dao: PersonalTrainerDAO\n<<Interface>>" as PTDAO
+control "ServizioSwapCorsiMySQL\n<<Service>>" as SwapService
+database "scriptactive_db" as DB
+
+Direttore -> View : 1 seleziona PT da licenziare
+Direttore -> View : 2 clicca "Licenzia senza sostituto"
+
+View -> Controller : 3 licenziaSenzaSostituto(idTrainer)
+activate Controller
+
+Controller -> PTDAO : 4 trovaPerId(idTrainer)
+activate PTDAO
+
+PTDAO -> DB : 5 SELECT PT WHERE idTrainer = ?
+activate DB
+DB --> PTDAO : 6 dati PT
+deactivate DB
+
+PTDAO --> Controller : 7 personalTrainer
+deactivate PTDAO
+
+Controller -> SwapService : 8 haCorsiAttiviOFuturi(idTrainer)
+activate SwapService
+
+SwapService -> DB : 9 SELECT corsi attivi/futuri del PT
+activate DB
+DB --> SwapService : 10 corsi trovati
+deactivate DB
+
+SwapService --> Controller : 11 true
+deactivate SwapService
+
+Controller --> View : 12 throw TrainerNonLicenziabileException
+deactivate Controller
+
+View --> Direttore : 13 mostra errore: PT non licenziabile
+
+@enduml
+
+' ------------------------------------------------------------
+' 07 - A3 - SostitutoNonValidoException - Sostituto non compatibile
+' ------------------------------------------------------------
+@startuml A3_SostitutoNonValidoException_SostitutoNonCompatibile
+title UC5 - Alternative Flow A3: SostitutoNonValidoException
+
+autonumber
+
+actor "Direttore" as Direttore
+boundary "GestionePersonaleView\n<<Boundary>>" as View
+control "GestorePersonale\n<<Controller>>" as Controller
+entity "dao: PersonalTrainerDAO\n<<Interface>>" as PTDAO
+control "ServizioSwapCorsiMySQL\n<<Service>>" as SwapService
+database "scriptactive_db" as DB
+
+Direttore -> View : seleziona PT da licenziare
+Direttore -> View : seleziona PT sostituto
+Direttore -> View : clicca "Licenzia con sostituto"
+
+View -> Controller : licenziaConSostituto(idDaLicenziare, idSostituto)
+activate Controller
+
+Controller -> PTDAO : trovaPerId(idDaLicenziare)
+activate PTDAO
+
+PTDAO -> DB : SELECT PT da licenziare
+activate DB
+DB --> PTDAO : dati PT da licenziare
+deactivate DB
+
+PTDAO --> Controller : ptDaLicenziare
+deactivate PTDAO
+
+Controller -> PTDAO : trovaPerId(idSostituto)
+activate PTDAO
+
+PTDAO -> DB : SELECT PT sostituto
+activate DB
+DB --> PTDAO : dati PT sostituto
+deactivate DB
+
+PTDAO --> Controller : ptSostituto
+deactivate PTDAO
+
+Controller -> SwapService : swapCorsiPerLicenziamento(ptDaLicenziare, ptSostituto)
+activate SwapService
+
+SwapService -> SwapService : verifica sostituto attivo
+SwapService -> SwapService : verifica PT diversi
+SwapService -> SwapService : verifica stessa specializzazione
+
+SwapService --> Controller : throw SostitutoNonValidoException
+deactivate SwapService
+
+Controller --> View : SostitutoNonValidoException
+deactivate Controller
+
+View --> Direttore : mostra messaggio di errore
+
+@enduml
+
+' ------------------------------------------------------------
+' 08 - A4 - SostitutoNonValidoException - Conflitto orario
+' ------------------------------------------------------------
+@startuml A4_SostitutoNonValidoException_ConflittoOrario
+title UC5 - Alternative Flow A4: SostitutoNonValidoException
+
+autonumber
+
+actor "Direttore" as Direttore
+boundary "GestionePersonaleView\n<<Boundary>>" as View
+control "GestorePersonale\n<<Controller>>" as Controller
+entity "dao: PersonalTrainerDAO\n<<Interface>>" as PTDAO
+control "ServizioSwapCorsiMySQL\n<<Service>>" as SwapService
+database "scriptactive_db" as DB
+
+Direttore -> View : seleziona PT da licenziare
+Direttore -> View : seleziona PT sostituto
+Direttore -> View : clicca "Licenzia con sostituto"
+
+View -> Controller : licenziaConSostituto(idDaLicenziare, idSostituto)
+activate Controller
+
+Controller -> PTDAO : trovaPerId(idDaLicenziare)
+activate PTDAO
+
+PTDAO -> DB : SELECT PT da licenziare
+activate DB
+DB --> PTDAO : dati PT da licenziare
+deactivate DB
+
+PTDAO --> Controller : ptDaLicenziare
+deactivate PTDAO
+
+Controller -> PTDAO : trovaPerId(idSostituto)
+activate PTDAO
+
+PTDAO -> DB : SELECT PT sostituto
+activate DB
+DB --> PTDAO : dati PT sostituto
+deactivate DB
+
+PTDAO --> Controller : ptSostituto
+deactivate PTDAO
+
+Controller -> SwapService : swapCorsiPerLicenziamento(ptDaLicenziare, ptSostituto)
+activate SwapService
+
+SwapService -> DB : SELECT corsi attivi/futuri del PT da licenziare
+activate DB
+DB --> SwapService : corsi da riassegnare
+deactivate DB
+
+SwapService -> DB : verifica conflitti orari del sostituto
+activate DB
+DB --> SwapService : conflitto trovato
+deactivate DB
+
+SwapService --> Controller : throw SostitutoNonValidoException
+deactivate SwapService
+
+Controller --> View : SostitutoNonValidoException
+deactivate Controller
+
+View --> Direttore : mostra messaggio di errore
+
+@enduml
