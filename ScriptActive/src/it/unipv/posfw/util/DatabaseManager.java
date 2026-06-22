@@ -8,7 +8,6 @@ import java.util.Properties;
 
 /**
  * La classe {@code DatabaseManager} implementa rigorosamente il design pattern creazionale Singleton 
- * introdotto dalla Gang of Four (GoF).
  * 
  * Motivazione Architetturale: Nel contesto dello strato di accesso ai dati (Data Access Layer), 
  * è fondamentale gestire la persistenza in modo centralizzato. Il pattern Singleton risolve il problema 

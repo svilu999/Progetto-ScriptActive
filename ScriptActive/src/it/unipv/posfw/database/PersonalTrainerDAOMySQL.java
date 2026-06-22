@@ -173,6 +173,59 @@ public class PersonalTrainerDAOMySQL implements PersonalTrainerDAO {
             throw new RuntimeException("Errore durante la ricerca del Personal Trainer su MySQL.", e);
         }
     }
+    
+    /**
+     * Cerca un Personal Trainer tramite email.
+     *
+     * Il metodo viene usato dal controller in fase di assunzione per evitare
+     * che la stessa persona venga registrata più volte con lo stesso indirizzo email.
+     *
+     * @param email email del Personal Trainer da cercare
+     * @return Personal Trainer trovato, oppure null se non esiste
+     */
+    @Override
+    public PersonalTrainer trovaPerEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return null;
+        }
+
+        String sql = """
+            SELECT
+                pt.ID_Trainer,
+                u.Nome,
+                u.Cognome,
+                u.Email,
+                pt.Specializzazione,
+                pt.TipoContratto,
+                pt.StatoContratto,
+                pt.Attivo,
+                pt.TipoRetribuzione,
+                pt.StipendioMensile,
+                pt.CompensoPerLezione
+            FROM PersonalTrainer pt
+            JOIN Utente u
+                ON pt.ID_Trainer = u.ID_Utente
+            WHERE LOWER(u.Email) = LOWER(?)
+        """;
+
+        try (
+            Connection conn = DatabaseManager.getInstance().getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+            stmt.setString(1, email.trim());
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return creaPersonalTrainerDaResultSet(rs);
+                }
+            }
+
+            return null;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Errore durante la ricerca del Personal Trainer tramite email su MySQL.", e);
+        }
+    }
 
     /**
      * Aggiorna i dati di un Personal Trainer già presente nel database.
@@ -373,12 +426,12 @@ public class PersonalTrainerDAOMySQL implements PersonalTrainerDAO {
          * prima salviamo l'utente e poi usiamo lo stesso ID per PersonalTrainer.
          */
 
-        Integer idEsistenteDaEmail = trovaIdUtenteDaEmail(conn, pt.getEmail());
+    	Integer idEsistenteDaEmail = trovaIdUtenteDaEmail(conn, pt.getEmail());
 
-        if (idEsistenteDaEmail != null) {
-            aggiornaUtente(conn, idEsistenteDaEmail, pt);
-            return idEsistenteDaEmail;
-        }
+    	if (idEsistenteDaEmail != null) {
+    	    throw new IllegalStateException(
+    	            "Esiste già un utente registrato con email: " + pt.getEmail());
+    	}
 
         String sqlUtente = """
             INSERT INTO Utente (

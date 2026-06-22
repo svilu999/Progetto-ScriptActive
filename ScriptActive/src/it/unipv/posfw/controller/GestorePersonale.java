@@ -115,21 +115,28 @@ public class GestorePersonale {
             String specializzazione,
             StrategiaRetribuzione contratto) throws TrainerGiaAssuntoException {
 
-        String idTecnico = normalizzaIdAssunzione(idPT);
+    	String idTecnico = normalizzaIdAssunzione(idPT);
+    	String emailNormalizzata = normalizzaEmailObbligatoria(email);
 
-        if (!"AUTO".equalsIgnoreCase(idTecnico) && trainerDAO.trovaPerId(idTecnico) != null) {
-            throw new TrainerGiaAssuntoException(
-                    "OPERAZIONE ANNULLATA: il PT con ID " + idTecnico + " è già registrato.");
-        }
+    	if (!"AUTO".equalsIgnoreCase(idTecnico) && trainerDAO.trovaPerId(idTecnico) != null) {
+    	    throw new TrainerGiaAssuntoException(
+    	            "OPERAZIONE ANNULLATA: il PT con ID " + idTecnico + " è già registrato.");
+    	}
 
-        PersonalTrainer nuovoTrainer = new PersonalTrainer(
-                nome,
-                cognome,
-                email,
-                idTecnico,
-                specializzazione,
-                contratto
-        );
+    	if (trainerDAO.trovaPerEmail(emailNormalizzata) != null) {
+    	    throw new TrainerGiaAssuntoException(
+    	            "OPERAZIONE ANNULLATA: esiste già un Personal Trainer registrato con email "
+    	                    + emailNormalizzata + ".");
+    	}
+
+    	PersonalTrainer nuovoTrainer = new PersonalTrainer(
+    	        nome,
+    	        cognome,
+    	        emailNormalizzata,
+    	        idTecnico,
+    	        specializzazione,
+    	        contratto
+    	);
 
         trainerDAO.salva(nuovoTrainer);
 
@@ -276,6 +283,25 @@ public class GestorePersonale {
         }
 
         return idPT.trim();
+    }
+    
+    /**
+     * Normalizza l'email inserita in fase di assunzione.
+     *
+     * L'email è usata come dato univoco per evitare che lo stesso Personal Trainer
+     * venga registrato più volte nel sistema.
+     *
+     * @param email email inserita nella view
+     * @return email normalizzata
+     * @throws TrainerGiaAssuntoException se l'email è assente
+     */
+    private String normalizzaEmailObbligatoria(String email) throws TrainerGiaAssuntoException {
+        if (email == null || email.trim().isEmpty()) {
+            throw new TrainerGiaAssuntoException(
+                    "OPERAZIONE ANNULLATA: email del Personal Trainer non indicata.");
+        }
+
+        return email.trim().toLowerCase();
     }
 
     /**
