@@ -1,0 +1,195 @@
+1. Scenario Principale di Successo: Creazione Corso
+@startuml
+skinparam monochrome false
+skinparam packageStyle rectangle
+skinparam sequenceMessageAlign center
+
+
+title UC3 - Main Success Scenario: Creazione Corso
+
+
+autonumber
+actor "Direttore" as D
+participant "PalinsestoCorsiView\n<<Boundary>>" as V
+participant "GestoreCorsi\n<<Controller>>" as C
+participant "nuovoCorso: Corso\n<<Entity>>" as E
+participant "dao: CorsoDAO\n<<Interface>>" as DAO
+
+
+D -> V : inserisce dati corso (nome, orario, capienza, idPT)
+activate V
+
+
+V -> C : getInstance()
+note right: Pattern Singleton
+
+
+V -> C : organizzaNuovoCorso(nome, orario, capienza, idPT)
+activate C
+
+
+C -> DAO : findAll()
+activate DAO
+DAO --> C : List<Corso> (palinsesto attuale)
+deactivate DAO
+
+
+C -> C : controllaSovrapposizioni(idPT, orario)
+activate C
+note right: Usa corsoAssegnatoAlTrainer()\nper isolare i numeri dell'ID.\nRestituisce false.
+deactivate C
+
+
+create E
+C -> E : <<create>> Corso(nome, orario, capienza, idPT)
+activate E
+E --> C : istanza corso
+deactivate E
+
+
+C -> DAO : insert(nuovoCorso)
+activate DAO
+note right: Dependency Inversion\ne Pure Fabrication
+DAO --> C : ok (salvataggio confermato)
+deactivate DAO
+
+
+C --> V : successo
+deactivate C
+V --> D : mostra corso creato e aggiorna calendario
+deactivate V
+
+
+@enduml
+
+
+2. Flusso di Cancellazione e Risoluzione "Open Issue"
+@startuml
+skinparam monochrome false
+skinparam packageStyle rectangle
+skinparam sequenceMessageAlign center
+
+
+title UC3 - Flusso di Cancellazione (con Pattern Observer)
+
+
+autonumber
+actor "Direttore" as D
+participant "PalinsestoCorsiView\n<<Boundary>>" as V
+participant "GestoreCorsi\n<<Controller>>" as C
+participant "dao: CorsoDAO\n<<Interface>>" as DAO
+participant "c: Corso\n<<Entity/Subject>>" as E
+participant "iscritto: Cliente\n<<Observer>>" as O
+
+
+D -> V : seleziona corso e clicca "Cancella"
+activate V
+
+
+V -> C : getInstance()
+note right: Pattern Singleton
+
+
+V -> C : annullaCorso(idCorso)
+activate C
+
+
+C -> DAO : findById(idCorso)
+activate DAO
+DAO --> C : restituisce istanza 'c'
+deactivate DAO
+
+
+C -> E : setStato(StatoCorso.CANCELLATO)
+activate E
+E -> E : notifyObservers()
+activate E
+loop per ogni Observer nella lista "iscritti"
+    E -> O : update()
+    note right: Pattern Observer:\nDisaccoppia la logica di notifica\ndallo stato del Corso
+    activate O
+    O --> E : ricevuto
+    deactivate O
+end
+deactivate E
+E --> C : stato aggiornato
+deactivate E
+
+
+C -> DAO : delete(idCorso)
+activate DAO
+note right: Dependency Inversion\n(Il DAO effettuerà un\nSoft Delete/Annullamento logico)
+DAO --> C : ok (rimozione confermata)
+deactivate DAO
+
+
+C --> V : confermata cancellazione
+deactivate C
+V --> D : aggiorna UI rimuovendo il corso
+deactivate V
+
+
+@enduml
+
+
+3. Flusso Alternativo 1: Trainer non valido
+@startuml
+skinparam monochrome false
+skinparam packageStyle rectangle
+skinparam sequenceMessageAlign center
+
+
+title UC3 - Flusso Alternativo 1: Trainer Non Valido (Exception Translation)
+
+
+autonumber
+actor "Direttore" as D
+participant "PalinsestoCorsiView\n<<Boundary>>" as V
+participant "GestoreCorsi\n<<Controller>>" as C
+participant "nuovoCorso: Corso\n<<Entity>>" as E
+participant "dao: CorsoDAO\n<<Interface>>" as DAO
+
+
+D -> V : inserisce dati (idPT inesistente nel database)
+activate V
+
+
+V -> C : getInstance()
+note right: Pattern Singleton
+
+
+V -> C : organizzaNuovoCorso(nome, orario, capienza, idPT_inesistente)
+activate C
+
+
+C -> C : convalidaTrainer(idPT)
+note right: Supera il controllo base\n(la stringa non è nulla)
+
+
+create E
+C -> E : <<create>> Corso(...)
+activate E
+E --> C : istanza corso
+deactivate E
+
+
+C -> DAO : insert(nuovoCorso)
+activate DAO
+DAO --> C : <<throws>> RuntimeException
+note right: Violazione Integrità Referenziale\n(Foreign Key fallita su MySQL)
+deactivate DAO
+
+
+C -> C : transizione eccezione (Exception Translation)
+note right: Il Controller cattura l'eccezione nativa (SQL)\ne la converte per disaccoppiare la View dal DB
+
+
+C --> V : <<throws>> TrainerNonValidoException
+deactivate C
+
+
+V --> D : mostra popup errore ("Il Trainer non esiste nel sistema")
+deactivate V
+
+
+@enduml
