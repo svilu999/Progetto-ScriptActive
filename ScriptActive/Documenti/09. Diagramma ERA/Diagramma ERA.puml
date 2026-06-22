@@ -1,0 +1,150 @@
+@startuml
+title Diagramma ERA - ScriptActive
+
+left to right direction
+
+skinparam shadowing false
+skinparam linetype ortho
+skinparam nodesep 90
+skinparam ranksep 95
+skinparam entity {
+  BackgroundColor White
+  BorderColor Black
+}
+hide circle
+
+entity "Utente" as Utente {
+  * ID_Utente : INT <<PK>>
+  --
+  CodiceFiscale : CHAR(16) <<UNIQUE>>
+  Nome : VARCHAR(50)
+  Cognome : VARCHAR(50)
+  Email : VARCHAR(100) <<UNIQUE>>
+  PasswordHash : VARCHAR(255)
+  Ruolo : ENUM
+  Stato : ENUM
+}
+
+entity "Direttore" as Direttore {
+  * ID_Direttore : INT <<PK, FK>>
+  --
+  CodiceAutorizzazione : VARCHAR(50) <<UNIQUE>>
+}
+
+entity "PersonalTrainer" as PersonalTrainer {
+  * ID_Trainer : INT <<PK, FK>>
+  --
+  Specializzazione : VARCHAR(100)
+  TipoContratto : VARCHAR(50)
+  StatoContratto : VARCHAR(50)
+  Attivo : BOOLEAN
+  TipoRetribuzione : VARCHAR(50)
+  StipendioMensile : DECIMAL(10,2)
+  CompensoPerLezione : DECIMAL(10,2)
+  ID_Direttore : INT <<FK>>
+}
+
+entity "Cliente" as Cliente {
+  * ID_Cliente : INT <<PK, FK>>
+  --
+  ID_Sede : INT <<FK>>
+}
+
+entity "Sede" as Sede {
+  * ID_Sede : INT <<PK>>
+  --
+  NomeSede : VARCHAR(100) <<UNIQUE>>
+}
+
+entity "SpesaFissa" as SpesaFissa {
+  * ID_Spesa : INT <<PK>>
+  --
+  Descrizione : VARCHAR(255)
+  Importo : DECIMAL(10,2)
+  Data : DATE
+  ID_Sede : INT <<FK>>
+}
+
+entity "Corso" as Corso {
+  * ID_Corso : INT <<PK>>
+  --
+  Nome : VARCHAR(100)
+  DataOra : DATETIME
+  CapienzaMassima : INT
+  PostiDisponibili : INT
+  Stato : ENUM
+  ID_Sede : INT <<FK>>
+  ID_Trainer : INT <<FK>>
+  ID_Direttore : INT <<FK>>
+}
+
+entity "Abbonamento" as Abbonamento {
+  * ID_Abbonamento : INT <<PK>>
+  --
+  Tipo : VARCHAR(50)
+  Livello : VARCHAR(50)
+  DataScadenza : DATE
+  RinnovoAutomatico : BOOLEAN
+  IBAN : VARCHAR(34)
+  ID_Cliente : INT <<FK, UNIQUE>>
+}
+
+entity "Pagamento" as Pagamento {
+  * ID_Pagamento : INT <<PK>>
+  --
+  Importo : DECIMAL(10,2)
+  DataTransazione : DATETIME
+  Esito : ENUM
+  ID_Abbonamento : INT <<FK>>
+}
+
+entity "Prenotazione" as Prenotazione {
+  * ID_Prenotazione : INT <<PK>>
+  --
+  DataCreazione : DATETIME
+  Stato : ENUM
+  ID_Cliente : INT <<FK>>
+  ID_Corso : INT <<FK>>
+}
+
+entity "SessioneAllenamento" as SessioneAllenamento {
+  * ID_Sessione : INT <<PK>>
+  --
+  Data : DATE
+  ID_Cliente : INT <<FK>>
+}
+
+entity "EsercizioRegistrato" as EsercizioRegistrato {
+  * ID_Esercizio : INT <<PK>>
+  --
+  GruppoMuscolare : VARCHAR(50)
+  Macchinario : VARCHAR(100)
+  Serie : INT
+  Ripetizioni : INT
+  Carico : DECIMAL(5,2)
+  ID_Sessione : INT <<FK>>
+}
+
+Utente <|-- Direttore : generalizza
+Utente <|-- PersonalTrainer : generalizza
+Utente <|-- Cliente : generalizza
+
+Direttore -- PersonalTrainer : gestisce
+Direttore -- Corso : pianifica
+
+Sede -- Cliente : assegna
+Sede -- Corso : ospita
+Sede -- SpesaFissa : registra
+
+PersonalTrainer -- Corso : tiene
+
+Cliente -- Abbonamento : sottoscrive
+Abbonamento -- Pagamento : genera
+
+Cliente -- Prenotazione : effettua
+Corso -- Prenotazione : riceve
+
+Cliente -- SessioneAllenamento : registra
+SessioneAllenamento -- EsercizioRegistrato : contiene
+
+@enduml
