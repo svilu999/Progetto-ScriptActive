@@ -24,7 +24,6 @@ public class DatiFormPojo {
     private String nomeEsercizio;
     private double carichi;
     private int ripetizioni;
-
     /**
      * Costruttore completo per l'inizializzazione dello stato interno.
      * <p>
