@@ -1,28 +1,40 @@
 package it.unipv.poingsfw.domain;
 
 /**
- * Classe astratta che rappresenta un utente generico del sistema.
- * Fornisce gli attributi comuni e la logica base per l'autenticazione.
+ * La classe astratta {@code Utente} definisce il nucleo strutturale e comportamentale 
+ * di qualsiasi entità "umana" in grado di interagire con il sistema.
+ * <p>
+ * Agisce come <b>Superclasse (Base Class)</b> all'interno della gerarchia di ereditarietà, 
+ * incapsulando gli attributi anagrafici comuni e le logiche condivise di autenticazione 
+ * e autorizzazione. Non essendo pensata per essere istanziata direttamente 
+ * (motivo per cui è dichiarata {@code abstract}), funge da "stampo" per le classi figlie 
+ * (es. {@code Cliente}, {@code PersonalTrainer}).
+ * </p>
+ * * @author Arianna Padula
+ * @version 1.0
  */
+
 public abstract class Utente {
     
-    // Visibilità protected così le classi figlie (Cliente, PT, ecc.) possono accedervi direttamente
     protected String nome;
     protected String cognome;
     protected String email;
     
-    // Dal progetto di gruppo (per ID database e sicurezza)
     private int id;
     protected String passwordHash;
     
-    // Dal tuo caso d'uso locale (per la gestione della password in fase di registrazione)
     protected String password;
 
-    // --- NUOVO ATTRIBUTO: STATO DELL'ACCOUNT ---
-    // Mappa la colonna "Stato" ("Attivo" o "Inattivo") nel database
     protected String stato;
 
-    // --- COSTRUTTORE UNIFICATO ---
+    /**
+     * Costruttore parametrizzato parziale. 
+     * Inizializza i campi anagrafici obbligatori comuni a tutte le tipologie di utente.
+     * * @param nome    Il nome proprio dell'utente.
+     * @param cognome Il cognome dell'utente.
+     * @param email   L'indirizzo email, utilizzato anche come credenziale (Username) di accesso.
+     */
+    
     public Utente(String nome, String cognome, String email) {
         this.nome = nome;
         this.cognome = cognome;
@@ -36,19 +48,15 @@ public abstract class Utente {
      */
     public abstract void accediAreaRiservata(it.unipv.poingsfw.controller.LoginController router);
     
-    // =======================================================
-    // METODI DI LOGICA DI BUSINESS (BLOCCO ACCOUNT)
-    // =======================================================
-
     /**
      * Controlla se l'account dell'utente è stato disabilitato manualmente dal Direttore.
      * * @return true se lo stato è "Attivo", false in caso contrario.
      */
+    
     public boolean isAccountAbilitato() {
         if (this.stato == null) {
             return false;
         }
-        // equalsIgnoreCase protegge da eventuali errori di battitura nel DB (es. "attivo" vs "Attivo")
         return this.stato.equalsIgnoreCase("Attivo");
     }
 

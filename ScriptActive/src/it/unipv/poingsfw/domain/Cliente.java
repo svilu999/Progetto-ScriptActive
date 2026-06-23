@@ -1,5 +1,20 @@
 package it.unipv.poingsfw.domain;
 
+/**
+ * La classe {@code Cliente} rappresenta un utente registrato che ha sottoscritto un abbonamento.
+ * <p>
+ * Sfrutta il concetto di <b>Ereditarietà</b> estendendo la classe base {@link Utente}, 
+ * da cui eredita attributi anagrafici e logiche di base, aggiungendo peculiarità specifiche 
+ * come il codice fiscale, la sede di appartenenza e lo stato dell'abbonamento.
+ * </p>
+ * <p>
+ * Implementa inoltre l'interfaccia {@link Observer}, inserendosi all'interno del pattern 
+ * architetturale <b>Observer</b> per la ricezione di notifiche da parte del sistema 
+ * (es. avvisi di scadenza abbonamento, promozioni).
+ * </p>
+ * * @author Arianna Padula
+ * @version 1.0
+ */
 
 public class Cliente extends Utente implements Observer {
     
@@ -7,21 +22,24 @@ public class Cliente extends Utente implements Observer {
     private TipoAbbonamento abbonamento;
     private Sede sedePrincipale;
     private Abbonamento abbonamentoAttivo;
+   
+    /**
+     * Costruttore base. Utilizza {@code super()} per delegare l'inizializzazione 
+     * dei campi anagrafici alla superclasse {@code Utente}.
+     */
     
     public Cliente(String nome, String cognome, String email, String codiceFiscale) {
         super(nome, cognome, email);
         this.codiceFiscale = codiceFiscale;
     }
 
-    // 2. Costruttore dei Compagni (Per non rompere le loro istanziazioni)
+    
     public Cliente(String nome, String cognome, String email, String codiceFiscale, TipoAbbonamento abbonamento) {
         super(nome, cognome, email);
         this.codiceFiscale = codiceFiscale;
         this.abbonamento = abbonamento;
     }
 
-    // 3. Costruttore per la Registrazione (Il tuo caso d'uso)
-    // NOTA: Ho convertito String tipoAbbonamento in TipoAbbonamento per allinearci a loro
     public Cliente(String nome, String cognome, String email, String codiceFiscale, Sede sedePrincipale, TipoAbbonamento abbonamento) {
         super(nome, cognome, email);
         this.codiceFiscale = codiceFiscale;
@@ -29,20 +47,27 @@ public class Cliente extends Utente implements Observer {
         this.abbonamento = abbonamento;
     }
 
+    /**
+     * Metodo richiesto dall'interfaccia {@code Observer}.
+     * Permette al cliente di ricevere messaggi in tempo reale dal sistema (Subject).
+     * * @param messaggio Il contenuto della notifica da mostrare al cliente.
+     */
+    
     @Override
     public void update(String messaggio) {
         System.out.println("[NOTIFICA a " + this.getNomeCompleto() + "]: " + messaggio);
     }
 
+    /**
+     * Logica di routing per l'interfaccia utente. 
+     * Sfrutta il polimorfismo per indirizzare il sistema verso la dashboard corretta.
+     */
+    
     @Override
     public void accediAreaRiservata(it.unipv.poingsfw.controller.LoginController router) {
         router.apriDashboardCliente(this);
     }
     
-    // =======================================================
-    // NUOVO METODO AGGIUNTO: LOGICA DI ACCESSO
-    // =======================================================
-
     /**
      * Sovrascrive (Override) la regola base di accesso definita nella classe Utente.
      * Il Cliente può accedere SOLO SE l'account è "Attivo" (regola del padre) 
@@ -59,7 +84,9 @@ public class Cliente extends Utente implements Observer {
                this.abbonamentoAttivo.isValidoOggi();
     }
 
-    // =======================================================
+    /**
+     * @return {@code true} se il cliente ha sottoscritto un piano Premium.
+     */
     
     public boolean isPremium() {
         return this.abbonamento == TipoAbbonamento.PREMIUM;
@@ -69,7 +96,7 @@ public class Cliente extends Utente implements Observer {
         return this.codiceFiscale;
     }
 
-    // --- GETTER E SETTER UNIFICATI ---
+    // --- GETTER E SETTER ---
     public String getCodiceFiscale() { 
         return codiceFiscale; 
     }

@@ -6,6 +6,20 @@ import javax.swing.*;
 import it.unipv.poingsfw.controller.LoginController;
 import it.unipv.poingsfw.database.UtenteDAOMySQL;
 
+/**
+ * La classe {@code RinnovoView} gestisce l'interfaccia grafica per il rinnovo 
+ * manuale di un abbonamento scaduto.
+ * <p>
+ * Implementata con <b>Java Swing</b>, questa finestra viene 
+ * tipicamente innescata durante la fase di autenticazione, qualora il sistema rilevi 
+ * che l'utente possiede credenziali valide ma un piano di abbonamento non più attivo.
+ * Permette all'utente di selezionare un nuovo piano tariffario e simula il pagamento 
+ * ripristinando l'accesso al sistema.
+ * </p>
+ * * @author Arianna Padula
+ * @version 1.0
+ */
+
 public class RinnovoView extends JFrame {
     private JComboBox<String> comboPiani;
     private JButton btnPaga;
@@ -21,14 +35,12 @@ public class RinnovoView extends JFrame {
         setLocationRelativeTo(null); // Centra la finestra
         setLayout(new BorderLayout(10, 10));
 
-        // Pannello Superiore (Intestazione)
         JPanel pnlNord = new JPanel();
         lblMessaggio = new JLabel("Il tuo abbonamento è scaduto. Seleziona un piano per rinnovare:");
         lblMessaggio.setFont(new Font("Arial", Font.BOLD, 12));
         pnlNord.add(lblMessaggio);
         add(pnlNord, BorderLayout.NORTH);
 
-        // Pannello Centrale (Form di selezione)
         JPanel pnlCentro = new JPanel(new GridLayout(2, 1, 5, 5));
         pnlCentro.setBorder(BorderFactory.createEmptyBorder(10, 30, 10, 30));
         
@@ -40,12 +52,10 @@ public class RinnovoView extends JFrame {
         
         add(pnlCentro, BorderLayout.CENTER);
 
-        // Pannello Inferiore (Pulsante di azione)
         JPanel pnlSud = new JPanel();
         btnPaga = new JButton("Paga e Attiva");
         btnPaga.setFont(new Font("Arial", Font.BOLD, 14));
         
-        // Gestione del Click sul pulsante Paga
         btnPaga.addActionListener(e -> {
             effettuaRinnovo();
         });
@@ -67,9 +77,6 @@ public class RinnovoView extends JFrame {
             tipoAbbonamento = "ANNUALE";
         }
 
-        // =======================================================================
-        // MAGIA IN AZIONE: Chiamiamo il database per aggiornare l'abbonamento!
-        // =======================================================================
         UtenteDAOMySQL dao = new UtenteDAOMySQL();
         dao.eseguiRinnovo(emailUtente, mesiDaAggiungere, tipoAbbonamento);
         
@@ -78,9 +85,8 @@ public class RinnovoView extends JFrame {
             "Rinnovo Completato", 
             JOptionPane.INFORMATION_MESSAGE);
             
-        this.dispose(); // Chiude questa schermata
+        this.dispose(); 
         
-        // Riapre il login in modo pulito collegando il controller architetturale
         LoginView login = new LoginView();
         LoginController controller = new LoginController(login, dao);
         login.setController(controller);

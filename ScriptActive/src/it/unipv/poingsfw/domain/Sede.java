@@ -1,5 +1,17 @@
 package it.unipv.poingsfw.domain;
 
+/**
+ * La classe {@code Sede} rappresenta un'entità del dominio applicativo, modellando 
+ * una sede fisica (es. filiale, centro sportivo) all'interno del sistema.
+ * <p>
+ * Implementata come <b>POJO (Plain Old Java Object)</b>, ha il solo compito di 
+ * incapsulare e trasportare i dati identificativi della sede tra i vari livelli 
+ * dell'applicazione (Database, Controller, Interfaccia Grafica).
+ * </p>
+ * * @author Arianna Padula
+ * @version 1.0
+ */
+
 public class Sede {
     
     private int idSede; // Cambiato da String a int
@@ -9,7 +21,12 @@ public class Sede {
     public Sede() {
     }
 
-    // Costruttore con parametri
+    /**
+     * Costruttore parametrico per l'inizializzazione completa dell'entità.
+     * * @param idSede   L'identificativo numerico univoco della sede (Primary Key nel database).
+     * @param nomeSede Il nome descrittivo della sede.
+     */
+    
     public Sede(int idSede, String nomeSede) { // Aggiornato anche qui
         this.idSede = idSede;       
         this.nomeSede = nomeSede;   
@@ -31,6 +48,12 @@ public class Sede {
         this.nomeSede = nomeSede;
     }
 
+    /**
+     * Restituisce una rappresentazione testuale dell'oggetto.
+     * <p>
+     * </p>
+     * * @return Il nome della sede come stringa.
+     */
     @Override
     public String toString() {
         return this.nomeSede; 

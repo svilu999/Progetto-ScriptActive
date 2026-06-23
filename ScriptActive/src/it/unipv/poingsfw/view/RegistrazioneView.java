@@ -29,6 +29,19 @@ import it.unipv.poingsfw.domain.LivelloAbbonamento;
 import it.unipv.poingsfw.domain.Sede;
 import it.unipv.poingsfw.domain.TipoAbbonamento;
 
+/**
+ * La classe {@code RegistrazioneView} gestisce l'interfaccia grafica (GUI) per 
+ * l'iscrizione di un nuovo cliente al sistema.
+ * <p>
+ * Sviluppata utilizzando il framework <b>Java Swing</b>, questa classe rappresenta il 
+ * livello <b>View</b> nel pattern architetturale MVC. Implementa un'interfaccia guidata a più step) sfruttando il {@link CardLayout} per guidare l'utente 
+ * dall'inserimento dei dati anagrafici fino al pagamento, mantenendo lo stato 
+ * della compilazione in un'unica finestra.
+ * </p>
+ * * @author Arianna Padula
+ * @version 1.2
+ */
+
 public class RegistrazioneView extends JFrame {
 
     private CardLayout cardLayout;
@@ -52,6 +65,11 @@ public class RegistrazioneView extends JFrame {
     private final Dimension fieldSize = new Dimension(280, 35);
     private final Dimension buttonSize = new Dimension(200, 45);
 
+    /**
+     * Costruttore della vista. Inizializza il collegamento con il Controller 
+     * e costruisce l'interfaccia utente.
+     */
+    
     public RegistrazioneView() {
         this.gestore = GestoreRegistrazione.getIstanza();
         initUI();
@@ -167,13 +185,12 @@ public class RegistrazioneView extends JFrame {
         return p;
     }
 
-    // --- STEP 3: PAGAMENTO (AGGIORNATO CON SPUNTA RINNOVO) ---
+    // --- STEP 3: PAGAMENTO ---
     private JPanel creaStep3() {
         JPanel p = creaBasePanel("3. Concludi Iscrizione");
 
         aggiungiLabelEInput(p, "IBAN per l'addebito", txtIBAN = new JTextField());
 
-        // --- INSERIMENTO CHECKBOX RINNOVO ---
         chkRinnovo = new JCheckBox("Attiva il rinnovo automatico alla scadenza");
         chkRinnovo.setBackground(Color.WHITE);
         chkRinnovo.setFocusPainted(false);
@@ -198,7 +215,17 @@ public class RegistrazioneView extends JFrame {
         return p;
     }
 
-    // --- LOGICA DI SALVATAGGIO ---
+    /**
+     * Raccoglie tutti i dati dai vari componenti grafici e invoca il Controller 
+     * per finalizzare il processo di registrazione.
+     * <p>
+     * Intercetta e gestisce visivamente tutte le eccezioni di business sollevate dal 
+     * Controller (es. utente duplicato, pagamento rifiutato), mostrando all'utente 
+     * finestre di dialogo dedicate (JOptionPane).
+     * </p>
+     * * @param e L'evento scatenato dalla pressione del pulsante finale.
+     */
+    
     private void handleFinalRegistration(ActionEvent e) {
         try {
             String ibanInserito = txtIBAN.getText().trim();
