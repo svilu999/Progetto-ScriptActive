@@ -22,6 +22,7 @@ package it.unipv.poingsfw.view;
 import javax.swing.*;
 
 import it.unipv.poingsfw.controller.GestoreCorsi;
+import it.unipv.poingsfw.bootstrap.GestionePersonaleBootstrap;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -166,13 +167,12 @@ public class DashboardDirettoreView extends JFrame {
             }
         });
 
-        // Click sul bottone GESTIONE PERSONALE
+     // Click sul bottone GESTIONE PERSONALE
         btnGestionePersonale.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                GestionePersonaleView finestraPersonale = new GestionePersonaleView();
-                finestraPersonale.setVisible(true);
-                areaLog.append("[VIEW] Apertura finestra Gestione Personale .\n");
+                GestionePersonaleBootstrap.apriModulo();
+                areaLog.append("[VIEW] Apertura finestra Gestione Personale.\n");
             }
         });
     }

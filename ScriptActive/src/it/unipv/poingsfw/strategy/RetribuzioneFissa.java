@@ -39,7 +39,7 @@ public class RetribuzioneFissa implements StrategiaRetribuzione {
      * @return tipo di contratto
      */
     @Override
-    public String getTipoContratto() {
-        return "Fisso";
+    public String getTipoRetribuzione() {
+        return "FISSA_MENSILE";
     }
 }

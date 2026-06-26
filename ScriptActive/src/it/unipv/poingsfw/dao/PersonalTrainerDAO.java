@@ -2,67 +2,57 @@ package it.unipv.poingsfw.dao;
 
 import java.util.List;
 
-import it.unipv.poingsfw.domain.PersonalTrainer;
+import it.unipv.poingsfw.dto.DatiPersonalTrainer;
 
 /**
  * Interfaccia DAO per la gestione della persistenza dei Personal Trainer.
  *
- * Questa interfaccia definisce le operazioni principali che il sistema può
- * eseguire sui Personal Trainer, senza esporre al controller i dettagli
- * dell'implementazione concreta del database.
- *
- * Viene usata da GestorePersonale per salvare, cercare,
- * aggiornare e disattivare logicamente i Personal Trainer.
+ * L'interfaccia lavora con DTO e identificativi già normalizzati, in modo
+ * che il DAO si occupi solo di accesso ai dati e non di logica applicativa.
  */
 public interface PersonalTrainerDAO {
 
     /**
-     * Salva un nuovo Personal Trainer nel sistema.
+     * Salva un nuovo Personal Trainer nel database.
      *
-     * @param pt Personal Trainer da salvare
+     * @param datiTrainer dati persistenti del Personal Trainer da salvare
      */
-    void salva(PersonalTrainer pt);
+    void salva(DatiPersonalTrainer datiTrainer);
 
     /**
-     * Cerca un Personal Trainer tramite il suo identificativo.
+     * Cerca un Personal Trainer tramite identificativo numerico.
      *
-     * @param idPT identificativo del Personal Trainer da cercare
-     * @return Personal Trainer trovato, oppure null se non esiste
+     * @param idTrainer identificativo numerico del Personal Trainer
+     * @return dati del Personal Trainer trovato, oppure null se non esiste
      */
-    PersonalTrainer trovaPerId(String idPT);
-    
+    DatiPersonalTrainer trovaPerId(Integer idTrainer);
+
     /**
-     * Cerca un Personal Trainer tramite la sua email.
-     *
-     * Il metodo viene usato in fase di assunzione per impedire
-     * la registrazione duplicata dello stesso Personal Trainer.
+     * Cerca un Personal Trainer tramite email.
      *
      * @param email email del Personal Trainer da cercare
-     * @return Personal Trainer trovato, oppure null se non esiste
+     * @return dati del Personal Trainer trovato, oppure null se non esiste
      */
-    PersonalTrainer trovaPerEmail(String email);
+    DatiPersonalTrainer trovaPerEmail(String email);
 
     /**
      * Disattiva logicamente un Personal Trainer.
      *
-     * L'operazione non elimina fisicamente il record dal database, ma permette
-     * all'implementazione concreta di applicare il soft delete.
-     *
-     * @param idPT identificativo del Personal Trainer da disattivare
+     * @param idTrainer identificativo numerico del Personal Trainer da disattivare
      */
-    void elimina(String idPT);
+    void elimina(Integer idTrainer);
 
     /**
-     * Aggiorna i dati di un Personal Trainer già presente nel sistema.
+     * Aggiorna i dati di un Personal Trainer già presente nel database.
      *
-     * @param pt Personal Trainer con i dati aggiornati
+     * @param datiTrainer dati persistenti aggiornati del Personal Trainer
      */
-    void aggiorna(PersonalTrainer pt);
+    void aggiorna(DatiPersonalTrainer datiTrainer);
 
     /**
-     * Restituisce tutti i Personal Trainer presenti nel sistema.
+     * Restituisce tutti i Personal Trainer presenti nel database.
      *
-     * @return lista dei Personal Trainer disponibili
+     * @return lista dei dati persistenti dei Personal Trainer
      */
-    List<PersonalTrainer> trovaTutti();
+    List<DatiPersonalTrainer> trovaTutti();
 }

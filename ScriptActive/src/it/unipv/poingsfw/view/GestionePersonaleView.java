@@ -1,20 +1,10 @@
 package it.unipv.poingsfw.view;
 
-import it.unipv.poingsfw.controller.GestorePersonale;
-import it.unipv.poingsfw.domain.PersonalTrainer;
-import it.unipv.poingsfw.exceptions.SostitutoNonValidoException;
-import it.unipv.poingsfw.exceptions.TrainerGiaAssuntoException;
-import it.unipv.poingsfw.exceptions.TrainerNonLicenziabileException;
-import it.unipv.poingsfw.strategy.RetribuzioneFissa;
-import it.unipv.poingsfw.strategy.RetribuzioneProvvigione;
-import it.unipv.poingsfw.strategy.StrategiaRetribuzione;
-
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -27,6 +17,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
+import javax.swing.JOptionPane;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -36,21 +27,15 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.util.List;
+
 
 /**
- * View Swing per la gestione dei PersonalTrainer.
+ * View Swing per la gestione grafica dei Personal Trainer.
  *
- * La classe permette al Direttore di visualizzare i trainer, assumere un nuovo
- * PersonalTrainer, licenziarlo con o senza sostituto e calcolare il totale delle
- * retribuzioni mensili.
- *
- * La view non esegue query SQL: raccoglie i dati inseriti dall'utente e delega
- * le operazioni principali a GestorePersonale.
+ * La classe costruisce la schermata e inizializza i componenti grafici usati
+ * dal caso d'uso di gestione del personale.
  */
 public class GestionePersonaleView extends JFrame {
-
-    private GestorePersonale gestorePersonale;
 
     private JTable tabellaPT;
     private DefaultTableModel modelloTabella;
@@ -102,12 +87,9 @@ public class GestionePersonaleView extends JFrame {
          * Uso il Look & Feel del sistema operativo.
          */
         impostaLookAndFeel();
-
-        this.gestorePersonale = GestorePersonale.getInstance();
-
         inizializzaFinestra();
         inizializzaComponenti();
-        caricaPersonalTrainer();
+        
     }
 
     /**
@@ -235,10 +217,7 @@ public class GestionePersonaleView extends JFrame {
     }
 
     /**
-     * Crea la tabella usata per mostrare i PersonalTrainer.
-     *
-     * La selezione di una riga compila automaticamente il campo del trainer da
-     * licenziare e aggiorna la lista dei possibili sostituti compatibili.
+     * Crea la tabella usata per mostrare graficamente i Personal Trainer.
      */
     private void creaTabella() {
         /*
@@ -268,59 +247,6 @@ public class GestionePersonaleView extends JFrame {
 
         tabellaPT = new JTable(modelloTabella);
         configuraTabella();
-
-        /*
-         * Listener sulla selezione della tabella.
-         *
-         * Quando il Direttore clicca su una riga:
-         * 1. leggo l'ID del PT selezionato;
-         * 2. leggo la sua specializzazione;
-         * 3. inserisco automaticamente l'ID nel campo "PT da licenziare";
-         * 4. carico nella tendina solo i sostituti compatibili.
-         */
-        tabellaPT.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) {
-                int rigaSelezionata = tabellaPT.getSelectedRow();
-
-                if (rigaSelezionata >= 0 && txtIdDaLicenziare != null) {
-
-                    /*
-                     * Converto l'indice della riga visualizzata nell'indice reale del modello.
-                     * È utile se in futuro si aggiungono ordinamento o filtri alla tabella.
-                     */
-                    int rigaModello = tabellaPT.convertRowIndexToModel(rigaSelezionata);
-
-                    /*
-                     * Colonna 0 = ID Trainer.
-                     */
-                    String idTrainer = modelloTabella
-                            .getValueAt(rigaModello, 0)
-                            .toString();
-
-                    /*
-                     * Colonna 3 = Specializzazione.
-                     */
-                    String specializzazione = modelloTabella
-                            .getValueAt(rigaModello, 3)
-                            .toString();
-
-                    /*
-                     * Compilo automaticamente il campo del PT da licenziare.
-                     * In questo modo si evitano errori di digitazione.
-                     */
-                    txtIdDaLicenziare.setText(idTrainer);
-
-                    /*
-                     * Aggiorno la tendina dei sostituti mostrando solo:
-                     * - PT attivi;
-                     * - PT diversi da quello selezionato;
-                     * - PT con la stessa specializzazione.
-                     */
-                    caricaSostitutiCompatibili(idTrainer, specializzazione);
-                    aggiornaStato("PT selezionato: " + idTrainer + " - " + specializzazione);
-                }
-            }
-        });
     }
 
     /**
@@ -455,7 +381,7 @@ public class GestionePersonaleView extends JFrame {
         aggiungiRigaForm(form, 6, "Importo retribuzione", txtImportoRetribuzione);
 
         btnAssumi = creaBottone("Assumi PT");
-        btnAssumi.addActionListener(e -> assumiPersonalTrainer());
+        
 
         GridBagConstraints gbcBottone = new GridBagConstraints();
         gbcBottone.gridx = 1;
@@ -499,7 +425,7 @@ public class GestionePersonaleView extends JFrame {
         form.add(nota, gbcNota);
 
         btnLicenziaConSostituto = creaBottone("Licenzia con sostituto");
-        btnLicenziaConSostituto.addActionListener(e -> licenziaPersonalTrainerConSostituto());
+        
 
         GridBagConstraints gbcBottoneConSostituto = new GridBagConstraints();
         gbcBottoneConSostituto.gridx = 1;
@@ -509,7 +435,7 @@ public class GestionePersonaleView extends JFrame {
         form.add(btnLicenziaConSostituto, gbcBottoneConSostituto);
 
         btnLicenziaSenzaSostituto = creaBottone("Licenzia senza sostituto");
-        btnLicenziaSenzaSostituto.addActionListener(e -> licenziaPersonalTrainerSenzaSostituto());
+        
 
         GridBagConstraints gbcBottoneSenzaSostituto = new GridBagConstraints();
         gbcBottoneSenzaSostituto.gridx = 1;
@@ -538,10 +464,10 @@ public class GestionePersonaleView extends JFrame {
         pulsanti.setOpaque(false);
 
         btnAggiorna = creaBottone("Aggiorna elenco");
-        btnAggiorna.addActionListener(e -> caricaPersonalTrainer());
+        
 
         btnCalcolaRetribuzioni = creaBottone("Calcola retribuzioni");
-        btnCalcolaRetribuzioni.addActionListener(e -> calcolaRetribuzioniMensili());
+        
 
         pulsanti.add(btnAggiorna);
         pulsanti.add(btnCalcolaRetribuzioni);
@@ -653,356 +579,184 @@ public class GestionePersonaleView extends JFrame {
         form.add(label, gbcLabel);
         form.add(componenteInput, gbcInput);
     }
-
+    
     /**
-     * Carica nella combo box i PersonalTrainer che possono sostituire quello selezionato.
+     * Restituisce il pulsante per l'assunzione del Personal Trainer.
      *
-     * Il filtro esclude il trainer da licenziare e considera solo trainer attivi
-     * con la stessa specializzazione.
+     * @return pulsante di assunzione
+     */
+    public JButton getBtnAssumi() {
+        return btnAssumi;
+    }
+
+    /**
+     * Restituisce il pulsante per il licenziamento con sostituto.
      *
-     * @param idDaLicenziare identificativo del trainer da licenziare
-     * @param specializzazioneRichiesta specializzazione richiesta al sostituto
+     * @return pulsante di licenziamento con sostituto
      */
-    private void caricaSostitutiCompatibili(String idDaLicenziare, String specializzazioneRichiesta) {
-        /*
-         * Viene pulita la tendina ogni volta che viene selezionato un nuovo PT.
-         * In questo modo non rimangono sostituti caricati da selezioni precedenti.
-         */
-        comboSostituto.removeAllItems();
-
-        /*
-         * Prima voce standard della tendina.
-         * Serve per evitare che venga selezionato automaticamente un sostituto.
-         */
-        comboSostituto.addItem("Seleziona sostituto...");
-
-        try {
-            /*
-             * Recupero tutti i Personal Trainer dal controller.
-             * Il controller va a coordinare il DAO MySQL per prendere i dati dal database.
-             */
-            List<PersonalTrainer> elenco = gestorePersonale.getElencoPersonalTrainer();
-
-            /*
-             * Scorro tutti i PT e tengo solo quelli compatibili.
-             */
-            for (PersonalTrainer pt : elenco) {
-                /*
-                 * Un PT non può sostituire sé stesso.
-                 */
-                boolean stessoTrainer = pt.getIdTrainer().equalsIgnoreCase(idDaLicenziare);
-
-                /*
-                 * Il sostituto deve essere attivo.
-                 */
-                boolean attivo = pt.isAttivo();
-
-                /*
-                 * Il sostituto deve avere la stessa specializzazione del PT da licenziare.
-                 */
-                boolean stessaSpecializzazione = pt.getSpecializzazione() != null
-                        && pt.getSpecializzazione().equalsIgnoreCase(specializzazioneRichiesta);
-
-                /*
-                 * Aggiungo alla tendina solo i PT realmente compatibili filtrandoli per specializzazione.
-                 */
-                if (!stessoTrainer && attivo && stessaSpecializzazione) {
-                    comboSostituto.addItem(
-                            pt.getIdTrainer()
-                                    + " - "
-                                    + pt.getNomeCompleto()
-                                    + " - "
-                                    + pt.getSpecializzazione()
-                    );
-                }
-            }
-
-            /*
-             * Se la tendina contiene solo la voce iniziale, significa che non esistono sostituti compatibili.
-             */
-            if (comboSostituto.getItemCount() == 1) {
-                comboSostituto.addItem("Nessun sostituto compatibile");
-            }
-
-        } catch (Exception e) {
-            mostraErrore("Errore durante il caricamento dei sostituti compatibili:\n" + e.getMessage());
-            e.printStackTrace();
-        }
+    public JButton getBtnLicenziaConSostituto() {
+        return btnLicenziaConSostituto;
     }
 
     /**
-     * Carica l'elenco dei PersonalTrainer e aggiorna la tabella della view.
-     */
-    private void caricaPersonalTrainer() {
-        try {
-            modelloTabella.setRowCount(0);
-
-            List<PersonalTrainer> listaPT = gestorePersonale.getElencoPersonalTrainer();
-
-            for (PersonalTrainer pt : listaPT) {
-                Object[] riga = {
-                        pt.getIdTrainer(),
-                        pt.getNomeCompleto(),
-                        pt.getEmail(),
-                        pt.getSpecializzazione(),
-                        pt.getStatoContratto(),
-                        pt.isAttivo() ? "Sì" : "No"
-                };
-
-                modelloTabella.addRow(riga);
-            }
-
-            aggiornaStato("Elenco aggiornato. PT caricati: " + listaPT.size());
-
-        } catch (Exception e) {
-            mostraErrore("Errore durante il caricamento dei Personal Trainer:\n" + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Legge i dati del form di assunzione e richiede a GestorePersonale
-     * l'inserimento del nuovo PersonalTrainer.
-     */
-    private void assumiPersonalTrainer() {
-        try {
-            String nome = txtNome.getText().trim();
-            String cognome = txtCognome.getText().trim();
-            String email = txtEmail.getText().trim();
-            String idTrainer = "AUTO";
-            String specializzazione = txtSpecializzazione.getText().trim();
-            String tipoRetribuzione = (String) comboTipoRetribuzione.getSelectedItem();
-            String importoTesto = txtImportoRetribuzione.getText().trim();
-
-            if (nome.isEmpty() || cognome.isEmpty() || email.isEmpty()
-                    || specializzazione.isEmpty()
-                    || importoTesto.isEmpty()) {
-
-                mostraErrore("Compila tutti i campi prima di assumere il PT.");
-                return;
-            }
-
-            double importo = Double.parseDouble(importoTesto);
-
-            if (importo < 0) {
-                mostraErrore("L'importo della retribuzione non può essere negativo.");
-                return;
-            }
-
-            StrategiaRetribuzione strategia;
-
-            if ("FISSA_MENSILE".equals(tipoRetribuzione)) {
-                strategia = new RetribuzioneFissa(importo);
-            } else {
-                strategia = new RetribuzioneProvvigione(importo);
-            }
-
-            gestorePersonale.assumiPT(
-                    nome,
-                    cognome,
-                    email,
-                    idTrainer,
-                    specializzazione,
-                    strategia
-            );
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Personal Trainer assunto correttamente.",
-                    "Operazione completata",
-                    JOptionPane.INFORMATION_MESSAGE
-            );
-
-            pulisciCampiAssunzione();
-            caricaPersonalTrainer();
-            aggiornaStato("PT assunto correttamente: " + nome + " " + cognome);
-
-        } catch (NumberFormatException e) {
-            mostraErrore("L'importo della retribuzione deve essere un numero. Esempio: 1400 oppure 25");
-
-        } catch (TrainerGiaAssuntoException e) {
-            mostraErrore(e.getMessage());
-
-        } catch (Exception e) {
-            mostraErrore("Errore durante l'assunzione del Personal Trainer:\n" + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Gestisce il licenziamento di un PersonalTrainer con sostituto selezionato.
+     * Restituisce il pulsante per il licenziamento senza sostituto.
      *
-     * Il metodo legge gli ID dalla schermata, chiede conferma all'utente e poi
-     * delega a GestorePersonale il controllo e l'operazione effettiva.
+     * @return pulsante di licenziamento senza sostituto
      */
-    private void licenziaPersonalTrainerConSostituto() {
-        try {
-            String idDaLicenziare = txtIdDaLicenziare.getText().trim();
-
-            /*
-             * Leggo dalla tendina il sostituto selezionato.
-             * La voce ha formato:
-             * ID - Nome Cognome - Specializzazione
-             */
-            String selezioneSostituto = (String) comboSostituto.getSelectedItem();
-
-            /*
-             * Controllo che l'utente abbia selezionato un sostituto valido.
-             */
-            if (selezioneSostituto == null
-                    || selezioneSostituto.equals("Seleziona sostituto...")
-                    || selezioneSostituto.equals("Nessun sostituto compatibile")) {
-
-                mostraErrore("Seleziona un PT sostituto compatibile.");
-                return;
-            }
-
-            /*
-             * Estraggo solo l'ID del sostituto dalla stringa della tendina.
-             */
-            String idSostituto = selezioneSostituto.split(" - ")[0].trim();
-
-            if (idDaLicenziare.isEmpty() || idSostituto.isEmpty()) {
-                mostraErrore("Seleziona il PT da licenziare e un sostituto compatibile.");
-                return;
-            }
-
-            int conferma = JOptionPane.showConfirmDialog(
-                    this,
-                    "Confermi il licenziamento del PT " + idDaLicenziare
-                            + " con sostituto " + idSostituto + "?",
-                    "Conferma licenziamento",
-                    JOptionPane.YES_NO_OPTION
-            );
-
-            if (conferma != JOptionPane.YES_OPTION) {
-                return;
-            }
-
-            gestorePersonale.licenziaPT(idDaLicenziare, idSostituto);
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Personal Trainer licenziato correttamente.",
-                    "Operazione completata",
-                    JOptionPane.INFORMATION_MESSAGE
-            );
-
-            resetCampiLicenziamento();
-            caricaPersonalTrainer();
-            aggiornaStato("PT licenziato: " + idDaLicenziare + ". Sostituto: " + idSostituto);
-
-        } catch (SostitutoNonValidoException | TrainerNonLicenziabileException e) {
-            mostraErrore(e.getMessage());
-
-        } catch (Exception e) {
-            mostraErrore("Errore durante il licenziamento del Personal Trainer:\n" + e.getMessage());
-            e.printStackTrace();
-        }
+    public JButton getBtnLicenziaSenzaSostituto() {
+        return btnLicenziaSenzaSostituto;
     }
 
     /**
-     * Gestisce il licenziamento di un PersonalTrainer senza sostituto.
+     * Restituisce il pulsante per aggiornare l'elenco dei Personal Trainer.
      *
-     * L'operazione viene delegata a GestorePersonale, che verifica se il trainer
-     * può essere disattivato senza lasciare corsi scoperti.
+     * @return pulsante di aggiornamento
      */
-    private void licenziaPersonalTrainerSenzaSostituto() {
-        try {
-            String idDaLicenziare = txtIdDaLicenziare.getText().trim();
-
-            if (idDaLicenziare.isEmpty()) {
-                mostraErrore("Seleziona dalla tabella il PT da licenziare.");
-                return;
-            }
-
-            int conferma = JOptionPane.showConfirmDialog(
-                    this,
-                    "Confermi il licenziamento del PT " + idDaLicenziare
-                            + " senza sostituto?\n"
-                            + "L'operazione riuscirà solo se il PT non ha corsi attivi o futuri.",
-                    "Conferma licenziamento senza sostituto",
-                    JOptionPane.YES_NO_OPTION
-            );
-
-            if (conferma != JOptionPane.YES_OPTION) {
-                return;
-            }
-
-            gestorePersonale.licenziaPT(idDaLicenziare);
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Personal Trainer licenziato correttamente senza sostituto.",
-                    "Operazione completata",
-                    JOptionPane.INFORMATION_MESSAGE
-            );
-
-            resetCampiLicenziamento();
-            caricaPersonalTrainer();
-            aggiornaStato("PT licenziato senza sostituto: " + idDaLicenziare);
-
-        } catch (SostitutoNonValidoException | TrainerNonLicenziabileException e) {
-            mostraErrore(e.getMessage());
-
-        } catch (Exception e) {
-            mostraErrore("Errore durante il licenziamento senza sostituto:\n" + e.getMessage());
-            e.printStackTrace();
-        }
+    public JButton getBtnAggiorna() {
+        return btnAggiorna;
     }
 
     /**
-     * Richiede il calcolo del totale mensile delle retribuzioni e mostra il risultato.
+     * Restituisce il pulsante per il calcolo delle retribuzioni.
+     *
+     * @return pulsante di calcolo retribuzioni
      */
-    private void calcolaRetribuzioniMensili() {
-        try {
-            double totale = gestorePersonale.calcolaTotaleStipendiMensili();
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    String.format("Totale retribuzioni mensili PT attivi: € %.2f", totale),
-                    "Calcolo retribuzioni",
-                    JOptionPane.INFORMATION_MESSAGE
-            );
-
-            aggiornaStato(String.format("Totale retribuzioni mensili: € %.2f", totale));
-
-        } catch (Exception e) {
-            mostraErrore("Errore durante il calcolo delle retribuzioni:\n" + e.getMessage());
-            e.printStackTrace();
-        }
+    public JButton getBtnCalcolaRetribuzioni() {
+        return btnCalcolaRetribuzioni;
     }
 
     /**
-     * Pulisce i campi del form di assunzione dopo un inserimento completato.
+     * Restituisce la tabella dei Personal Trainer.
+     *
+     * @return tabella dei Personal Trainer
      */
-    private void pulisciCampiAssunzione() {
-        txtNome.setText("");
-        txtCognome.setText("");
-        txtEmail.setText("");
-        txtIdTrainer.setText("Generato automaticamente");
-        txtSpecializzazione.setText("");
-        txtImportoRetribuzione.setText("");
-        comboTipoRetribuzione.setSelectedIndex(0);
+    public JTable getTabellaPT() {
+        return tabellaPT;
     }
 
     /**
-     * Ripristina i campi usati per il licenziamento.
+     * Restituisce il modello della tabella dei Personal Trainer.
+     *
+     * @return modello della tabella
      */
-    private void resetCampiLicenziamento() {
-        txtIdDaLicenziare.setText("");
-        comboSostituto.removeAllItems();
-        comboSostituto.addItem("Seleziona sostituto...");
+    public DefaultTableModel getModelloTabella() {
+        return modelloTabella;
+    }
+
+    /**
+     * Restituisce il campo del nome.
+     *
+     * @return campo del nome
+     */
+    public JTextField getTxtNome() {
+        return txtNome;
+    }
+
+    /**
+     * Restituisce il campo del cognome.
+     *
+     * @return campo del cognome
+     */
+    public JTextField getTxtCognome() {
+        return txtCognome;
+    }
+
+    /**
+     * Restituisce il campo dell'email.
+     *
+     * @return campo dell'email
+     */
+    public JTextField getTxtEmail() {
+        return txtEmail;
+    }
+
+    /**
+     * Restituisce il campo dell'identificativo del trainer.
+     *
+     * @return campo dell'identificativo del trainer
+     */
+    public JTextField getTxtIdTrainer() {
+        return txtIdTrainer;
+    }
+
+    /**
+     * Restituisce il campo della specializzazione.
+     *
+     * @return campo della specializzazione
+     */
+    public JTextField getTxtSpecializzazione() {
+        return txtSpecializzazione;
+    }
+
+    /**
+     * Restituisce il campo dell'importo della retribuzione.
+     *
+     * @return campo dell'importo della retribuzione
+     */
+    public JTextField getTxtImportoRetribuzione() {
+        return txtImportoRetribuzione;
+    }
+
+    /**
+     * Restituisce la combo box del tipo di retribuzione.
+     *
+     * @return combo box del tipo di retribuzione
+     */
+    public JComboBox<String> getComboTipoRetribuzione() {
+        return comboTipoRetribuzione;
+    }
+
+    /**
+     * Restituisce il campo dell'identificativo del trainer da licenziare.
+     *
+     * @return campo del trainer da licenziare
+     */
+    public JTextField getTxtIdDaLicenziare() {
+        return txtIdDaLicenziare;
+    }
+
+    /**
+     * Restituisce la combo box dei sostituti.
+     *
+     * @return combo box dei sostituti
+     */
+    public JComboBox<String> getComboSostituto() {
+        return comboSostituto;
+    }
+
+    /**
+     * Restituisce la label di stato della schermata.
+     *
+     * @return label di stato
+     */
+    public JLabel getLblStato() {
+        return lblStato;
+    }
+    
+    /**
+     * Mostra un messaggio informativo all'utente.
+     *
+     * Il metodo contiene solo logica grafica di presentazione.
+     *
+     * @param messaggio testo da mostrare
+     */
+    public void mostraMessaggioInformativo(String messaggio) {
+        JOptionPane.showMessageDialog(
+                this,
+                messaggio,
+                "Operazione completata",
+                JOptionPane.INFORMATION_MESSAGE
+        );
     }
 
     /**
      * Mostra un messaggio di errore all'utente.
      *
-     * @param messaggio testo dell'errore da visualizzare
+     * Il metodo contiene solo logica grafica di presentazione.
+     *
+     * @param messaggio testo dell'errore da mostrare
      */
-    private void mostraErrore(String messaggio) {
-        aggiornaStato("Errore: operazione non completata.");
-
+    public void mostraMessaggioErrore(String messaggio) {
         JOptionPane.showMessageDialog(
                 this,
                 messaggio,
@@ -1011,16 +765,6 @@ public class GestionePersonaleView extends JFrame {
         );
     }
 
-    /**
-     * Aggiorna il messaggio di stato nella parte bassa della finestra.
-     *
-     * @param messaggio testo da mostrare nello stato
-     */
-    private void aggiornaStato(String messaggio) {
-        if (lblStato != null) {
-            lblStato.setText(messaggio);
-        }
-    }
 
     /**
      * Metodo main usato per avviare direttamente la schermata.

@@ -36,7 +36,7 @@ public class RetribuzioneProvvigione implements StrategiaRetribuzione {
      * @return tipo di contratto
      */
     @Override
-    public String getTipoContratto() {
-        return "Provvigione";
+    public String getTipoRetribuzione() {
+        return "A_LEZIONE";
     }
 }
