@@ -20,9 +20,9 @@ public class DatiPersonalTrainer {
     private final String specializzazione;
     private final String tipoContratto;
     private final String statoContratto;
-    private final Boolean attivo;
     private final String tipoRetribuzione;
-    private final Double stipendioMensile;
+    private final boolean attivo;
+    private final double stipendioMensile;
     private final Double compensoPerLezione;
     private final Integer idDirettore;
 

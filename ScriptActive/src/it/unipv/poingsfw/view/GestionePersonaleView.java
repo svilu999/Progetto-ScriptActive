@@ -115,7 +115,7 @@ public class GestionePersonaleView extends JFrame {
         setSize(1120, 760);
         setMinimumSize(new Dimension(1000, 680));
         setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout());
 
         getContentPane().setBackground(COLORE_SFONDO);
@@ -763,18 +763,5 @@ public class GestionePersonaleView extends JFrame {
                 "Errore",
                 JOptionPane.ERROR_MESSAGE
         );
-    }
-
-
-    /**
-     * Metodo main usato per avviare direttamente la schermata.
-     *
-     * @param args argomenti da linea di comando, non usati
-     */
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            GestionePersonaleView view = new GestionePersonaleView();
-            view.setVisible(true);
-        });
     }
 }
