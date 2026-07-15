@@ -3,6 +3,7 @@ package it.unipv.poingsfw.service;
 import it.unipv.poingsfw.dao.PersonalTrainerDAO;
 import it.unipv.poingsfw.domain.PersonalTrainer;
 import it.unipv.poingsfw.dto.DatiPersonalTrainer;
+import it.unipv.poingsfw.dto.DatiVisualizzazioneTrainer;
 import it.unipv.poingsfw.exceptions.SostitutoNonValidoException;
 import it.unipv.poingsfw.exceptions.TrainerGiaAssuntoException;
 import it.unipv.poingsfw.exceptions.TrainerNonLicenziabileException;
@@ -74,11 +75,10 @@ public class GestoreContrattiPersonale implements ServizioContrattiPersonale {
      * @param nome nome del Personal Trainer
      * @param cognome cognome del Personal Trainer
      * @param email email del Personal Trainer
-     * @param idTrainer identificativo del Personal Trainer, oppure AUTO
      * @param specializzazione specializzazione professionale
      * @param tipoRetribuzione tipo di retribuzione scelto
      * @param importoRetribuzione importo associato alla retribuzione
-     * @throws TrainerGiaAssuntoException se esiste già un trainer con stesso ID o email
+     *@throws TrainerGiaAssuntoException se esiste già un trainer con la stessa email
      * @throws TrainerNonValidoException se i dati del trainer non sono validi
      */
     @Override
@@ -86,7 +86,6 @@ public class GestoreContrattiPersonale implements ServizioContrattiPersonale {
             String nome,
             String cognome,
             String email,
-            String idTrainer,
             String specializzazione,
             String tipoRetribuzione,
             double importoRetribuzione)
@@ -100,16 +99,6 @@ public class GestoreContrattiPersonale implements ServizioContrattiPersonale {
                 "specializzazione"
         );
 
-        Integer idTrainerNumerico = normalizzaIdAssunzione(idTrainer);
-
-        if (idTrainerNumerico != null && trainerDAO.trovaPerId(idTrainerNumerico) != null) {
-            throw new TrainerGiaAssuntoException(
-                    "OPERAZIONE ANNULLATA: il PT con ID "
-                            + idTrainerNumerico
-                            + " è già registrato."
-            );
-        }
-
         if (trainerDAO.trovaPerEmail(emailNormalizzata) != null) {
             throw new TrainerGiaAssuntoException(
                     "OPERAZIONE ANNULLATA: esiste già un Personal Trainer registrato con email "
@@ -117,15 +106,22 @@ public class GestoreContrattiPersonale implements ServizioContrattiPersonale {
             );
         }
 
-        StrategiaRetribuzioneFactory.crea(tipoRetribuzione, importoRetribuzione);
+        StrategiaRetribuzione strategia = StrategiaRetribuzioneFactory.crea(
+                tipoRetribuzione,
+                importoRetribuzione
+        );
 
-        DatiPersonalTrainer datiNuovoTrainer = creaDatiNuovoTrainer(
-                idTrainerNumerico,
+        PersonalTrainer nuovoTrainer = new PersonalTrainer(
                 nomeNormalizzato,
                 cognomeNormalizzato,
                 emailNormalizzata,
+                null,
                 specializzazioneNormalizzata,
-                tipoRetribuzione,
+                strategia
+        );
+        
+        DatiPersonalTrainer datiNuovoTrainer = creaDatiNuovoTrainer(
+                nuovoTrainer,
                 importoRetribuzione
         );
 
@@ -133,49 +129,84 @@ public class GestoreContrattiPersonale implements ServizioContrattiPersonale {
     }
 
     /**
-     * Restituisce l'elenco dei Personal Trainer presenti nel sistema.
+     * Restituisce al Controller i dati necessari alla visualizzazione
+     * dei Personal Trainer.
      *
-     * Il DAO restituisce DTO persistenti. Il Service li converte in oggetti
-     * di dominio prima di restituirli al Controller.
+     * I DTO persistenti restituiti dal DAO vengono convertiti prima in
+     * oggetti di dominio e successivamente in DTO di presentazione.
      *
-     * @return lista dei Personal Trainer presenti nel sistema
+     * @return lista dei dati destinati alla schermata
      */
     @Override
-    public List<PersonalTrainer> getElencoPersonalTrainer() {
-        return convertiListaDatiInPersonalTrainer(trainerDAO.trovaTutti());
+    public List<DatiVisualizzazioneTrainer> getElencoPersonalTrainer() {
+
+        List<PersonalTrainer> trainerDiDominio =
+                convertiListaDatiInPersonalTrainer(trainerDAO.trovaTutti());
+
+        List<DatiVisualizzazioneTrainer> datiVisualizzazione =
+                new ArrayList<>();
+
+        for (PersonalTrainer trainer : trainerDiDominio) {
+            datiVisualizzazione.add(
+                    convertiInDatiVisualizzazione(trainer)
+            );
+        }
+
+        return datiVisualizzazione;
     }
 
     /**
-     * Restituisce i Personal Trainer compatibili come sostituti.
+     * Individua i Personal Trainer compatibili con quello da licenziare.
+     *
+     * La compatibilità viene verificata utilizzando gli oggetti di dominio
+     * internamente al Service. Al Controller vengono restituiti soltanto
+     * DTO destinati alla presentazione.
      *
      * @param idTrainerDaLicenziare identificativo del trainer da sostituire
-     * @return lista dei Personal Trainer compatibili
-     * @throws TrainerNonValidoException se il trainer da licenziare non esiste o non è valido
+     * @return lista dei dati dei sostituti compatibili
+     * @throws TrainerNonValidoException se l'identificativo non è valido
+     *         o il trainer non esiste
      */
     @Override
-    public List<PersonalTrainer> getSostitutiCompatibili(String idTrainerDaLicenziare)
+    public List<DatiVisualizzazioneTrainer> getSostitutiCompatibili(
+            String idTrainerDaLicenziare)
             throws TrainerNonValidoException {
 
-        Integer idDaLicenziare = normalizzaIdObbligatorio(
+        Integer idTrainerNumerico = normalizzaIdObbligatorio(
                 idTrainerDaLicenziare,
                 "identificativo del Personal Trainer da licenziare"
         );
 
-        PersonalTrainer trainerDaLicenziare = convertiDatiInPersonalTrainer(
-                trainerDAO.trovaPerId(idDaLicenziare)
-        );
+        DatiPersonalTrainer datiTrainerDaLicenziare =
+                trainerDAO.trovaPerId(idTrainerNumerico);
 
-        if (trainerDaLicenziare == null) {
+        if (datiTrainerDaLicenziare == null) {
             throw new TrainerNonValidoException(
-                    "OPERAZIONE ANNULLATA: il Personal Trainer da licenziare non esiste."
+                    "Personal Trainer da licenziare non trovato."
             );
         }
 
-        List<PersonalTrainer> sostitutiCompatibili = new ArrayList<>();
+        PersonalTrainer trainerDaLicenziare =
+                convertiDatiInPersonalTrainer(datiTrainerDaLicenziare);
 
-        for (PersonalTrainer possibileSostituto : getElencoPersonalTrainer()) {
-            if (isSostitutoCompatibile(trainerDaLicenziare, possibileSostituto)) {
-                sostitutiCompatibili.add(possibileSostituto);
+        List<PersonalTrainer> elencoTrainer =
+                convertiListaDatiInPersonalTrainer(
+                        trainerDAO.trovaTutti()
+                );
+
+        List<DatiVisualizzazioneTrainer> sostitutiCompatibili =
+                new ArrayList<>();
+
+        for (PersonalTrainer possibileSostituto : elencoTrainer) {
+            if (isSostitutoCompatibile(
+                    trainerDaLicenziare,
+                    possibileSostituto)) {
+
+                sostitutiCompatibili.add(
+                        convertiInDatiVisualizzazione(
+                                possibileSostituto
+                        )
+                );
             }
         }
 
@@ -290,67 +321,74 @@ public class GestoreContrattiPersonale implements ServizioContrattiPersonale {
     }
 
     /**
-     * Crea il DTO persistente da usare per salvare un nuovo Personal Trainer.
+     * Prepara il DTO persistente partendo dal Personal Trainer di dominio.
      *
-     * @param idTrainer id numerico del trainer, oppure null se generato dal database
-     * @param nome nome normalizzato
-     * @param cognome cognome normalizzato
-     * @param email email normalizzata
-     * @param specializzazione specializzazione normalizzata
-     * @param tipoRetribuzione tipo di retribuzione
-     * @param importoRetribuzione importo retributivo
-     * @return DTO pronto per il DAO
+     * Il metodo estrae dalla Strategy il tipo di retribuzione, prepara i valori
+     * persistenti e associa il trainer a un Direttore presente nel sistema.
+     *
+     * @param trainer Personal Trainer di dominio da convertire
+     * @param importoRetribuzione importo associato alla Strategy
+     * @return DTO pronto per essere passato al DAO
      */
     private DatiPersonalTrainer creaDatiNuovoTrainer(
-            Integer idTrainer,
-            String nome,
-            String cognome,
-            String email,
-            String specializzazione,
-            String tipoRetribuzione,
+            PersonalTrainer trainer,
             double importoRetribuzione) {
 
-        String tipoRetribuzioneNormalizzato = tipoRetribuzione.trim().toUpperCase();
+        StrategiaRetribuzione strategia = trainer.getStrategia();
 
-        String tipoContratto;
+        if (strategia == null) {
+            throw new IllegalStateException(
+                    "Il Personal Trainer deve avere una strategia di retribuzione."
+            );
+        }
+
+        String tipoRetribuzione = strategia.getTipoRetribuzione();
+
         double stipendioMensile;
         Double compensoPerLezione;
 
-        if (TIPO_FISSA_MENSILE.equalsIgnoreCase(tipoRetribuzioneNormalizzato)) {
-            tipoContratto = "Fisso";
+        if (TIPO_FISSA_MENSILE.equalsIgnoreCase(tipoRetribuzione)) {
+            trainer.setTipoContratto("Fisso");
             stipendioMensile = importoRetribuzione;
             compensoPerLezione = null;
 
-        } else if (TIPO_A_LEZIONE.equalsIgnoreCase(tipoRetribuzioneNormalizzato)) {
-            tipoContratto = "Provvigione";
+        } else if (TIPO_A_LEZIONE.equalsIgnoreCase(tipoRetribuzione)) {
+            trainer.setTipoContratto("Provvigione");
             stipendioMensile = 0.00;
             compensoPerLezione = importoRetribuzione;
 
         } else {
-            throw new IllegalArgumentException("Tipo retribuzione non valido: " + tipoRetribuzione);
+            throw new IllegalStateException(
+                    "Tipo di retribuzione non gestito: " + tipoRetribuzione
+            );
         }
-        
+
         Integer idDirettore = direttoreDAO.trovaIdDirettoreDisponibile();
 
-    	if (idDirettore == null) {
-    	    throw new IllegalStateException(
-    	            "Nessun Direttore disponibile nel database per associare il Personal Trainer."
-    	    );
-    	}
+        if (idDirettore == null) {
+            throw new IllegalStateException(
+                    "Nessun Direttore disponibile nel database "
+                            + "per associare il Personal Trainer."
+            );
+        }
 
         return new DatiPersonalTrainer(
-                idTrainer,
-                generaCodiceFiscaleTecnico(email, nome, cognome),
-                nome,
-                cognome,
-                email,
+                null,
+                generaCodiceFiscaleTecnico(
+                        trainer.getEmail(),
+                        trainer.getNome(),
+                        trainer.getCognome()
+                ),
+                trainer.getNome(),
+                trainer.getCognome(),
+                trainer.getEmail(),
                 PASSWORD_PREDEFINITA,
                 STATO_UTENTE_ATTIVO,
-                specializzazione,
-                tipoContratto,
-                STATO_CONTRATTO_ATTIVO,
-                true,
-                tipoRetribuzioneNormalizzato,
+                trainer.getSpecializzazione(),
+                trainer.getTipoContratto(),
+                trainer.getStatoContratto(),
+                trainer.isAttivo(),
+                tipoRetribuzione,
                 stipendioMensile,
                 compensoPerLezione,
                 idDirettore
@@ -358,25 +396,28 @@ public class GestoreContrattiPersonale implements ServizioContrattiPersonale {
     }
 
     /**
-     * Converte una lista di DTO in una lista di Personal Trainer di dominio.
+     * Converte un Personal Trainer di dominio nel DTO destinato
+     * alla presentazione.
      *
-     * @param datiTrainers lista di DTO letti dal DAO
-     * @return lista di Personal Trainer di dominio
+     * @param trainer Personal Trainer da convertire
+     * @return DTO contenente esclusivamente i dati necessari alla View
      */
-    private List<PersonalTrainer> convertiListaDatiInPersonalTrainer(
-            List<DatiPersonalTrainer> datiTrainers) {
+    private DatiVisualizzazioneTrainer convertiInDatiVisualizzazione(
+            PersonalTrainer trainer) {
 
-        List<PersonalTrainer> trainers = new ArrayList<>();
+        Objects.requireNonNull(
+                trainer,
+                "trainer non può essere null"
+        );
 
-        for (DatiPersonalTrainer datiTrainer : datiTrainers) {
-            PersonalTrainer trainer = convertiDatiInPersonalTrainer(datiTrainer);
-
-            if (trainer != null) {
-                trainers.add(trainer);
-            }
-        }
-
-        return trainers;
+        return new DatiVisualizzazioneTrainer(
+                trainer.getIdTrainer(),
+                trainer.getNomeCompleto(),
+                trainer.getEmail(),
+                trainer.getSpecializzazione(),
+                trainer.getStatoContratto(),
+                trainer.isAttivo()
+        );
     }
 
     /**
@@ -423,6 +464,36 @@ public class GestoreContrattiPersonale implements ServizioContrattiPersonale {
             );
         }
     }
+    
+    /**
+     * Converte una lista di DTO persistenti in una lista di oggetti
+     * PersonalTrainer di dominio.
+     *
+     * La conversione resta interna al Service, evitando che DAO e
+     * Controller debbano conoscere contemporaneamente persistenza
+     * e dominio.
+     *
+     * @param datiTrainer lista dei DTO restituiti dal DAO
+     * @return lista dei Personal Trainer di dominio
+     */
+    private List<PersonalTrainer> convertiListaDatiInPersonalTrainer(
+            List<DatiPersonalTrainer> datiTrainer) {
+
+        Objects.requireNonNull(
+                datiTrainer,
+                "La lista dei dati trainer non può essere null"
+        );
+
+        List<PersonalTrainer> trainerDiDominio = new ArrayList<>();
+
+        for (DatiPersonalTrainer dati : datiTrainer) {
+            trainerDiDominio.add(
+                    convertiDatiInPersonalTrainer(dati)
+            );
+        }
+
+        return trainerDiDominio;
+    }
 
     /**
      * Seleziona l'importo corretto da passare alla Strategy Factory.
@@ -464,33 +535,7 @@ public class GestoreContrattiPersonale implements ServizioContrattiPersonale {
         }
     }
 
-    /**
-     * Normalizza l'identificativo del Personal Trainer in fase di assunzione.
-     *
-     * @param idTrainer identificativo ricevuto dal controller
-     * @return identificativo numerico oppure null se AUTO
-     * @throws TrainerNonValidoException se l'identificativo non è valido
-     */
-    private Integer normalizzaIdAssunzione(String idTrainer) throws TrainerNonValidoException {
-        if (idTrainer == null || idTrainer.trim().isEmpty()) {
-            return null;
-        }
-
-        if ("AUTO".equalsIgnoreCase(idTrainer.trim())) {
-            return null;
-        }
-
-        return normalizzaIdObbligatorio(idTrainer, "identificativo del Personal Trainer");
-    }
-
-    /**
-     * Normalizza un identificativo obbligatorio.
-     *
-     * @param idTrainer identificativo ricevuto
-     * @param nomeCampo nome logico del campo
-     * @return identificativo numerico
-     * @throws TrainerNonValidoException se l'identificativo non è valido
-     */
+    
     private Integer normalizzaIdObbligatorio(String idTrainer, String nomeCampo)
             throws TrainerNonValidoException {
 

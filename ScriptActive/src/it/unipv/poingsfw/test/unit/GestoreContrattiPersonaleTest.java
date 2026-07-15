@@ -26,6 +26,7 @@ import it.unipv.poingsfw.exceptions.TrainerNonValidoException;
 import it.unipv.poingsfw.service.GestoreContrattiPersonale;
 import it.unipv.poingsfw.service.ServizioRetribuzioni;
 import it.unipv.poingsfw.service.ServizioSwapCorsi;
+import it.unipv.poingsfw.dto.DatiVisualizzazioneTrainer;
 
 /**
  * Test JUnit del Service applicativo GestoreContrattiPersonale.
@@ -74,7 +75,6 @@ public class GestoreContrattiPersonaleTest {
                 "Mario",
                 "Rossi",
                 "Mario.Rossi@Test.it",
-                "AUTO",
                 "Sala pesi",
                 "FISSA_MENSILE",
                 1300.0
@@ -117,7 +117,6 @@ public class GestoreContrattiPersonaleTest {
                 "Luca",
                 "Bianchi",
                 "luca.bianchi@test.it",
-                "AUTO",
                 "Sala pesi",
                 "FISSA_MENSILE",
                 1300.0
@@ -126,33 +125,7 @@ public class GestoreContrattiPersonaleTest {
         assertEquals(1, trainerDAO.trovaTutti().size());
     }
 
-    /**
-     * Verifica che l'assunzione venga bloccata se viene indicato un ID già presente.
-     */
-    @Test
-    public void testAssumiPersonalTrainer_IdGiaPresente_LanciaEccezione() {
-        trainerDAO.salva(creaDatiTrainer(
-                10,
-                "Luca",
-                "Bianchi",
-                "luca.bianchi@test.it",
-                "Sala pesi",
-                true
-        ));
-
-        assertThrows(TrainerGiaAssuntoException.class, () -> servizioContratti.assumiPersonalTrainer(
-                "Mario",
-                "Rossi",
-                "mario.rossi@test.it",
-                "10",
-                "Sala pesi",
-                "FISSA_MENSILE",
-                1300.0
-        ));
-
-        assertEquals(1, trainerDAO.trovaTutti().size());
-    }
-
+    
     /**
      * Verifica che un trainer senza corsi attivi o futuri venga licenziato
      * correttamente senza sostituto.
@@ -323,12 +296,12 @@ public class GestoreContrattiPersonaleTest {
                 true
         ));
 
-        List<PersonalTrainer> compatibili = servizioContratti.getSostitutiCompatibili("10");
+        List<DatiVisualizzazioneTrainer> compatibili = servizioContratti.getSostitutiCompatibili("10");
 
         assertEquals(1, compatibili.size());
         assertEquals("11", compatibili.get(0).getIdTrainer());
-        assertEquals("Giulia", compatibili.get(0).getNome());
-    }
+        assertEquals("Giulia Verdi", compatibili.get(0).getNomeCompleto());
+        }
 
     /**
      * Verifica che il calcolo delle retribuzioni venga delegato al servizio dedicato.

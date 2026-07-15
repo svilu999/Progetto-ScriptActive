@@ -3,13 +3,13 @@ package it.unipv.poingsfw.controller;
 import java.util.List;
 import java.util.Objects;
 
-import it.unipv.poingsfw.domain.PersonalTrainer;
 import it.unipv.poingsfw.service.ServizioContrattiPersonale;
 import it.unipv.poingsfw.view.GestionePersonaleView;
 import it.unipv.poingsfw.exceptions.TrainerGiaAssuntoException;
 import it.unipv.poingsfw.exceptions.TrainerNonValidoException;
 import it.unipv.poingsfw.exceptions.TrainerNonLicenziabileException;
 import it.unipv.poingsfw.exceptions.SostitutoNonValidoException;
+import it.unipv.poingsfw.dto.DatiVisualizzazioneTrainer;
 
 /**
  * Controller della gestione del personale.
@@ -71,11 +71,11 @@ public class GestorePersonale {
      */
     private void aggiornaElencoPersonalTrainer() {
         try {
-            List<PersonalTrainer> listaTrainer = servizioContratti.getElencoPersonalTrainer();
+        	List<DatiVisualizzazioneTrainer> listaTrainer = servizioContratti.getElencoPersonalTrainer();
 
             view.getModelloTabella().setRowCount(0);
 
-            for (PersonalTrainer trainer : listaTrainer) {
+            for (DatiVisualizzazioneTrainer trainer : listaTrainer) {
                 Object[] riga = {
                         trainer.getIdTrainer(),
                         trainer.getNomeCompleto(),
@@ -113,7 +113,6 @@ public class GestorePersonale {
                     view.getTxtNome().getText(),
                     view.getTxtCognome().getText(),
                     view.getTxtEmail().getText(),
-                    "AUTO",
                     view.getTxtSpecializzazione().getText(),
                     (String) view.getComboTipoRetribuzione().getSelectedItem(),
                     importoRetribuzione
@@ -184,12 +183,15 @@ public class GestorePersonale {
      */
     private void caricaSostitutiCompatibili(String idTrainerDaLicenziare) {
         try {
-            List<PersonalTrainer> sostituti = servizioContratti.getSostitutiCompatibili(idTrainerDaLicenziare);
+            List<DatiVisualizzazioneTrainer> sostituti =
+                    servizioContratti.getSostitutiCompatibili(
+                            idTrainerDaLicenziare
+                    );
 
             view.getComboSostituto().removeAllItems();
             view.getComboSostituto().addItem("Seleziona sostituto...");
 
-            for (PersonalTrainer sostituto : sostituti) {
+            for (DatiVisualizzazioneTrainer sostituto : sostituti) {
                 view.getComboSostituto().addItem(
                         sostituto.getIdTrainer()
                                 + " - "
@@ -200,10 +202,14 @@ public class GestorePersonale {
             }
 
             if (sostituti.isEmpty()) {
-                view.getComboSostituto().addItem("Nessun sostituto compatibile");
+                view.getComboSostituto().addItem(
+                        "Nessun sostituto compatibile"
+                );
             }
 
-            view.getLblStato().setText("PT selezionato: " + idTrainerDaLicenziare);
+            view.getLblStato().setText(
+                    "PT selezionato: " + idTrainerDaLicenziare
+            );
 
         } catch (TrainerNonValidoException e) {
             view.getComboSostituto().removeAllItems();
@@ -213,7 +219,9 @@ public class GestorePersonale {
         } catch (Exception e) {
             view.getComboSostituto().removeAllItems();
             view.getComboSostituto().addItem("Seleziona sostituto...");
-            view.getLblStato().setText("Errore durante il caricamento dei sostituti compatibili.");
+            view.getLblStato().setText(
+                    "Errore durante il caricamento dei sostituti compatibili."
+            );
             e.printStackTrace();
         }
     }
@@ -257,10 +265,10 @@ public class GestorePersonale {
             String idSostituto = estraiIdSostitutoSelezionato();
 
             if (idSostituto == null || idSostituto.isBlank()) {
-                view.getLblStato().setText("Selezionare un sostituto valido.");
+                mostraErrore("Selezionare un sostituto valido.");
                 return;
             }
-
+            
             servizioContratti.licenziaPersonalTrainerConSostituto(
                     idTrainerDaLicenziare,
                     idSostituto
@@ -275,7 +283,9 @@ public class GestorePersonale {
         	mostraErrore(e.getMessage());
 
         } catch (Exception e) {
-        	mostraErrore("Selezionare un sostituto valido.");
+            mostraErrore(
+                    "Errore durante il licenziamento con sostituto."
+            );
             e.printStackTrace();
         }
     }

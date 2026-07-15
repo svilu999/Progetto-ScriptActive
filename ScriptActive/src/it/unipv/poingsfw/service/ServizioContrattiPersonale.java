@@ -2,11 +2,11 @@ package it.unipv.poingsfw.service;
 
 import java.util.List;
 
-import it.unipv.poingsfw.domain.PersonalTrainer;
 import it.unipv.poingsfw.exceptions.SostitutoNonValidoException;
 import it.unipv.poingsfw.exceptions.TrainerGiaAssuntoException;
 import it.unipv.poingsfw.exceptions.TrainerNonValidoException;
 import it.unipv.poingsfw.exceptions.TrainerNonLicenziabileException;
+import it.unipv.poingsfw.dto.DatiVisualizzazioneTrainer;
 
 /**
  * Interfaccia del servizio applicativo per la gestione dei contratti del personale.
@@ -37,33 +37,35 @@ public interface ServizioContrattiPersonale {
             String nome,
             String cognome,
             String email,
-            String idTrainer,
             String specializzazione,
             String tipoRetribuzione,
             double importoRetribuzione)
             throws TrainerGiaAssuntoException, TrainerNonValidoException;
     
     /**
-     * Restituisce l'elenco dei Personal Trainer presenti nel sistema.
+     * Restituisce i dati dei Personal Trainer necessari alla visualizzazione.
      *
-     * Il controller userà questi dati per aggiornare la tabella della View,
-     * senza permettere alla View di accedere direttamente al Model o al DAO.
+     * Il Controller riceve esclusivamente un DTO di presentazione e non
+     * accede direttamente agli oggetti di dominio o ai DTO di persistenza.
      *
-     * @return lista dei Personal Trainer presenti nel sistema
+     * @return lista dei dati destinati alla schermata di gestione personale
      */
-    List<PersonalTrainer> getElencoPersonalTrainer();
+    List<DatiVisualizzazioneTrainer> getElencoPersonalTrainer();
     
     /**
-     * Restituisce i Personal Trainer compatibili come sostituti.
+     * Restituisce i dati dei Personal Trainer compatibili con il trainer
+     * indicato e utilizzabili come sostituti.
      *
-     * Un sostituto è considerato compatibile se è attivo, non coincide con il
-     * trainer da licenziare e possiede la stessa specializzazione.
+     * Il Controller riceve esclusivamente DTO destinati alla presentazione
+     * e non accede agli oggetti di dominio.
      *
      * @param idTrainerDaLicenziare identificativo del trainer da sostituire
-     * @return lista dei Personal Trainer compatibili
-     * @throws TrainerNonValidoException se il trainer da licenziare non esiste o non è valido
+     * @return lista dei sostituti compatibili destinata alla presentazione
+     * @throws TrainerNonValidoException se l'identificativo non è valido
+     *         o il trainer non esiste
      */
-    List<PersonalTrainer> getSostitutiCompatibili(String idTrainerDaLicenziare)
+    List<DatiVisualizzazioneTrainer> getSostitutiCompatibili(
+            String idTrainerDaLicenziare)
             throws TrainerNonValidoException;
     
     /**
