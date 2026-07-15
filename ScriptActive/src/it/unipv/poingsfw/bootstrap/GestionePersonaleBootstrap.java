@@ -67,9 +67,14 @@ public final class GestionePersonaleBootstrap {
 
         GestionePersonaleView view = new GestionePersonaleView();
 
-        new GestorePersonale(view, servizioContratti);
+        GestorePersonale controller =
+                new GestorePersonale(
+                        view,
+                        servizioContratti
+                );
 
         view.setVisible(true);
+        controller.inizializza();
     }
 
 }

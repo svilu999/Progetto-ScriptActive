@@ -465,7 +465,7 @@ public class GestoreContrattiPersonaleTest {
         }
 
         @Override
-        public void elimina(Integer idTrainer) {
+        public void disattiva(Integer idTrainer) {
             DatiPersonalTrainer datiTrainer = trainers.get(idTrainer);
 
             if (datiTrainer != null) {

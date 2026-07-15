@@ -8,19 +8,21 @@ import it.unipv.poingsfw.exceptions.SostitutoNonValidoException;
 /**
  * Service applicativo dedicato allo swap dei corsi tra Personal Trainer.
  *
- * La classe contiene le regole applicative dello swap, mentre le operazioni
- * SQL sono delegate al DAO dedicato.
+ * La classe contiene le regole applicative specifiche dello swap, mentre
+ * l'accesso al database e la transazione sono delegati al DAO.
  */
 public class GestoreSwapCorsi implements ServizioSwapCorsi {
 
     private final SwapCorsiDAO swapCorsiDAO;
 
     /**
-     * Crea il service di swap dei corsi.
+     * Crea il Service di swap dei corsi.
      *
-     * @param swapCorsiDAO DAO usato per accedere ai dati dei corsi
+     * @param swapCorsiDAO DAO utilizzato per la persistenza dello swap
      */
-    public GestoreSwapCorsi(SwapCorsiDAO swapCorsiDAO) {
+    public GestoreSwapCorsi(
+            SwapCorsiDAO swapCorsiDAO) {
+
         this.swapCorsiDAO = Objects.requireNonNull(
                 swapCorsiDAO,
                 "swapCorsiDAO non può essere null"
@@ -28,106 +30,180 @@ public class GestoreSwapCorsi implements ServizioSwapCorsi {
     }
 
     /**
-     * Verifica se un Personal Trainer ha corsi attivi o futuri.
+     * Verifica se un Personal Trainer possiede corsi attivi o futuri.
      *
      * @param idTrainer identificativo testuale del Personal Trainer
-     * @return true se esiste almeno un corso attivo o futuro, false altrimenti
+     * @return true se esiste almeno un corso attivo o futuro
      */
     @Override
-    public boolean haCorsiAttiviOFuturi(String idTrainer) {
-        Integer idTrainerNumerico = estraiIdNumerico(idTrainer);
+    public boolean haCorsiAttiviOFuturi(
+            String idTrainer) {
+
+        Integer idTrainerNumerico =
+                convertiIdNumerico(idTrainer);
 
         if (idTrainerNumerico == null) {
             return false;
         }
 
-        return swapCorsiDAO.esistonoCorsiAttiviOFuturiPerTrainer(idTrainerNumerico);
+        return swapCorsiDAO
+                .esistonoCorsiAttiviOFuturiPerTrainer(
+                        idTrainerNumerico
+                );
     }
 
     /**
-     * Verifica se un Personal Trainer ha corsi imminenti.
+     * Verifica se un Personal Trainer possiede corsi imminenti.
      *
      * @param idTrainer identificativo testuale del Personal Trainer
-     * @return true se esiste almeno un corso imminente, false altrimenti
+     * @return true se esiste almeno un corso imminente
      */
     @Override
-    public boolean haCorsiImminenti(String idTrainer) {
-        Integer idTrainerNumerico = estraiIdNumerico(idTrainer);
+    public boolean haCorsiImminenti(
+            String idTrainer) {
+
+        Integer idTrainerNumerico =
+                convertiIdNumerico(idTrainer);
 
         if (idTrainerNumerico == null) {
             return false;
         }
 
-        return swapCorsiDAO.esistonoCorsiImminentiPerTrainer(idTrainerNumerico);
+        return swapCorsiDAO
+                .esistonoCorsiImminentiPerTrainer(
+                        idTrainerNumerico
+                );
     }
 
     /**
-     * Sostituisce un Personal Trainer nei corsi attivi o futuri.
+     * Sostituisce un Personal Trainer nei corsi e ne completa
+     * la disattivazione.
      *
-     * Il metodo applica le regole di validazione del sostituto e delega al DAO
-     * solo l'aggiornamento effettivo dei corsi nel database.
+     * Il Service verifica gli identificativi, l'attivazione del sostituto
+     * e gli eventuali conflitti orari. Il DAO esegue atomicamente la
+     * riassegnazione dei corsi e la disattivazione del vecchio trainer.
      *
-     * @param idTrainerDaSostituire identificativo del Personal Trainer da sostituire
-     * @param idTrainerSostituto identificativo del Personal Trainer sostituto
-     * @return numero di corsi aggiornati
+     * @param idTrainerDaSostituire identificativo del trainer da sostituire
+     * @param idTrainerSostituto identificativo del trainer sostituto
+     * @return numero di corsi riassegnati
      * @throws SostitutoNonValidoException se il sostituto non è valido
      */
     @Override
     public int sostituisciTrainerNeiCorsi(
             String idTrainerDaSostituire,
-            String idTrainerSostituto) throws SostitutoNonValidoException {
+            String idTrainerSostituto)
+            throws SostitutoNonValidoException {
 
-        Integer idVecchioTrainer = estraiIdNumerico(idTrainerDaSostituire);
-        Integer idNuovoTrainer = estraiIdNumerico(idTrainerSostituto);
+        int idVecchioTrainer =
+                convertiIdObbligatorio(
+                        idTrainerDaSostituire,
+                        "Identificativo del trainer da sostituire"
+                );
 
-        if (idVecchioTrainer == null || idNuovoTrainer == null) {
-            throw new SostitutoNonValidoException("ID trainer non valido.");
-        }
+        int idNuovoTrainer =
+                convertiIdObbligatorio(
+                        idTrainerSostituto,
+                        "Identificativo del trainer sostituto"
+                );
 
-        if (idVecchioTrainer.equals(idNuovoTrainer)) {
+        if (idVecchioTrainer == idNuovoTrainer) {
             throw new SostitutoNonValidoException(
-                    "Il sostituto non può coincidere con il PT da sostituire."
+                    "Il sostituto non può coincidere "
+                    + "con il trainer da sostituire."
             );
         }
 
-        if (!swapCorsiDAO.esisteTrainerConContrattoAttivo(idNuovoTrainer)) {
+        boolean sostitutoAttivo =
+                swapCorsiDAO
+                        .esisteTrainerConContrattoAttivo(
+                                idNuovoTrainer
+                        );
+
+        if (!sostitutoAttivo) {
             throw new SostitutoNonValidoException(
-                    "Il sostituto non esiste o non è attivo."
+                    "Il sostituto non esiste "
+                    + "oppure non possiede un contratto attivo."
             );
         }
 
-        if (swapCorsiDAO.esistonoSovrapposizioniTraCorsi(
-                idVecchioTrainer,
-                idNuovoTrainer)) {
+        boolean sovrapposizione =
+                swapCorsiDAO
+                        .esistonoSovrapposizioniTraCorsi(
+                                idVecchioTrainer,
+                                idNuovoTrainer
+                        );
 
+        if (sovrapposizione) {
             throw new SostitutoNonValidoException(
-                    "OPERAZIONE ANNULLATA: il sostituto ha già un corso assegnato nello stesso orario."
+                    "Il sostituto possiede già un corso "
+                    + "assegnato nello stesso orario."
             );
         }
 
-        return swapCorsiDAO.riassegnaCorsiAttiviOFuturi(
-                idVecchioTrainer,
-                idNuovoTrainer
-        );
+        return swapCorsiDAO
+                .riassegnaCorsiEDisattivaTrainer(
+                        idVecchioTrainer,
+                        idNuovoTrainer
+                );
     }
 
     /**
-     * Estrae la parte numerica da un identificativo testuale.
+     * Converte un identificativo testuale in un numero positivo.
      *
      * @param id identificativo da convertire
-     * @return identificativo numerico, oppure null se il valore non è valido
+     * @return identificativo numerico oppure null se non valido
      */
-    private Integer estraiIdNumerico(String id) {
-        if (id == null || id.isBlank()) {
+    private Integer convertiIdNumerico(
+            String id) {
+
+        if (id == null) {
             return null;
         }
 
-        String soloNumeri = id.replaceAll("[^0-9]", "");
+        String valoreNormalizzato =
+                id.trim();
 
-        if (soloNumeri.isBlank()) {
+        if (!valoreNormalizzato.matches("\\d+")) {
             return null;
         }
 
-        return Integer.parseInt(soloNumeri);
+        try {
+            int idNumerico =
+                    Integer.parseInt(
+                            valoreNormalizzato
+                    );
+
+            return idNumerico > 0
+                    ? idNumerico
+                    : null;
+
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Converte e valida un identificativo obbligatorio.
+     *
+     * @param id identificativo da convertire
+     * @param nomeCampo nome del campo
+     * @return identificativo numerico positivo
+     * @throws SostitutoNonValidoException se l'identificativo non è valido
+     */
+    private int convertiIdObbligatorio(
+            String id,
+            String nomeCampo)
+            throws SostitutoNonValidoException {
+
+        Integer idNumerico =
+                convertiIdNumerico(id);
+
+        if (idNumerico == null) {
+            throw new SostitutoNonValidoException(
+                    nomeCampo + " non valido."
+            );
+        }
+
+        return idNumerico;
     }
 }

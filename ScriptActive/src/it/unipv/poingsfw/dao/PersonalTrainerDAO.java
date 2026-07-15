@@ -40,7 +40,7 @@ public interface PersonalTrainerDAO {
      *
      * @param idTrainer identificativo numerico del Personal Trainer da disattivare
      */
-    void elimina(Integer idTrainer);
+    void disattiva(Integer idTrainer);
 
     /**
      * Aggiorna i dati di un Personal Trainer già presente nel database.

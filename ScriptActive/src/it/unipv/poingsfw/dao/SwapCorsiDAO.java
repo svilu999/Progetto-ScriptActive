@@ -1,48 +1,54 @@
 package it.unipv.poingsfw.dao;
 
 /**
- * DAO dedicato alle operazioni di persistenza necessarie allo swap dei corsi.
+ * DAO dedicato alle operazioni di persistenza necessarie
+ * alla sostituzione di un Personal Trainer nei corsi.
  *
- * L'interfaccia espone solo operazioni tecniche sul database. Le regole
- * applicative, come la validità del sostituto o il blocco dello swap, restano
- * nel Service.
+ * L'interfaccia espone esclusivamente operazioni tecniche sul database.
+ * Le verifiche e le decisioni applicative restano nel Service.
  */
 public interface SwapCorsiDAO {
 
     /**
-     * Verifica nel database se esistono corsi attivi o futuri associati
+     * Verifica se esistono corsi attivi o futuri associati
      * a un Personal Trainer.
      *
-     * @param idTrainer identificativo numerico del Personal Trainer
-     * @return true se esiste almeno un corso attivo o futuro, false altrimenti
+     * @param idTrainer identificativo numerico del trainer
+     * @return true se esiste almeno un corso attivo o futuro
      */
-    boolean esistonoCorsiAttiviOFuturiPerTrainer(int idTrainer);
+    boolean esistonoCorsiAttiviOFuturiPerTrainer(
+            int idTrainer
+    );
 
     /**
-     * Verifica nel database se esistono corsi imminenti associati
+     * Verifica se esistono corsi imminenti associati
      * a un Personal Trainer.
      *
-     * @param idTrainer identificativo numerico del Personal Trainer
-     * @return true se esiste almeno un corso imminente, false altrimenti
+     * @param idTrainer identificativo numerico del trainer
+     * @return true se esiste almeno un corso imminente
      */
-    boolean esistonoCorsiImminentiPerTrainer(int idTrainer);
+    boolean esistonoCorsiImminentiPerTrainer(
+            int idTrainer
+    );
 
     /**
-     * Verifica nel database se esiste un Personal Trainer attivo
+     * Verifica se esiste un Personal Trainer attivo
      * con contratto attivo.
      *
-     * @param idTrainer identificativo numerico del Personal Trainer
-     * @return true se il trainer esiste ed è attivo, false altrimenti
+     * @param idTrainer identificativo numerico del trainer
+     * @return true se il trainer esiste ed è attivo
      */
-    boolean esisteTrainerConContrattoAttivo(int idTrainer);
+    boolean esisteTrainerConContrattoAttivo(
+            int idTrainer
+    );
 
     /**
-     * Verifica nel database se esistono sovrapposizioni orarie tra i corsi
-     * del trainer da sostituire e i corsi già assegnati al sostituto.
+     * Verifica se esistono sovrapposizioni tra i corsi del trainer
+     * da sostituire e quelli del sostituto.
      *
-     * @param idTrainerDaSostituire identificativo numerico del trainer da sostituire
-     * @param idTrainerSostituto identificativo numerico del trainer sostituto
-     * @return true se esiste almeno una sovrapposizione, false altrimenti
+     * @param idTrainerDaSostituire identificativo del trainer da sostituire
+     * @param idTrainerSostituto identificativo del trainer sostituto
+     * @return true se esiste almeno una sovrapposizione
      */
     boolean esistonoSovrapposizioniTraCorsi(
             int idTrainerDaSostituire,
@@ -50,16 +56,20 @@ public interface SwapCorsiDAO {
     );
 
     /**
-     * Riassegna nel database i corsi attivi o futuri dal vecchio trainer
-     * al nuovo trainer.
+     * Riassegna i corsi al sostituto e disattiva il trainer sostituito.
      *
-     * Il metodo non decide se lo swap sia valido: esegue solo l'update.
+     * Le modifiche alla tabella Corso, alla tabella PersonalTrainer
+     * e alla tabella Utente devono essere eseguite utilizzando la stessa
+     * connessione e la stessa transazione.
      *
-     * @param idTrainerDaSostituire identificativo numerico del trainer da sostituire
-     * @param idTrainerSostituto identificativo numerico del trainer sostituto
-     * @return numero di righe aggiornate
+     * Il metodo non decide se la sostituzione sia consentita:
+     * esegue esclusivamente le modifiche persistenti richieste dal Service.
+     *
+     * @param idTrainerDaSostituire identificativo del trainer da disattivare
+     * @param idTrainerSostituto identificativo del trainer sostituto
+     * @return numero di corsi riassegnati
      */
-    int riassegnaCorsiAttiviOFuturi(
+    int riassegnaCorsiEDisattivaTrainer(
             int idTrainerDaSostituire,
             int idTrainerSostituto
     );

@@ -1,45 +1,59 @@
 package it.unipv.poingsfw.strategy;
 
 /**
- * Strategia concreta per la retribuzione fissa mensile.
+ * Strategy per il calcolo della retribuzione fissa mensile.
  *
- * La classe implementa StrategiaRetribuzione restituendo sempre lo stesso
- * importo mensile, indipendentemente dal numero di lezioni svolte.
+ * La retribuzione non dipende dal numero di lezioni completate.
  */
-public class RetribuzioneFissa implements StrategiaRetribuzione {
+public class RetribuzioneFissa
+        implements StrategiaRetribuzione {
 
-    private double stipendioBase;
+    private static final String TIPO_RETRIBUZIONE =
+            "FISSA_MENSILE";
+
+    private final double stipendioBase;
 
     /**
-     * Costruisce una strategia di retribuzione fissa.
+     * Crea una Strategy di retribuzione fissa.
      *
-     * @param stipendioBase importo mensile fisso da riconoscere al PersonalTrainer
+     * @param stipendioBase importo mensile fisso
+     * @throws IllegalArgumentException se l'importo è negativo
      */
-    public RetribuzioneFissa(double stipendioBase) {
-        this.stipendioBase = stipendioBase;
+    public RetribuzioneFissa(
+            double stipendioBase) {
+
+        if (stipendioBase < 0) {
+            throw new IllegalArgumentException(
+                    "Lo stipendio base non può essere negativo."
+            );
+        }
+
+        this.stipendioBase =
+                stipendioBase;
     }
 
     /**
-     * Restituisce lo stipendio fisso mensile.
+     * Restituisce la retribuzione fissa mensile.
      *
-     * Il parametro numeroLezioni non modifica il risultato, perché questa
-     * strategia non dipende dal numero di lezioni svolte.
+     * Il numero di lezioni non modifica il risultato.
      *
-     * @param numeroLezioni numero di lezioni, non usato in questa strategia
+     * @param numeroLezioni numero di lezioni, non utilizzato
      * @return stipendio fisso mensile
      */
     @Override
-    public double calcolaStipendio(int numeroLezioni) {
+    public double calcolaStipendio(
+            int numeroLezioni) {
+
         return stipendioBase;
     }
 
     /**
-     * Restituisce il nome del tipo di contratto associato alla retribuzione fissa.
+     * Restituisce il tipo di retribuzione rappresentato dalla Strategy.
      *
-     * @return tipo di contratto
+     * @return tipo di retribuzione fissa mensile
      */
     @Override
     public String getTipoRetribuzione() {
-        return "FISSA_MENSILE";
+        return TIPO_RETRIBUZIONE;
     }
 }

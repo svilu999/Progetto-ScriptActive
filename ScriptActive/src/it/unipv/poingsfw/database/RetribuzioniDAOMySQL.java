@@ -37,7 +37,7 @@ public class RetribuzioniDAOMySQL implements RetribuzioniDAO {
             FROM PersonalTrainer pt
             LEFT JOIN Corso c
                 ON pt.ID_Trainer = c.ID_Trainer
-               AND c.Stato = 'Completato'
+               AND c.Stato = 'Completo'
                AND MONTH(c.DataOra) = MONTH(CURRENT_DATE)
                AND YEAR(c.DataOra) = YEAR(CURRENT_DATE)
             WHERE pt.StatoContratto = 'ATTIVO'

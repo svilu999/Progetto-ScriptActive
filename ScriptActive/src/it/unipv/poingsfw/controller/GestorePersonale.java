@@ -3,368 +3,402 @@ package it.unipv.poingsfw.controller;
 import java.util.List;
 import java.util.Objects;
 
+import it.unipv.poingsfw.controller.mapper.GestionePersonaleViewMapper;
+import it.unipv.poingsfw.dto.DatiVisualizzazioneTrainer;
+import it.unipv.poingsfw.exceptions.SostitutoNonValidoException;
+import it.unipv.poingsfw.exceptions.TrainerGiaAssuntoException;
+import it.unipv.poingsfw.exceptions.TrainerNonLicenziabileException;
+import it.unipv.poingsfw.exceptions.TrainerNonValidoException;
 import it.unipv.poingsfw.service.ServizioContrattiPersonale;
 import it.unipv.poingsfw.view.GestionePersonaleView;
-import it.unipv.poingsfw.exceptions.TrainerGiaAssuntoException;
-import it.unipv.poingsfw.exceptions.TrainerNonValidoException;
-import it.unipv.poingsfw.exceptions.TrainerNonLicenziabileException;
-import it.unipv.poingsfw.exceptions.SostitutoNonValidoException;
-import it.unipv.poingsfw.dto.DatiVisualizzazioneTrainer;
 
 /**
  * Controller della gestione del personale.
  *
- * Questa classe intercetta gli eventi generati dalla View, coordina il flusso
- * applicativo e delega la logica del caso d'uso al servizio del Model.
- * Non contiene logica di business, non accede ai DAO e non conosce il database.
+ * La classe intercetta gli eventi della View, coordina il flusso del caso
+ * d'uso e delega la logica applicativa al Service del Model.
  */
-public class GestorePersonale {
+public final class GestorePersonale {
+
+    private static final String[] TIPI_RETRIBUZIONE = {
+            "FISSA_MENSILE",
+            "A_LEZIONE"
+    };
 
     private final GestionePersonaleView view;
-    private final ServizioContrattiPersonale servizioContratti;
+
+    private final ServizioContrattiPersonale
+            servizioContratti;
+
+    /*
+     * Dati attualmente rappresentati nella schermata.
+     *
+     * Il Controller li conserva per associare gli indici grafici restituiti
+     * dalla View ai corrispondenti identificativi applicativi.
+     */
+    private List<DatiVisualizzazioneTrainer>
+            trainerVisualizzati = List.of();
+
+    private List<DatiVisualizzazioneTrainer>
+            sostitutiVisualizzati = List.of();
 
     /**
-     * Crea il controller della gestione del personale.
+     * Crea il Controller e registra gli eventi della View.
      *
-     * @param view schermata grafica della gestione del personale
-     * @param servizioContratti servizio applicativo dei contratti del personale
+     * Il costruttore non esegue accessi al database.
+     *
+     * @param view schermata della gestione del personale
+     * @param servizioContratti Service applicativo del caso d'uso
      */
     public GestorePersonale(
             GestionePersonaleView view,
             ServizioContrattiPersonale servizioContratti) {
 
-        this.view = Objects.requireNonNull(view, "view non può essere null");
-        this.servizioContratti = Objects.requireNonNull(
-                servizioContratti,
-                "servizioContratti non può essere null"
+        this.view = Objects.requireNonNull(
+                view,
+                "La View non può essere null."
         );
 
-        inizializzaListeners();
+        this.servizioContratti =
+                Objects.requireNonNull(
+                        servizioContratti,
+                        "Il Service non può essere null."
+                );
+
+        registraListener();
+    }
+
+    /**
+     * Inizializza i dati della schermata.
+     */
+    public void inizializza() {
+        view.mostraTipiRetribuzione(
+                TIPI_RETRIBUZIONE.clone()
+        );
+
         aggiornaElencoPersonalTrainer();
     }
 
     /**
-     * Registra gli ActionListener sui componenti esposti dalla View.
-     *
-     * La View non richiama mai il Controller: il Controller si collega ai
-     * componenti grafici e intercetta gli eventi dell'utente.
+     * Registra nel Controller tutti gli eventi generati dalla View.
      */
-    private void inizializzaListeners() {
-        view.getBtnAggiorna().addActionListener(e -> aggiornaElencoPersonalTrainer());
-        view.getBtnAssumi().addActionListener(e -> gestisciAssunzionePersonalTrainer());
-        view.getBtnLicenziaSenzaSostituto().addActionListener(e -> gestisciLicenziamentoSenzaSostituto());
-        view.getBtnLicenziaConSostituto().addActionListener(e -> gestisciLicenziamentoConSostituto());
-        view.getBtnCalcolaRetribuzioni().addActionListener(e -> gestisciCalcoloRetribuzioni());
-        
-        view.getTabellaPT().getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) {
-                gestisciSelezionePersonalTrainer();
-            }
-        });
+    private void registraListener() {
+        view.getBtnAggiorna().addActionListener(
+                evento -> aggiornaElencoPersonalTrainer()
+        );
+
+        view.getBtnAssumi().addActionListener(
+                evento -> gestisciAssunzione()
+        );
+
+        view.getBtnLicenziaSenzaSostituto()
+                .addActionListener(
+                        evento ->
+                                gestisciLicenziamentoSenzaSostituto()
+                );
+
+        view.getBtnLicenziaConSostituto()
+                .addActionListener(
+                        evento ->
+                                gestisciLicenziamentoConSostituto()
+                );
+
+        view.getBtnCalcolaRetribuzioni()
+                .addActionListener(
+                        evento ->
+                                gestisciCalcoloRetribuzioni()
+                );
+
+        view.getTabellaPT()
+                .getSelectionModel()
+                .addListSelectionListener(evento -> {
+
+                    if (!evento.getValueIsAdjusting()) {
+                        gestisciSelezioneTrainer();
+                    }
+                });
     }
 
     /**
-     * Aggiorna la tabella grafica dei Personal Trainer.
-     *
-     * Il metodo recupera i dati dal servizio applicativo e li trasferisce nel
-     * modello della tabella della View. La View non accede al Model.
+     * Recupera l'elenco dei trainer dal Model e ne coordina
+     * la rappresentazione nella View.
      */
     private void aggiornaElencoPersonalTrainer() {
         try {
-        	List<DatiVisualizzazioneTrainer> listaTrainer = servizioContratti.getElencoPersonalTrainer();
+            List<DatiVisualizzazioneTrainer> trainer =
+                    servizioContratti
+                            .getElencoPersonalTrainer();
 
-            view.getModelloTabella().setRowCount(0);
+            trainerVisualizzati =
+                    trainer == null
+                            ? List.of()
+                            : List.copyOf(trainer);
 
-            for (DatiVisualizzazioneTrainer trainer : listaTrainer) {
-                Object[] riga = {
-                        trainer.getIdTrainer(),
-                        trainer.getNomeCompleto(),
-                        trainer.getEmail(),
-                        trainer.getSpecializzazione(),
-                        trainer.getStatoContratto(),
-                        trainer.isAttivo() ? "Sì" : "No"
-                };
+            sostitutiVisualizzati = List.of();
 
-                view.getModelloTabella().addRow(riga);
-            }
+            Object[][] righe =
+                    GestionePersonaleViewMapper
+                            .creaRigheTrainer(
+                                    trainerVisualizzati
+                            );
 
-            view.getLblStato().setText("Elenco aggiornato. PT caricati: " + listaTrainer.size());
+            view.mostraRigheTrainer(righe);
+            view.mostraSostituti(new String[0]);
+            view.mostraIdTrainerDaLicenziare("");
+            view.mostraStato("Elenco aggiornato.");
 
-        } catch (Exception e) {
-            view.getLblStato().setText("Errore durante il caricamento dei Personal Trainer.");
-            e.printStackTrace();
-        }
-    }
-    
-    /**
-     * Gestisce il flusso di assunzione di un Personal Trainer.
-     *
-     * Il Controller legge i dati dai componenti grafici della View, effettua solo
-     * la conversione tecnica dell'importo e delega la logica applicativa al
-     * servizio del Model.
-     */
-    private void gestisciAssunzionePersonalTrainer() {
-        try {
-            double importoRetribuzione = Double.parseDouble(
-                    view.getTxtImportoRetribuzione().getText().trim()
+        } catch (RuntimeException e) {
+            trainerVisualizzati = List.of();
+            sostitutiVisualizzati = List.of();
+
+            view.mostraRigheTrainer(
+                    new Object[0][0]
             );
 
+            view.mostraSostituti(
+                    new String[0]
+            );
+
+            view.mostraErrore(
+                    "Errore durante il caricamento "
+                    + "dei Personal Trainer."
+            );
+        }
+    }
+
+    /**
+     * Coordina il flusso di assunzione.
+     */
+    private void gestisciAssunzione() {
+        try {
+            double importoRetribuzione =
+                    GestionePersonaleViewMapper
+                            .convertiImporto(
+                                    view
+                                            .getImportoRetribuzioneInserito()
+                            );
+
             servizioContratti.assumiPersonalTrainer(
-                    view.getTxtNome().getText(),
-                    view.getTxtCognome().getText(),
-                    view.getTxtEmail().getText(),
-                    view.getTxtSpecializzazione().getText(),
-                    (String) view.getComboTipoRetribuzione().getSelectedItem(),
+                    view.getNomeInserito(),
+                    view.getCognomeInserito(),
+                    view.getEmailInserita(),
+                    view.getSpecializzazioneInserita(),
+                    view.getTipoRetribuzioneSelezionato(),
                     importoRetribuzione
             );
 
-            pulisciCampiAssunzione();
+            view.pulisciFormAssunzione();
+
             aggiornaElencoPersonalTrainer();
 
-            mostraSuccesso("Personal Trainer assunto correttamente.");
+            view.mostraSuccesso(
+                    "Personal Trainer assunto correttamente."
+            );
 
         } catch (NumberFormatException e) {
-        	mostraErrore("Errore: l'importo della retribuzione deve essere numerico.");
+            view.mostraErrore(
+                    "L'importo della retribuzione "
+                    + "deve essere numerico."
+            );
 
-        } catch (TrainerGiaAssuntoException | TrainerNonValidoException e) {
-        	mostraErrore(e.getMessage());
+        } catch (TrainerGiaAssuntoException |
+                 TrainerNonValidoException e) {
 
-        } catch (Exception e) {
-        	mostraErrore("Errore durante l'assunzione del Personal Trainer.");
+            view.mostraErrore(e.getMessage());
+
+        } catch (RuntimeException e) {
+            view.mostraErrore(
+                    "Errore durante l'assunzione "
+                    + "del Personal Trainer."
+            );
         }
     }
-    
-    /**
-     * Ripulisce i campi grafici del form di assunzione.
-     *
-     * Si tratta di un aggiornamento della View coordinato dal Controller dopo
-     * l'esito positivo dell'operazione.
-     */
-    private void pulisciCampiAssunzione() {
-        view.getTxtNome().setText("");
-        view.getTxtCognome().setText("");
-        view.getTxtEmail().setText("");
-        view.getTxtIdTrainer().setText("Generato automaticamente");
-        view.getTxtSpecializzazione().setText("");
-        view.getTxtImportoRetribuzione().setText("");
-        view.getComboTipoRetribuzione().setSelectedIndex(0);
-    }
-    
-    /**
-     * Gestisce la selezione di un Personal Trainer dalla tabella.
-     *
-     * Il Controller legge l'identificativo dalla riga selezionata, aggiorna il campo
-     * grafico del trainer da licenziare e richiede al servizio i sostituti compatibili.
-     */
-    private void gestisciSelezionePersonalTrainer() {
-        int rigaSelezionata = view.getTabellaPT().getSelectedRow();
 
-        if (rigaSelezionata < 0) {
+    /**
+     * Coordina la selezione di un trainer nella tabella.
+     */
+    private void gestisciSelezioneTrainer() {
+        int indiceSelezionato =
+                view.getIndiceTrainerSelezionato();
+
+        String idTrainer =
+                GestionePersonaleViewMapper
+                        .trovaIdTrainer(
+                                trainerVisualizzati,
+                                indiceSelezionato
+                        );
+
+        if (idTrainer == null
+                || idTrainer.isBlank()) {
+
             return;
         }
 
-        int rigaModello = view.getTabellaPT().convertRowIndexToModel(rigaSelezionata);
+        view.mostraIdTrainerDaLicenziare(
+                idTrainer
+        );
 
-        String idTrainer = view.getModelloTabella()
-                .getValueAt(rigaModello, 0)
-                .toString();
-
-        view.getTxtIdDaLicenziare().setText(idTrainer);
         caricaSostitutiCompatibili(idTrainer);
     }
-    
+
     /**
-     * Carica nella combo box i Personal Trainer compatibili come sostituti.
+     * Richiede al Model i sostituti compatibili e ne coordina
+     * la rappresentazione grafica.
      *
-     * Il Controller non applica direttamente le regole di compatibilità: richiede
-     * l'elenco al servizio applicativo e aggiorna solo la componente grafica.
-     *
-     * @param idTrainerDaLicenziare identificativo del trainer selezionato
+     * @param idTrainerDaLicenziare identificativo del trainer
      */
-    private void caricaSostitutiCompatibili(String idTrainerDaLicenziare) {
+    private void caricaSostitutiCompatibili(
+            String idTrainerDaLicenziare) {
+
         try {
-            List<DatiVisualizzazioneTrainer> sostituti =
-                    servizioContratti.getSostitutiCompatibili(
-                            idTrainerDaLicenziare
-                    );
+            List<DatiVisualizzazioneTrainer>
+                    sostituti =
+                            servizioContratti
+                                    .getSostitutiCompatibili(
+                                            idTrainerDaLicenziare
+                                    );
 
-            view.getComboSostituto().removeAllItems();
-            view.getComboSostituto().addItem("Seleziona sostituto...");
+            sostitutiVisualizzati =
+                    sostituti == null
+                            ? List.of()
+                            : List.copyOf(sostituti);
 
-            for (DatiVisualizzazioneTrainer sostituto : sostituti) {
-                view.getComboSostituto().addItem(
-                        sostituto.getIdTrainer()
-                                + " - "
-                                + sostituto.getNomeCompleto()
-                                + " - "
-                                + sostituto.getSpecializzazione()
-                );
-            }
+            String[] descrizioni =
+                    GestionePersonaleViewMapper
+                            .creaDescrizioniSostituti(
+                                    sostitutiVisualizzati
+                            );
 
-            if (sostituti.isEmpty()) {
-                view.getComboSostituto().addItem(
-                        "Nessun sostituto compatibile"
-                );
-            }
+            view.mostraSostituti(descrizioni);
 
-            view.getLblStato().setText(
-                    "PT selezionato: " + idTrainerDaLicenziare
+            view.mostraStato(
+                    "Personal Trainer selezionato."
             );
 
         } catch (TrainerNonValidoException e) {
-            view.getComboSostituto().removeAllItems();
-            view.getComboSostituto().addItem("Seleziona sostituto...");
-            view.getLblStato().setText(e.getMessage());
+            sostitutiVisualizzati = List.of();
 
-        } catch (Exception e) {
-            view.getComboSostituto().removeAllItems();
-            view.getComboSostituto().addItem("Seleziona sostituto...");
-            view.getLblStato().setText(
-                    "Errore durante il caricamento dei sostituti compatibili."
+            view.mostraSostituti(
+                    new String[0]
             );
-            e.printStackTrace();
+
+            view.mostraErrore(e.getMessage());
+
+        } catch (RuntimeException e) {
+            sostitutiVisualizzati = List.of();
+
+            view.mostraSostituti(
+                    new String[0]
+            );
+
+            view.mostraErrore(
+                    "Errore durante il caricamento "
+                    + "dei sostituti compatibili."
+            );
         }
     }
-    
+
     /**
-     * Gestisce il licenziamento di un Personal Trainer senza sostituto.
-     *
-     * Il Controller legge l'identificativo dalla View e delega al servizio la
-     * verifica delle regole applicative. La disattivazione logica del trainer
-     * viene eseguita dal Model tramite il DAO.
+     * Coordina il licenziamento senza sostituto.
      */
     private void gestisciLicenziamentoSenzaSostituto() {
         try {
-            String idTrainer = view.getTxtIdDaLicenziare().getText().trim();
+            servizioContratti
+                    .licenziaPersonalTrainerSenzaSostituto(
+                            view.getIdTrainerDaLicenziare()
+                    );
 
-            servizioContratti.licenziaPersonalTrainerSenzaSostituto(idTrainer);
+            view.pulisciFormLicenziamento();
 
-            pulisciCampiLicenziamento();
             aggiornaElencoPersonalTrainer();
 
-            mostraSuccesso("Personal Trainer licenziato correttamente senza sostituto.");
+            view.mostraSuccesso(
+                    "Personal Trainer licenziato "
+                    + "correttamente senza sostituto."
+            );
 
-        } catch (TrainerNonValidoException | TrainerNonLicenziabileException e) {
-        	mostraErrore(e.getMessage());
+        } catch (TrainerNonValidoException |
+                 TrainerNonLicenziabileException e) {
 
-        } catch (Exception e) {
-        	mostraErrore("Errore durante il licenziamento senza sostituto.");
-            e.printStackTrace();
+            view.mostraErrore(e.getMessage());
+
+        } catch (RuntimeException e) {
+            view.mostraErrore(
+                    "Errore durante il licenziamento "
+                    + "senza sostituto."
+            );
         }
     }
-    
+
     /**
-     * Gestisce il licenziamento di un Personal Trainer con sostituto.
-     *
-     * Il Controller legge dalla View il trainer da licenziare e il sostituto scelto,
-     * poi delega al servizio le verifiche applicative e lo swap sui corsi.
+     * Coordina il licenziamento con sostituto.
      */
     private void gestisciLicenziamentoConSostituto() {
         try {
-            String idTrainerDaLicenziare = view.getTxtIdDaLicenziare().getText().trim();
-            String idSostituto = estraiIdSostitutoSelezionato();
+            int indiceSostituto =
+                    view.getIndiceSostitutoSelezionato();
 
-            if (idSostituto == null || idSostituto.isBlank()) {
-                mostraErrore("Selezionare un sostituto valido.");
+            String idSostituto =
+                    GestionePersonaleViewMapper
+                            .trovaIdTrainer(
+                                    sostitutiVisualizzati,
+                                    indiceSostituto
+                            );
+
+            if (idSostituto == null
+                    || idSostituto.isBlank()) {
+
+                view.mostraErrore(
+                        "Selezionare un sostituto valido."
+                );
+
                 return;
             }
-            
-            servizioContratti.licenziaPersonalTrainerConSostituto(
-                    idTrainerDaLicenziare,
-                    idSostituto
-            );
 
-            pulisciCampiLicenziamento();
+            servizioContratti
+                    .licenziaPersonalTrainerConSostituto(
+                            view.getIdTrainerDaLicenziare(),
+                            idSostituto
+                    );
+
+            view.pulisciFormLicenziamento();
+
             aggiornaElencoPersonalTrainer();
 
-            mostraSuccesso("Personal Trainer licenziato correttamente con sostituto.");
-
-        } catch (TrainerNonValidoException | SostitutoNonValidoException e) {
-        	mostraErrore(e.getMessage());
-
-        } catch (Exception e) {
-            mostraErrore(
-                    "Errore durante il licenziamento con sostituto."
+            view.mostraSuccesso(
+                    "Personal Trainer licenziato "
+                    + "correttamente con sostituto."
             );
-            e.printStackTrace();
+
+        } catch (TrainerNonValidoException |
+                 SostitutoNonValidoException e) {
+
+            view.mostraErrore(e.getMessage());
+
+        } catch (RuntimeException e) {
+            view.mostraErrore(
+                    "Errore durante il licenziamento "
+                    + "con sostituto."
+            );
         }
     }
-    
+
     /**
-     * Estrae l'identificativo del sostituto dalla voce selezionata nella combo box.
-     *
-     * La combo mostra una stringa descrittiva del tipo "ID - Nome - Specializzazione";
-     * al servizio viene passato solo l'identificativo tecnico del trainer.
-     *
-     * @return identificativo del sostituto, oppure null se la selezione non è valida
-     */
-    private String estraiIdSostitutoSelezionato() {
-        Object elementoSelezionato = view.getComboSostituto().getSelectedItem();
-
-        if (elementoSelezionato == null) {
-            return null;
-        }
-
-        String testoSelezionato = elementoSelezionato.toString().trim();
-
-        if (testoSelezionato.isBlank()
-                || testoSelezionato.equals("Seleziona sostituto...")
-                || testoSelezionato.equals("Nessun sostituto compatibile")) {
-            return null;
-        }
-
-        return testoSelezionato.split(" - ")[0].trim();
-    }
-    
-    /**
-     * Gestisce il calcolo del totale mensile delle retribuzioni.
-     *
-     * Il Controller non calcola direttamente le retribuzioni: richiede il risultato
-     * al servizio applicativo e aggiorna soltanto la label di stato della View.
+     * Coordina il calcolo delle retribuzioni mensili.
      */
     private void gestisciCalcoloRetribuzioni() {
         try {
-            double totaleRetribuzioni = servizioContratti.calcolaTotaleRetribuzioniMensili();
+            double totale =
+                    servizioContratti
+                            .calcolaTotaleRetribuzioniMensili();
 
-            mostraSuccesso(
-                    String.format("Totale retribuzioni mensili: %.2f €", totaleRetribuzioni)
+            view.mostraTotaleRetribuzioni(totale);
+
+        } catch (RuntimeException e) {
+            view.mostraErrore(
+                    "Errore durante il calcolo "
+                    + "delle retribuzioni mensili."
             );
-
-        } catch (Exception e) {
-        	mostraErrore("Errore durante il calcolo delle retribuzioni mensili.");
-            e.printStackTrace();
         }
-    }
-    
-    /**
-     * Ripulisce i campi grafici usati per il licenziamento.
-     *
-     * Il metodo aggiorna soltanto lo stato dei componenti della View dopo una
-     * operazione coordinata dal Controller.
-     */
-    private void pulisciCampiLicenziamento() {
-        view.getTxtIdDaLicenziare().setText("");
-        view.getComboSostituto().removeAllItems();
-        view.getComboSostituto().addItem("Seleziona sostituto...");
-    }
-    
-    /**
-     * Mostra un esito positivo nella label di stato e tramite popup.
-     *
-     * @param messaggio messaggio da mostrare
-     */
-    private void mostraSuccesso(String messaggio) {
-        view.getLblStato().setText(messaggio);
-        view.mostraMessaggioInformativo(messaggio);
-    }
-
-    /**
-     * Mostra un errore nella label di stato e tramite popup.
-     *
-     * @param messaggio messaggio da mostrare
-     */
-    private void mostraErrore(String messaggio) {
-        view.getLblStato().setText(messaggio);
-        view.mostraMessaggioErrore(messaggio);
     }
 }

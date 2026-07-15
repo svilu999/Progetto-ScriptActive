@@ -1,45 +1,72 @@
 package it.unipv.poingsfw.strategy;
 
+import java.util.Locale;
+
 import it.unipv.poingsfw.exceptions.TrainerNonValidoException;
 
 /**
- * Factory per creare la strategia di retribuzione corretta.
+ * Factory responsabile della creazione delle strategie di retribuzione.
  *
- * Serve a evitare che View o Controller conoscano direttamente
- * RetribuzioneFissa e RetribuzioneProvvigione.
+ * La classe centralizza la scelta della Strategy concreta, evitando che
+ * Controller, View e Service conoscano direttamente le implementazioni.
  */
 public final class StrategiaRetribuzioneFactory {
 
+    private static final String TIPO_FISSA_MENSILE =
+            "FISSA_MENSILE";
+
+    private static final String TIPO_A_LEZIONE =
+            "A_LEZIONE";
+
     private StrategiaRetribuzioneFactory() {
-        // Costruttore privato perché la factory non deve essere istanziata.
     }
 
-    public static StrategiaRetribuzione crea(String tipoRetribuzione, double importo)
+    /**
+     * Crea la strategia corrispondente al tipo di retribuzione indicato.
+     *
+     * @param tipoRetribuzione tipo della strategia da creare
+     * @param importo importo associato alla strategia
+     * @return strategia di retribuzione configurata
+     * @throws TrainerNonValidoException se il tipo o l'importo non sono validi
+     */
+    public static StrategiaRetribuzione crea(
+            String tipoRetribuzione,
+            double importo)
             throws TrainerNonValidoException {
 
-        if (tipoRetribuzione == null || tipoRetribuzione.trim().isEmpty()) {
+        if (tipoRetribuzione == null
+                || tipoRetribuzione.isBlank()) {
+
             throw new TrainerNonValidoException(
-                    "OPERAZIONE ANNULLATA: tipo di retribuzione non indicato.");
+                    "Tipo di retribuzione non indicato."
+            );
         }
 
         if (importo < 0) {
             throw new TrainerNonValidoException(
-                    "OPERAZIONE ANNULLATA: l'importo della retribuzione non può essere negativo.");
+                    "L'importo della retribuzione "
+                    + "non può essere negativo."
+            );
         }
 
-        String tipoNormalizzato = tipoRetribuzione.trim().toUpperCase();
+        String tipoNormalizzato =
+                tipoRetribuzione
+                        .trim()
+                        .toUpperCase(Locale.ROOT);
 
-        switch (tipoNormalizzato) {
-            case "FISSA_MENSILE":
-                return new RetribuzioneFissa(importo);
+        return switch (tipoNormalizzato) {
+            case TIPO_FISSA_MENSILE ->
+                    new RetribuzioneFissa(importo);
 
-            case "A_LEZIONE":
-                return new RetribuzioneProvvigione(importo);
+            case TIPO_A_LEZIONE ->
+                    new RetribuzioneProvvigione(importo);
 
-            default:
-                throw new TrainerNonValidoException(
-                        "OPERAZIONE ANNULLATA: tipo di retribuzione non riconosciuto: "
-                                + tipoRetribuzione + ".");
-        }
+            default ->
+                    throw new TrainerNonValidoException(
+                            "Tipo di retribuzione non riconosciuto: "
+                            + tipoRetribuzione
+                            + "."
+                    );
+        };
     }
 }
