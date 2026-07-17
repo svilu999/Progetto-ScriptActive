@@ -23,9 +23,7 @@ public class SwapCorsiDAOMySQL implements SwapCorsiDAO {
      * @return true se esiste almeno un corso attivo o futuro
      */
     @Override
-    public boolean esistonoCorsiAttiviOFuturiPerTrainer(
-            int idTrainer) {
-
+    public boolean esistonoCorsiAttiviOFuturiPerTrainer(int idTrainer) {
         String sql = """
             SELECT COUNT(*) AS totale
             FROM Corso
@@ -39,10 +37,7 @@ public class SwapCorsiDAOMySQL implements SwapCorsiDAO {
               )
         """;
 
-        return esisteAlmenoUnRisultato(
-                sql,
-                idTrainer
-        );
+        return esisteAlmenoUnRisultato(sql, idTrainer);
     }
 
     /**
@@ -55,9 +50,7 @@ public class SwapCorsiDAOMySQL implements SwapCorsiDAO {
      * @return true se esiste almeno un corso imminente
      */
     @Override
-    public boolean esistonoCorsiImminentiPerTrainer(
-            int idTrainer) {
-
+    public boolean esistonoCorsiImminentiPerTrainer(int idTrainer) {
         String sql = """
             SELECT COUNT(*) AS totale
             FROM Corso
@@ -72,10 +65,7 @@ public class SwapCorsiDAOMySQL implements SwapCorsiDAO {
               )
         """;
 
-        return esisteAlmenoUnRisultato(
-                sql,
-                idTrainer
-        );
+        return esisteAlmenoUnRisultato(sql, idTrainer);
     }
 
     /**
@@ -85,9 +75,7 @@ public class SwapCorsiDAOMySQL implements SwapCorsiDAO {
      * @return true se il trainer esiste ed è attivo
      */
     @Override
-    public boolean esisteTrainerConContrattoAttivo(
-            int idTrainer) {
-
+    public boolean esisteTrainerConContrattoAttivo(int idTrainer) {
         String sql = """
             SELECT COUNT(*) AS totale
             FROM PersonalTrainer
@@ -96,10 +84,7 @@ public class SwapCorsiDAOMySQL implements SwapCorsiDAO {
               AND Attivo = TRUE
         """;
 
-        return esisteAlmenoUnRisultato(
-                sql,
-                idTrainer
-        );
+        return esisteAlmenoUnRisultato(sql, idTrainer);
     }
 
     /**
@@ -142,27 +127,14 @@ public class SwapCorsiDAOMySQL implements SwapCorsiDAO {
         """;
 
         try (
-            Connection conn =
-                    DatabaseManager
-                            .getInstance()
-                            .getConnection();
-
-            PreparedStatement stmt =
-                    conn.prepareStatement(sql)
+            Connection conn = DatabaseManager.getInstance().getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)
         ) {
-            stmt.setInt(
-                    1,
-                    idTrainerDaSostituire
-            );
-
-            stmt.setInt(
-                    2,
-                    idTrainerSostituto
-            );
+            stmt.setInt(1, idTrainerDaSostituire);
+            stmt.setInt(2, idTrainerSostituto);
 
             try (ResultSet rs = stmt.executeQuery()) {
-                return rs.next()
-                        && rs.getInt("totale") > 0;
+                return rs.next() && rs.getInt("totale") > 0;
             }
 
         } catch (SQLException e) {
@@ -191,27 +163,20 @@ public class SwapCorsiDAOMySQL implements SwapCorsiDAO {
             int idTrainerDaSostituire,
             int idTrainerSostituto) {
 
-        try (
-            Connection conn =
-                    DatabaseManager
-                            .getInstance()
-                            .getConnection()
-        ) {
+        try (Connection conn = DatabaseManager.getInstance().getConnection()) {
             try {
                 conn.setAutoCommit(false);
 
-                int corsiRiassegnati =
-                        riassegnaCorsi(
-                                conn,
-                                idTrainerDaSostituire,
-                                idTrainerSostituto
-                        );
+                int corsiRiassegnati = riassegnaCorsi(
+                        conn,
+                        idTrainerDaSostituire,
+                        idTrainerSostituto
+                );
 
-                int trainerDisattivati =
-                        disattivaPersonalTrainer(
-                                conn,
-                                idTrainerDaSostituire
-                        );
+                int trainerDisattivati = disattivaPersonalTrainer(
+                        conn,
+                        idTrainerDaSostituire
+                );
 
                 if (trainerDisattivati != 1) {
                     throw new SQLException(
@@ -220,11 +185,10 @@ public class SwapCorsiDAOMySQL implements SwapCorsiDAO {
                     );
                 }
 
-                int utentiDisattivati =
-                        disattivaUtente(
-                                conn,
-                                idTrainerDaSostituire
-                        );
+                int utentiDisattivati = disattivaUtente(
+                        conn,
+                        idTrainerDaSostituire
+                );
 
                 if (utentiDisattivati != 1) {
                     throw new SQLException(
@@ -234,16 +198,13 @@ public class SwapCorsiDAOMySQL implements SwapCorsiDAO {
                 }
 
                 conn.commit();
-
                 return corsiRiassegnati;
 
             } catch (Exception e) {
                 try {
                     conn.rollback();
                 } catch (SQLException rollbackException) {
-                    e.addSuppressed(
-                            rollbackException
-                    );
+                    e.addSuppressed(rollbackException);
                 }
 
                 throw e;
@@ -270,8 +231,7 @@ public class SwapCorsiDAOMySQL implements SwapCorsiDAO {
     private int riassegnaCorsi(
             Connection conn,
             int idTrainerDaSostituire,
-            int idTrainerSostituto)
-            throws SQLException {
+            int idTrainerSostituto) throws SQLException {
 
         String sql = """
             UPDATE Corso
@@ -286,19 +246,9 @@ public class SwapCorsiDAOMySQL implements SwapCorsiDAO {
               )
         """;
 
-        try (
-            PreparedStatement stmt =
-                    conn.prepareStatement(sql)
-        ) {
-            stmt.setInt(
-                    1,
-                    idTrainerSostituto
-            );
-
-            stmt.setInt(
-                    2,
-                    idTrainerDaSostituire
-            );
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, idTrainerSostituto);
+            stmt.setInt(2, idTrainerDaSostituire);
 
             return stmt.executeUpdate();
         }
@@ -314,8 +264,7 @@ public class SwapCorsiDAOMySQL implements SwapCorsiDAO {
      */
     private int disattivaPersonalTrainer(
             Connection conn,
-            int idTrainer)
-            throws SQLException {
+            int idTrainer) throws SQLException {
 
         String sql = """
             UPDATE PersonalTrainer
@@ -326,15 +275,8 @@ public class SwapCorsiDAOMySQL implements SwapCorsiDAO {
               AND Attivo = TRUE
         """;
 
-        try (
-            PreparedStatement stmt =
-                    conn.prepareStatement(sql)
-        ) {
-            stmt.setInt(
-                    1,
-                    idTrainer
-            );
-
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, idTrainer);
             return stmt.executeUpdate();
         }
     }
@@ -349,8 +291,7 @@ public class SwapCorsiDAOMySQL implements SwapCorsiDAO {
      */
     private int disattivaUtente(
             Connection conn,
-            int idTrainer)
-            throws SQLException {
+            int idTrainer) throws SQLException {
 
         String sql = """
             UPDATE Utente
@@ -358,15 +299,8 @@ public class SwapCorsiDAOMySQL implements SwapCorsiDAO {
             WHERE ID_Utente = ?
         """;
 
-        try (
-            PreparedStatement stmt =
-                    conn.prepareStatement(sql)
-        ) {
-            stmt.setInt(
-                    1,
-                    idTrainer
-            );
-
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, idTrainer);
             return stmt.executeUpdate();
         }
     }
@@ -378,27 +312,15 @@ public class SwapCorsiDAOMySQL implements SwapCorsiDAO {
      * @param parametro parametro della query
      * @return true se il conteggio è maggiore di zero
      */
-    private boolean esisteAlmenoUnRisultato(
-            String sql,
-            int parametro) {
-
+    private boolean esisteAlmenoUnRisultato(String sql, int parametro) {
         try (
-            Connection conn =
-                    DatabaseManager
-                            .getInstance()
-                            .getConnection();
-
-            PreparedStatement stmt =
-                    conn.prepareStatement(sql)
+            Connection conn = DatabaseManager.getInstance().getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)
         ) {
-            stmt.setInt(
-                    1,
-                    parametro
-            );
+            stmt.setInt(1, parametro);
 
             try (ResultSet rs = stmt.executeQuery()) {
-                return rs.next()
-                        && rs.getInt("totale") > 0;
+                return rs.next() && rs.getInt("totale") > 0;
             }
 
         } catch (SQLException e) {

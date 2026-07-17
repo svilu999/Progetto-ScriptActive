@@ -16,9 +16,7 @@ public interface SwapCorsiDAO {
      * @param idTrainer identificativo numerico del trainer
      * @return true se esiste almeno un corso attivo o futuro
      */
-    boolean esistonoCorsiAttiviOFuturiPerTrainer(
-            int idTrainer
-    );
+    boolean esistonoCorsiAttiviOFuturiPerTrainer(int idTrainer);
 
     /**
      * Verifica se esistono corsi imminenti associati
@@ -27,9 +25,7 @@ public interface SwapCorsiDAO {
      * @param idTrainer identificativo numerico del trainer
      * @return true se esiste almeno un corso imminente
      */
-    boolean esistonoCorsiImminentiPerTrainer(
-            int idTrainer
-    );
+    boolean esistonoCorsiImminentiPerTrainer(int idTrainer);
 
     /**
      * Verifica se esiste un Personal Trainer attivo
@@ -38,9 +34,7 @@ public interface SwapCorsiDAO {
      * @param idTrainer identificativo numerico del trainer
      * @return true se il trainer esiste ed è attivo
      */
-    boolean esisteTrainerConContrattoAttivo(
-            int idTrainer
-    );
+    boolean esisteTrainerConContrattoAttivo(int idTrainer);
 
     /**
      * Verifica se esistono sovrapposizioni tra i corsi del trainer

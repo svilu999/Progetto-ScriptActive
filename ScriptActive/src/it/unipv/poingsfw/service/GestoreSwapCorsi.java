@@ -20,9 +20,7 @@ public class GestoreSwapCorsi implements ServizioSwapCorsi {
      *
      * @param swapCorsiDAO DAO utilizzato per la persistenza dello swap
      */
-    public GestoreSwapCorsi(
-            SwapCorsiDAO swapCorsiDAO) {
-
+    public GestoreSwapCorsi(SwapCorsiDAO swapCorsiDAO) {
         this.swapCorsiDAO = Objects.requireNonNull(
                 swapCorsiDAO,
                 "swapCorsiDAO non può essere null"
@@ -36,20 +34,16 @@ public class GestoreSwapCorsi implements ServizioSwapCorsi {
      * @return true se esiste almeno un corso attivo o futuro
      */
     @Override
-    public boolean haCorsiAttiviOFuturi(
-            String idTrainer) {
-
-        Integer idTrainerNumerico =
-                convertiIdNumerico(idTrainer);
+    public boolean haCorsiAttiviOFuturi(String idTrainer) {
+        Integer idTrainerNumerico = convertiIdNumerico(idTrainer);
 
         if (idTrainerNumerico == null) {
             return false;
         }
 
-        return swapCorsiDAO
-                .esistonoCorsiAttiviOFuturiPerTrainer(
-                        idTrainerNumerico
-                );
+        return swapCorsiDAO.esistonoCorsiAttiviOFuturiPerTrainer(
+                idTrainerNumerico
+        );
     }
 
     /**
@@ -59,20 +53,16 @@ public class GestoreSwapCorsi implements ServizioSwapCorsi {
      * @return true se esiste almeno un corso imminente
      */
     @Override
-    public boolean haCorsiImminenti(
-            String idTrainer) {
-
-        Integer idTrainerNumerico =
-                convertiIdNumerico(idTrainer);
+    public boolean haCorsiImminenti(String idTrainer) {
+        Integer idTrainerNumerico = convertiIdNumerico(idTrainer);
 
         if (idTrainerNumerico == null) {
             return false;
         }
 
-        return swapCorsiDAO
-                .esistonoCorsiImminentiPerTrainer(
-                        idTrainerNumerico
-                );
+        return swapCorsiDAO.esistonoCorsiImminentiPerTrainer(
+                idTrainerNumerico
+        );
     }
 
     /**
@@ -94,17 +84,15 @@ public class GestoreSwapCorsi implements ServizioSwapCorsi {
             String idTrainerSostituto)
             throws SostitutoNonValidoException {
 
-        int idVecchioTrainer =
-                convertiIdObbligatorio(
-                        idTrainerDaSostituire,
-                        "Identificativo del trainer da sostituire"
-                );
+        int idVecchioTrainer = convertiIdObbligatorio(
+                idTrainerDaSostituire,
+                "Identificativo del trainer da sostituire"
+        );
 
-        int idNuovoTrainer =
-                convertiIdObbligatorio(
-                        idTrainerSostituto,
-                        "Identificativo del trainer sostituto"
-                );
+        int idNuovoTrainer = convertiIdObbligatorio(
+                idTrainerSostituto,
+                "Identificativo del trainer sostituto"
+        );
 
         if (idVecchioTrainer == idNuovoTrainer) {
             throw new SostitutoNonValidoException(
@@ -114,10 +102,9 @@ public class GestoreSwapCorsi implements ServizioSwapCorsi {
         }
 
         boolean sostitutoAttivo =
-                swapCorsiDAO
-                        .esisteTrainerConContrattoAttivo(
-                                idNuovoTrainer
-                        );
+                swapCorsiDAO.esisteTrainerConContrattoAttivo(
+                        idNuovoTrainer
+                );
 
         if (!sostitutoAttivo) {
             throw new SostitutoNonValidoException(
@@ -127,11 +114,10 @@ public class GestoreSwapCorsi implements ServizioSwapCorsi {
         }
 
         boolean sovrapposizione =
-                swapCorsiDAO
-                        .esistonoSovrapposizioniTraCorsi(
-                                idVecchioTrainer,
-                                idNuovoTrainer
-                        );
+                swapCorsiDAO.esistonoSovrapposizioniTraCorsi(
+                        idVecchioTrainer,
+                        idNuovoTrainer
+                );
 
         if (sovrapposizione) {
             throw new SostitutoNonValidoException(
@@ -140,11 +126,10 @@ public class GestoreSwapCorsi implements ServizioSwapCorsi {
             );
         }
 
-        return swapCorsiDAO
-                .riassegnaCorsiEDisattivaTrainer(
-                        idVecchioTrainer,
-                        idNuovoTrainer
-                );
+        return swapCorsiDAO.riassegnaCorsiEDisattivaTrainer(
+                idVecchioTrainer,
+                idNuovoTrainer
+        );
     }
 
     /**
@@ -153,29 +138,20 @@ public class GestoreSwapCorsi implements ServizioSwapCorsi {
      * @param id identificativo da convertire
      * @return identificativo numerico oppure null se non valido
      */
-    private Integer convertiIdNumerico(
-            String id) {
-
+    private Integer convertiIdNumerico(String id) {
         if (id == null) {
             return null;
         }
 
-        String valoreNormalizzato =
-                id.trim();
+        String valoreNormalizzato = id.trim();
 
         if (!valoreNormalizzato.matches("\\d+")) {
             return null;
         }
 
         try {
-            int idNumerico =
-                    Integer.parseInt(
-                            valoreNormalizzato
-                    );
-
-            return idNumerico > 0
-                    ? idNumerico
-                    : null;
+            int idNumerico = Integer.parseInt(valoreNormalizzato);
+            return idNumerico > 0 ? idNumerico : null;
 
         } catch (NumberFormatException e) {
             return null;
@@ -195,8 +171,7 @@ public class GestoreSwapCorsi implements ServizioSwapCorsi {
             String nomeCampo)
             throws SostitutoNonValidoException {
 
-        Integer idNumerico =
-                convertiIdNumerico(id);
+        Integer idNumerico = convertiIdNumerico(id);
 
         if (idNumerico == null) {
             throw new SostitutoNonValidoException(

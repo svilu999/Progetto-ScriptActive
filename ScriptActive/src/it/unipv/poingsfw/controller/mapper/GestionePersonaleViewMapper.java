@@ -28,23 +28,17 @@ public final class GestionePersonaleViewMapper {
             return new Object[0][0];
         }
 
-        Object[][] righe =
-                new Object[trainer.size()][6];
+        Object[][] righe = new Object[trainer.size()][6];
 
-        for (int indice = 0;
-                indice < trainer.size();
-                indice++) {
-
-            DatiVisualizzazioneTrainer dato =
-                    trainer.get(indice);
+        for (int indice = 0; indice < trainer.size(); indice++) {
+            DatiVisualizzazioneTrainer dato = trainer.get(indice);
 
             righe[indice][0] = dato.getIdTrainer();
             righe[indice][1] = dato.getNomeCompleto();
             righe[indice][2] = dato.getEmail();
             righe[indice][3] = dato.getSpecializzazione();
             righe[indice][4] = dato.getStatoContratto();
-            righe[indice][5] =
-                    dato.isAttivo() ? "Sì" : "No";
+            righe[indice][5] = dato.isAttivo() ? "Sì" : "No";
         }
 
         return righe;
@@ -63,15 +57,10 @@ public final class GestionePersonaleViewMapper {
             return new String[0];
         }
 
-        String[] descrizioni =
-                new String[sostituti.size()];
+        String[] descrizioni = new String[sostituti.size()];
 
-        for (int indice = 0;
-                indice < sostituti.size();
-                indice++) {
-
-            DatiVisualizzazioneTrainer sostituto =
-                    sostituti.get(indice);
+        for (int indice = 0; indice < sostituti.size(); indice++) {
+            DatiVisualizzazioneTrainer sostituto = sostituti.get(indice);
 
             descrizioni[indice] =
                     sostituto.getIdTrainer()
@@ -95,19 +84,13 @@ public final class GestionePersonaleViewMapper {
             List<DatiVisualizzazioneTrainer> trainer,
             int indice) {
 
-        if (trainer == null
-                || indice < 0
-                || indice >= trainer.size()) {
-
+        if (trainer == null || indice < 0 || indice >= trainer.size()) {
             return null;
         }
 
-        DatiVisualizzazioneTrainer dato =
-                trainer.get(indice);
+        DatiVisualizzazioneTrainer dato = trainer.get(indice);
 
-        return dato == null
-                ? null
-                : dato.getIdTrainer();
+        return dato == null ? null : dato.getIdTrainer();
     }
 
     /**
@@ -117,9 +100,7 @@ public final class GestionePersonaleViewMapper {
      * @return importo convertito
      * @throws NumberFormatException se il testo non rappresenta un numero
      */
-    public static double convertiImporto(
-            String testoImporto) {
-
+    public static double convertiImporto(String testoImporto) {
         if (testoImporto == null) {
             throw new NumberFormatException(
                     "Importo assente."
@@ -135,8 +116,6 @@ public final class GestionePersonaleViewMapper {
             );
         }
 
-        return Double.parseDouble(
-                valoreNormalizzato
-        );
+        return Double.parseDouble(valoreNormalizzato);
     }
 }

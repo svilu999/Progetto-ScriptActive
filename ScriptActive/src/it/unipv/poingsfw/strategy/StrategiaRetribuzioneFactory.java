@@ -12,11 +12,8 @@ import it.unipv.poingsfw.exceptions.TrainerNonValidoException;
  */
 public final class StrategiaRetribuzioneFactory {
 
-    private static final String TIPO_FISSA_MENSILE =
-            "FISSA_MENSILE";
-
-    private static final String TIPO_A_LEZIONE =
-            "A_LEZIONE";
+    private static final String TIPO_FISSA_MENSILE = "FISSA_MENSILE";
+    private static final String TIPO_A_LEZIONE = "A_LEZIONE";
 
     private StrategiaRetribuzioneFactory() {
     }
@@ -34,9 +31,7 @@ public final class StrategiaRetribuzioneFactory {
             double importo)
             throws TrainerNonValidoException {
 
-        if (tipoRetribuzione == null
-                || tipoRetribuzione.isBlank()) {
-
+        if (tipoRetribuzione == null || tipoRetribuzione.isBlank()) {
             throw new TrainerNonValidoException(
                     "Tipo di retribuzione non indicato."
             );
@@ -49,10 +44,9 @@ public final class StrategiaRetribuzioneFactory {
             );
         }
 
-        String tipoNormalizzato =
-                tipoRetribuzione
-                        .trim()
-                        .toUpperCase(Locale.ROOT);
+        String tipoNormalizzato = tipoRetribuzione
+                .trim()
+                .toUpperCase(Locale.ROOT);
 
         return switch (tipoNormalizzato) {
             case TIPO_FISSA_MENSILE ->

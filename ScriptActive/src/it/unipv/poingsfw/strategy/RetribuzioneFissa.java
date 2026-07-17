@@ -5,11 +5,9 @@ package it.unipv.poingsfw.strategy;
  *
  * La retribuzione non dipende dal numero di lezioni completate.
  */
-public class RetribuzioneFissa
-        implements StrategiaRetribuzione {
+public class RetribuzioneFissa implements StrategiaRetribuzione {
 
-    private static final String TIPO_RETRIBUZIONE =
-            "FISSA_MENSILE";
+    private static final String TIPO_RETRIBUZIONE = "FISSA_MENSILE";
 
     private final double stipendioBase;
 
@@ -19,17 +17,14 @@ public class RetribuzioneFissa
      * @param stipendioBase importo mensile fisso
      * @throws IllegalArgumentException se l'importo è negativo
      */
-    public RetribuzioneFissa(
-            double stipendioBase) {
-
+    public RetribuzioneFissa(double stipendioBase) {
         if (stipendioBase < 0) {
             throw new IllegalArgumentException(
                     "Lo stipendio base non può essere negativo."
             );
         }
 
-        this.stipendioBase =
-                stipendioBase;
+        this.stipendioBase = stipendioBase;
     }
 
     /**
@@ -41,9 +36,7 @@ public class RetribuzioneFissa
      * @return stipendio fisso mensile
      */
     @Override
-    public double calcolaStipendio(
-            int numeroLezioni) {
-
+    public double calcolaStipendio(int numeroLezioni) {
         return stipendioBase;
     }
 

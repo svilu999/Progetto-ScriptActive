@@ -6,11 +6,9 @@ package it.unipv.poingsfw.strategy;
  * La retribuzione dipende dal numero di lezioni completate e dal compenso
  * previsto per ogni lezione.
  */
-public class RetribuzioneProvvigione
-        implements StrategiaRetribuzione {
+public class RetribuzioneProvvigione implements StrategiaRetribuzione {
 
-    private static final String TIPO_RETRIBUZIONE =
-            "A_LEZIONE";
+    private static final String TIPO_RETRIBUZIONE = "A_LEZIONE";
 
     private final double quotaPerLezione;
 
@@ -20,17 +18,14 @@ public class RetribuzioneProvvigione
      * @param quotaPerLezione compenso previsto per una singola lezione
      * @throws IllegalArgumentException se la quota è negativa
      */
-    public RetribuzioneProvvigione(
-            double quotaPerLezione) {
-
+    public RetribuzioneProvvigione(double quotaPerLezione) {
         if (quotaPerLezione < 0) {
             throw new IllegalArgumentException(
                     "La quota per lezione non può essere negativa."
             );
         }
 
-        this.quotaPerLezione =
-                quotaPerLezione;
+        this.quotaPerLezione = quotaPerLezione;
     }
 
     /**
@@ -42,17 +37,14 @@ public class RetribuzioneProvvigione
      * @throws IllegalArgumentException se il numero di lezioni è negativo
      */
     @Override
-    public double calcolaStipendio(
-            int numeroLezioni) {
-
+    public double calcolaStipendio(int numeroLezioni) {
         if (numeroLezioni < 0) {
             throw new IllegalArgumentException(
                     "Il numero di lezioni non può essere negativo."
             );
         }
 
-        return numeroLezioni
-                * quotaPerLezione;
+        return numeroLezioni * quotaPerLezione;
     }
 
     /**

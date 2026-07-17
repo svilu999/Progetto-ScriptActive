@@ -25,23 +25,13 @@ import it.unipv.poingsfw.strategy.StrategiaRetribuzioneFactory;
  * Coordina gli oggetti di dominio, le Strategy, i DAO e gli altri servizi
  * interni al Model senza esporli al Controller.
  */
-public class GestoreContrattiPersonale
-        implements ServizioContrattiPersonale {
+public class GestoreContrattiPersonale implements ServizioContrattiPersonale {
 
-    private static final String STATO_CONTRATTO_ATTIVO =
-            "ATTIVO";
-
-    private static final String STATO_UTENTE_ATTIVO =
-            "Attivo";
-
-    private static final String PASSWORD_PREDEFINITA =
-            "1234";
-
-    private static final String TIPO_FISSA_MENSILE =
-            "FISSA_MENSILE";
-
-    private static final String TIPO_A_LEZIONE =
-            "A_LEZIONE";
+    private static final String STATO_CONTRATTO_ATTIVO = "ATTIVO";
+    private static final String STATO_UTENTE_ATTIVO = "Attivo";
+    private static final String PASSWORD_PREDEFINITA = "1234";
+    private static final String TIPO_FISSA_MENSILE = "FISSA_MENSILE";
+    private static final String TIPO_A_LEZIONE = "A_LEZIONE";
 
     private final PersonalTrainerDAO trainerDAO;
     private final DirettoreDAO direttoreDAO;
@@ -109,33 +99,26 @@ public class GestoreContrattiPersonale
             String specializzazione,
             String tipoRetribuzione,
             double importoRetribuzione)
-            throws TrainerGiaAssuntoException,
-                   TrainerNonValidoException {
+            throws TrainerGiaAssuntoException, TrainerNonValidoException {
 
-        String nomeNormalizzato =
-                normalizzaCampoObbligatorio(
-                        nome,
-                        "Nome del Personal Trainer"
-                );
+        String nomeNormalizzato = normalizzaCampoObbligatorio(
+                nome,
+                "Nome del Personal Trainer"
+        );
 
-        String cognomeNormalizzato =
-                normalizzaCampoObbligatorio(
-                        cognome,
-                        "Cognome del Personal Trainer"
-                );
+        String cognomeNormalizzato = normalizzaCampoObbligatorio(
+                cognome,
+                "Cognome del Personal Trainer"
+        );
 
-        String emailNormalizzata =
-                normalizzaEmailObbligatoria(email);
+        String emailNormalizzata = normalizzaEmailObbligatoria(email);
 
-        String specializzazioneNormalizzata =
-                normalizzaCampoObbligatorio(
-                        specializzazione,
-                        "Specializzazione del Personal Trainer"
-                );
+        String specializzazioneNormalizzata = normalizzaCampoObbligatorio(
+                specializzazione,
+                "Specializzazione del Personal Trainer"
+        );
 
-        if (trainerDAO.trovaPerEmail(
-                emailNormalizzata) != null) {
-
+        if (trainerDAO.trovaPerEmail(emailNormalizzata) != null) {
             throw new TrainerGiaAssuntoException(
                     "Esiste già un Personal Trainer "
                     + "registrato con email "
@@ -144,27 +127,24 @@ public class GestoreContrattiPersonale
             );
         }
 
-        StrategiaRetribuzione strategia =
-                StrategiaRetribuzioneFactory.crea(
-                        tipoRetribuzione,
-                        importoRetribuzione
-                );
+        StrategiaRetribuzione strategia = StrategiaRetribuzioneFactory.crea(
+                tipoRetribuzione,
+                importoRetribuzione
+        );
 
-        PersonalTrainer nuovoTrainer =
-                new PersonalTrainer(
-                        nomeNormalizzato,
-                        cognomeNormalizzato,
-                        emailNormalizzata,
-                        null,
-                        specializzazioneNormalizzata,
-                        strategia
-                );
+        PersonalTrainer nuovoTrainer = new PersonalTrainer(
+                nomeNormalizzato,
+                cognomeNormalizzato,
+                emailNormalizzata,
+                null,
+                specializzazioneNormalizzata,
+                strategia
+        );
 
-        DatiPersonalTrainer datiNuovoTrainer =
-                creaDatiNuovoTrainer(
-                        nuovoTrainer,
-                        importoRetribuzione
-                );
+        DatiPersonalTrainer datiNuovoTrainer = creaDatiNuovoTrainer(
+                nuovoTrainer,
+                importoRetribuzione
+        );
 
         trainerDAO.salva(datiNuovoTrainer);
     }
@@ -178,28 +158,18 @@ public class GestoreContrattiPersonale
      * @return lista dei dati destinati alla schermata
      */
     @Override
-    public List<DatiVisualizzazioneTrainer>
-            getElencoPersonalTrainer() {
-
-        List<DatiPersonalTrainer> datiPersistenti =
-                trainerDAO.trovaTutti();
+    public List<DatiVisualizzazioneTrainer> getElencoPersonalTrainer() {
+        List<DatiPersonalTrainer> datiPersistenti = trainerDAO.trovaTutti();
 
         List<PersonalTrainer> trainerDiDominio =
-                convertiListaDatiInPersonalTrainer(
-                        datiPersistenti
-                );
+                convertiListaDatiInPersonalTrainer(datiPersistenti);
 
-        List<DatiVisualizzazioneTrainer>
-                datiVisualizzazione =
-                        new ArrayList<>();
+        List<DatiVisualizzazioneTrainer> datiVisualizzazione =
+                new ArrayList<>();
 
-        for (PersonalTrainer trainer :
-                trainerDiDominio) {
-
+        for (PersonalTrainer trainer : trainerDiDominio) {
             datiVisualizzazione.add(
-                    convertiInDatiVisualizzazione(
-                            trainer
-                    )
+                    convertiInDatiVisualizzazione(trainer)
             );
         }
 
@@ -218,22 +188,16 @@ public class GestoreContrattiPersonale
      *         trainer non esiste oppure non ha un contratto attivo
      */
     @Override
-    public List<DatiVisualizzazioneTrainer>
-            getSostitutiCompatibili(
-                    String idTrainerDaLicenziare)
-                    throws TrainerNonValidoException {
+    public List<DatiVisualizzazioneTrainer> getSostitutiCompatibili(
+            String idTrainerDaLicenziare) throws TrainerNonValidoException {
 
-        Integer idTrainerNumerico =
-                normalizzaIdObbligatorio(
-                        idTrainerDaLicenziare,
-                        "Identificativo del Personal Trainer "
-                        + "da licenziare"
-                );
+        Integer idTrainerNumerico = normalizzaIdObbligatorio(
+                idTrainerDaLicenziare,
+                "Identificativo del Personal Trainer da licenziare"
+        );
 
         DatiPersonalTrainer datiTrainerDaLicenziare =
-                trainerDAO.trovaPerId(
-                        idTrainerNumerico
-                );
+                trainerDAO.trovaPerId(idTrainerNumerico);
 
         if (datiTrainerDaLicenziare == null) {
             throw new TrainerNonValidoException(
@@ -243,34 +207,23 @@ public class GestoreContrattiPersonale
         }
 
         PersonalTrainer trainerDaLicenziare =
-                convertiDatiInPersonalTrainer(
-                        datiTrainerDaLicenziare
-                );
+                convertiDatiInPersonalTrainer(datiTrainerDaLicenziare);
 
-        validaTrainerLicenziabile(
-                trainerDaLicenziare
-        );
+        validaTrainerLicenziabile(trainerDaLicenziare);
 
         List<PersonalTrainer> elencoTrainer =
-                convertiListaDatiInPersonalTrainer(
-                        trainerDAO.trovaTutti()
-                );
+                convertiListaDatiInPersonalTrainer(trainerDAO.trovaTutti());
 
-        List<DatiVisualizzazioneTrainer>
-                sostitutiCompatibili =
-                        new ArrayList<>();
+        List<DatiVisualizzazioneTrainer> sostitutiCompatibili =
+                new ArrayList<>();
 
-        for (PersonalTrainer possibileSostituto :
-                elencoTrainer) {
-
+        for (PersonalTrainer possibileSostituto : elencoTrainer) {
             if (isSostitutoCompatibile(
                     trainerDaLicenziare,
                     possibileSostituto)) {
 
                 sostitutiCompatibili.add(
-                        convertiInDatiVisualizzazione(
-                                possibileSostituto
-                        )
+                        convertiInDatiVisualizzazione(possibileSostituto)
                 );
             }
         }
@@ -288,22 +241,17 @@ public class GestoreContrattiPersonale
      *         attivi o futuri
      */
     @Override
-    public void licenziaPersonalTrainerSenzaSostituto(
-            String idTrainer)
+    public void licenziaPersonalTrainerSenzaSostituto(String idTrainer)
             throws TrainerNonValidoException,
                    TrainerNonLicenziabileException {
 
-        Integer idTrainerNumerico =
-                normalizzaIdObbligatorio(
-                        idTrainer,
-                        "Identificativo del Personal Trainer "
-                        + "da licenziare"
-                );
+        Integer idTrainerNumerico = normalizzaIdObbligatorio(
+                idTrainer,
+                "Identificativo del Personal Trainer da licenziare"
+        );
 
         DatiPersonalTrainer datiTrainer =
-                trainerDAO.trovaPerId(
-                        idTrainerNumerico
-                );
+                trainerDAO.trovaPerId(idTrainerNumerico);
 
         if (datiTrainer == null) {
             throw new TrainerNonValidoException(
@@ -313,21 +261,13 @@ public class GestoreContrattiPersonale
         }
 
         PersonalTrainer trainerDaLicenziare =
-                convertiDatiInPersonalTrainer(
-                        datiTrainer
-                );
+                convertiDatiInPersonalTrainer(datiTrainer);
 
-        validaTrainerLicenziabile(
-                trainerDaLicenziare
+        validaTrainerLicenziabile(trainerDaLicenziare);
+
+        boolean possiedeCorsi = servizioSwapCorsi.haCorsiAttiviOFuturi(
+                String.valueOf(idTrainerNumerico)
         );
-
-        boolean possiedeCorsi =
-                servizioSwapCorsi
-                        .haCorsiAttiviOFuturi(
-                                String.valueOf(
-                                        idTrainerNumerico
-                                )
-                        );
 
         if (possiedeCorsi) {
             throw new TrainerNonLicenziabileException(
@@ -336,9 +276,7 @@ public class GestoreContrattiPersonale
             );
         }
 
-        trainerDAO.disattiva(
-                idTrainerNumerico
-        );
+        trainerDAO.disattiva(idTrainerNumerico);
     }
 
     /**
@@ -358,24 +296,18 @@ public class GestoreContrattiPersonale
             throws TrainerNonValidoException,
                    SostitutoNonValidoException {
 
-        Integer idDaLicenziare =
-                normalizzaIdObbligatorio(
-                        idTrainerDaLicenziare,
-                        "Identificativo del Personal Trainer "
-                        + "da licenziare"
-                );
+        Integer idDaLicenziare = normalizzaIdObbligatorio(
+                idTrainerDaLicenziare,
+                "Identificativo del Personal Trainer da licenziare"
+        );
 
-        Integer idSostituto =
-                normalizzaIdObbligatorio(
-                        idTrainerSostituto,
-                        "Identificativo del Personal Trainer "
-                        + "sostituto"
-                );
+        Integer idSostituto = normalizzaIdObbligatorio(
+                idTrainerSostituto,
+                "Identificativo del Personal Trainer sostituto"
+        );
 
         DatiPersonalTrainer datiTrainerDaLicenziare =
-                trainerDAO.trovaPerId(
-                        idDaLicenziare
-                );
+                trainerDAO.trovaPerId(idDaLicenziare);
 
         if (datiTrainerDaLicenziare == null) {
             throw new TrainerNonValidoException(
@@ -385,18 +317,12 @@ public class GestoreContrattiPersonale
         }
 
         PersonalTrainer trainerDaLicenziare =
-                convertiDatiInPersonalTrainer(
-                        datiTrainerDaLicenziare
-                );
+                convertiDatiInPersonalTrainer(datiTrainerDaLicenziare);
 
-        validaTrainerLicenziabile(
-                trainerDaLicenziare
-        );
+        validaTrainerLicenziabile(trainerDaLicenziare);
 
         DatiPersonalTrainer datiSostituto =
-                trainerDAO.trovaPerId(
-                        idSostituto
-                );
+                trainerDAO.trovaPerId(idSostituto);
 
         if (datiSostituto == null) {
             throw new SostitutoNonValidoException(
@@ -406,30 +332,19 @@ public class GestoreContrattiPersonale
         }
 
         PersonalTrainer sostituto =
-                convertiDatiInPersonalTrainer(
-                        datiSostituto
-                );
+                convertiDatiInPersonalTrainer(datiSostituto);
 
-        if (!isSostitutoCompatibile(
-                trainerDaLicenziare,
-                sostituto)) {
-
+        if (!isSostitutoCompatibile(trainerDaLicenziare, sostituto)) {
             throw new SostitutoNonValidoException(
                     "Il sostituto non è compatibile "
                     + "con il trainer da licenziare."
             );
         }
 
-        servizioSwapCorsi
-                .sostituisciTrainerNeiCorsi(
-                        String.valueOf(
-                                idDaLicenziare
-                        ),
-                        String.valueOf(
-                                idSostituto
-                        )
-                );
-
+        servizioSwapCorsi.sostituisciTrainerNeiCorsi(
+                String.valueOf(idDaLicenziare),
+                String.valueOf(idSostituto)
+        );
     }
 
     /**
@@ -439,8 +354,7 @@ public class GestoreContrattiPersonale
      */
     @Override
     public double calcolaTotaleRetribuzioniMensili() {
-        return servizioRetribuzioni
-                .calcolaTotaleRetribuzioniMensili();
+        return servizioRetribuzioni.calcolaTotaleRetribuzioniMensili();
     }
 
     /**
@@ -457,8 +371,7 @@ public class GestoreContrattiPersonale
             PersonalTrainer trainer,
             double importoRetribuzione) {
 
-        StrategiaRetribuzione strategia =
-                trainer.getStrategia();
+        StrategiaRetribuzione strategia = trainer.getStrategia();
 
         if (strategia == null) {
             throw new IllegalStateException(
@@ -467,37 +380,20 @@ public class GestoreContrattiPersonale
             );
         }
 
-        String tipoRetribuzione =
-                strategia.getTipoRetribuzione();
+        String tipoRetribuzione = strategia.getTipoRetribuzione();
 
         double stipendioMensile;
         Double compensoPerLezione;
 
-        if (TIPO_FISSA_MENSILE.equalsIgnoreCase(
-                tipoRetribuzione)) {
+        if (TIPO_FISSA_MENSILE.equalsIgnoreCase(tipoRetribuzione)) {
+            trainer.setTipoContratto("Fisso");
+            stipendioMensile = importoRetribuzione;
+            compensoPerLezione = null;
 
-            trainer.setTipoContratto(
-                    "Fisso"
-            );
-
-            stipendioMensile =
-                    importoRetribuzione;
-
-            compensoPerLezione =
-                    null;
-
-        } else if (TIPO_A_LEZIONE.equalsIgnoreCase(
-                tipoRetribuzione)) {
-
-            trainer.setTipoContratto(
-                    "Provvigione"
-            );
-
-            stipendioMensile =
-                    0.00;
-
-            compensoPerLezione =
-                    importoRetribuzione;
+        } else if (TIPO_A_LEZIONE.equalsIgnoreCase(tipoRetribuzione)) {
+            trainer.setTipoContratto("Provvigione");
+            stipendioMensile = 0.00;
+            compensoPerLezione = importoRetribuzione;
 
         } else {
             throw new IllegalStateException(
@@ -506,9 +402,7 @@ public class GestoreContrattiPersonale
             );
         }
 
-        Integer idDirettore =
-                direttoreDAO
-                        .trovaIdDirettoreDisponibile();
+        Integer idDirettore = direttoreDAO.trovaIdDirettoreDisponibile();
 
         if (idDirettore == null) {
             throw new IllegalStateException(
@@ -547,9 +441,8 @@ public class GestoreContrattiPersonale
      * @param trainer Personal Trainer da convertire
      * @return DTO contenente i dati necessari alla schermata
      */
-    private DatiVisualizzazioneTrainer
-            convertiInDatiVisualizzazione(
-                    PersonalTrainer trainer) {
+    private DatiVisualizzazioneTrainer convertiInDatiVisualizzazione(
+            PersonalTrainer trainer) {
 
         Objects.requireNonNull(
                 trainer,
@@ -583,42 +476,26 @@ public class GestoreContrattiPersonale
 
         try {
             double importoRetribuzione =
-                    selezionaImportoRetribuzione(
-                            datiTrainer
-                    );
+                    selezionaImportoRetribuzione(datiTrainer);
 
             StrategiaRetribuzione strategia =
                     StrategiaRetribuzioneFactory.crea(
-                            datiTrainer
-                                    .getTipoRetribuzione(),
+                            datiTrainer.getTipoRetribuzione(),
                             importoRetribuzione
                     );
 
-            PersonalTrainer trainer =
-                    new PersonalTrainer(
-                            datiTrainer.getNome(),
-                            datiTrainer.getCognome(),
-                            datiTrainer.getEmail(),
-                            String.valueOf(
-                                    datiTrainer
-                                            .getIdTrainer()
-                            ),
-                            datiTrainer
-                                    .getSpecializzazione(),
-                            strategia
-                    );
-
-            trainer.setTipoContratto(
-                    datiTrainer.getTipoContratto()
+            PersonalTrainer trainer = new PersonalTrainer(
+                    datiTrainer.getNome(),
+                    datiTrainer.getCognome(),
+                    datiTrainer.getEmail(),
+                    String.valueOf(datiTrainer.getIdTrainer()),
+                    datiTrainer.getSpecializzazione(),
+                    strategia
             );
 
-            trainer.setStatoContratto(
-                    datiTrainer.getStatoContratto()
-            );
-
-            trainer.setAttivo(
-                    datiTrainer.isAttivo()
-            );
+            trainer.setTipoContratto(datiTrainer.getTipoContratto());
+            trainer.setStatoContratto(datiTrainer.getStatoContratto());
+            trainer.setAttivo(datiTrainer.isAttivo());
 
             return trainer;
 
@@ -638,26 +515,19 @@ public class GestoreContrattiPersonale
      * @param datiTrainer lista dei DTO restituiti dal DAO
      * @return lista dei Personal Trainer di dominio
      */
-    private List<PersonalTrainer>
-            convertiListaDatiInPersonalTrainer(
-                    List<DatiPersonalTrainer> datiTrainer) {
+    private List<PersonalTrainer> convertiListaDatiInPersonalTrainer(
+            List<DatiPersonalTrainer> datiTrainer) {
 
         Objects.requireNonNull(
                 datiTrainer,
-                "La lista dei dati trainer "
-                + "non può essere null"
+                "La lista dei dati trainer non può essere null"
         );
 
-        List<PersonalTrainer> trainerDiDominio =
-                new ArrayList<>();
+        List<PersonalTrainer> trainerDiDominio = new ArrayList<>();
 
-        for (DatiPersonalTrainer dati :
-                datiTrainer) {
-
+        for (DatiPersonalTrainer dati : datiTrainer) {
             trainerDiDominio.add(
-                    convertiDatiInPersonalTrainer(
-                            dati
-                    )
+                    convertiDatiInPersonalTrainer(dati)
             );
         }
 
@@ -673,14 +543,10 @@ public class GestoreContrattiPersonale
     private double selezionaImportoRetribuzione(
             DatiPersonalTrainer datiTrainer) {
 
-        String tipoRetribuzione =
-                datiTrainer.getTipoRetribuzione();
+        String tipoRetribuzione = datiTrainer.getTipoRetribuzione();
 
-        if (TIPO_FISSA_MENSILE.equalsIgnoreCase(
-                tipoRetribuzione)) {
-
-            double stipendio =
-                    datiTrainer.getStipendioMensile();
+        if (TIPO_FISSA_MENSILE.equalsIgnoreCase(tipoRetribuzione)) {
+            double stipendio = datiTrainer.getStipendioMensile();
 
             if (stipendio < 0) {
                 throw new IllegalStateException(
@@ -692,12 +558,8 @@ public class GestoreContrattiPersonale
             return stipendio;
         }
 
-        if (TIPO_A_LEZIONE.equalsIgnoreCase(
-                tipoRetribuzione)) {
-
-            Double compenso =
-                    datiTrainer
-                            .getCompensoPerLezione();
+        if (TIPO_A_LEZIONE.equalsIgnoreCase(tipoRetribuzione)) {
+            Double compenso = datiTrainer.getCompensoPerLezione();
 
             if (compenso == null) {
                 throw new IllegalStateException(
@@ -734,11 +596,9 @@ public class GestoreContrattiPersonale
             throws TrainerNonValidoException {
 
         if (!trainerDaLicenziare.isAttivo()
-                || !STATO_CONTRATTO_ATTIVO
-                        .equalsIgnoreCase(
-                                trainerDaLicenziare
-                                        .getStatoContratto()
-                        )) {
+                || !STATO_CONTRATTO_ATTIVO.equalsIgnoreCase(
+                        trainerDaLicenziare.getStatoContratto()
+                )) {
 
             throw new TrainerNonValidoException(
                     "Il Personal Trainer risulta "
@@ -760,30 +620,23 @@ public class GestoreContrattiPersonale
             String nomeCampo)
             throws TrainerNonValidoException {
 
-        String valoreNormalizzato =
-                normalizzaCampoObbligatorio(
-                        idTrainer,
-                        nomeCampo
-                );
+        String valoreNormalizzato = normalizzaCampoObbligatorio(
+                idTrainer,
+                nomeCampo
+        );
 
-        if (!valoreNormalizzato.matches(
-                "\\d+")) {
-
+        if (!valoreNormalizzato.matches("\\d+")) {
             throw new TrainerNonValidoException(
                     nomeCampo + " non valido."
             );
         }
 
         try {
-            int idNumerico =
-                    Integer.parseInt(
-                            valoreNormalizzato
-                    );
+            int idNumerico = Integer.parseInt(valoreNormalizzato);
 
             if (idNumerico <= 0) {
                 throw new TrainerNonValidoException(
-                        nomeCampo
-                        + " deve essere maggiore di zero."
+                        nomeCampo + " deve essere maggiore di zero."
                 );
             }
 
@@ -804,15 +657,13 @@ public class GestoreContrattiPersonale
      * @return email normalizzata
      * @throws TrainerNonValidoException se l'email non è valida
      */
-    private String normalizzaEmailObbligatoria(
-            String email)
+    private String normalizzaEmailObbligatoria(String email)
             throws TrainerNonValidoException {
 
-        String emailNormalizzata =
-                normalizzaCampoObbligatorio(
-                        email,
-                        "Email del Personal Trainer"
-                ).toLowerCase();
+        String emailNormalizzata = normalizzaCampoObbligatorio(
+                email,
+                "Email del Personal Trainer"
+        ).toLowerCase();
 
         if (!emailNormalizzata.matches(
                 "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
@@ -839,9 +690,7 @@ public class GestoreContrattiPersonale
             String nomeCampo)
             throws TrainerNonValidoException {
 
-        if (valore == null
-                || valore.trim().isEmpty()) {
-
+        if (valore == null || valore.trim().isEmpty()) {
             throw new TrainerNonValidoException(
                     nomeCampo + " non indicato."
             );
@@ -874,17 +723,12 @@ public class GestoreContrattiPersonale
                     + System.nanoTime();
         }
 
-        long hash =
-                Math.abs(
-                        (long) base.hashCode()
-                );
+        long hash = Math.abs((long) base.hashCode());
 
-        String numeri =
-                String.format(
-                        "%014d",
-                        hash
-                        % 100000000000000L
-                );
+        String numeri = String.format(
+                "%014d",
+                hash % 100000000000000L
+        );
 
         return "PT" + numeri;
     }
@@ -900,9 +744,7 @@ public class GestoreContrattiPersonale
             PersonalTrainer trainerDaLicenziare,
             PersonalTrainer possibileSostituto) {
 
-        if (trainerDaLicenziare == null
-                || possibileSostituto == null) {
-
+        if (trainerDaLicenziare == null || possibileSostituto == null) {
             return false;
         }
 
@@ -910,29 +752,22 @@ public class GestoreContrattiPersonale
             return false;
         }
 
-        if (!STATO_CONTRATTO_ATTIVO
-                .equalsIgnoreCase(
-                        possibileSostituto
-                                .getStatoContratto()
-                )) {
+        if (!STATO_CONTRATTO_ATTIVO.equalsIgnoreCase(
+                possibileSostituto.getStatoContratto())) {
 
             return false;
         }
 
         if (stessoTesto(
-                trainerDaLicenziare
-                        .getIdTrainer(),
-                possibileSostituto
-                        .getIdTrainer())) {
+                trainerDaLicenziare.getIdTrainer(),
+                possibileSostituto.getIdTrainer())) {
 
             return false;
         }
 
         return stessoTesto(
-                trainerDaLicenziare
-                        .getSpecializzazione(),
-                possibileSostituto
-                        .getSpecializzazione()
+                trainerDaLicenziare.getSpecializzazione(),
+                possibileSostituto.getSpecializzazione()
         );
     }
 
@@ -943,17 +778,11 @@ public class GestoreContrattiPersonale
      * @param secondo secondo valore
      * @return {@code true} se i valori sono equivalenti
      */
-    private boolean stessoTesto(
-            String primo,
-            String secondo) {
-
+    private boolean stessoTesto(String primo, String secondo) {
         if (primo == null || secondo == null) {
             return false;
         }
 
-        return primo.trim()
-                .equalsIgnoreCase(
-                        secondo.trim()
-                );
+        return primo.trim().equalsIgnoreCase(secondo.trim());
     }
 }

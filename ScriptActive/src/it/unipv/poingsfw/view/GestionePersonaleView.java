@@ -46,30 +46,14 @@ public class GestionePersonaleView extends JFrame {
     private static final String TESTO_NESSUN_SOSTITUTO =
             "Nessun sostituto compatibile";
 
-    private static final Color COLORE_SFONDO =
-            new Color(245, 245, 247);
-
-    private static final Color COLORE_CARD =
-            Color.WHITE;
-
-    private static final Color COLORE_TESTO =
-            new Color(28, 28, 30);
-
-    private static final Color COLORE_TESTO_SECONDARIO =
-            new Color(90, 90, 95);
-
-    private static final Color COLORE_BORDO =
-            new Color(215, 215, 220);
-
-    private static final Color COLORE_HEADER_TABELLA =
-            new Color(248, 248, 250);
-
-    private static final Color COLORE_RIGA_ALTERNATA =
-            new Color(250, 250, 252);
-
-    private static final Color COLORE_SELEZIONE =
-            new Color(210, 232, 255);
-
+    private static final Color COLORE_SFONDO = new Color(245, 245, 247);
+    private static final Color COLORE_CARD = Color.WHITE;
+    private static final Color COLORE_TESTO = new Color(28, 28, 30);
+    private static final Color COLORE_TESTO_SECONDARIO = new Color(90, 90, 95);
+    private static final Color COLORE_BORDO = new Color(215, 215, 220);
+    private static final Color COLORE_HEADER_TABELLA = new Color(248, 248, 250);
+    private static final Color COLORE_RIGA_ALTERNATA = new Color(250, 250, 252);
+    private static final Color COLORE_SELEZIONE = new Color(210, 232, 255);
     private static final Color COLORE_CAMPO_NON_MODIFICABILE =
             new Color(238, 238, 240);
 
@@ -174,13 +158,9 @@ public class GestionePersonaleView extends JFrame {
 
         JPanel contenuto = new JPanel(new GridBagLayout());
         contenuto.setBackground(COLORE_SFONDO);
-        contenuto.setBorder(
-                new EmptyBorder(0, 24, 22, 24)
-        );
+        contenuto.setBorder(new EmptyBorder(0, 24, 22, 24));
 
-        GridBagConstraints gbcTabella =
-                new GridBagConstraints();
-
+        GridBagConstraints gbcTabella = new GridBagConstraints();
         gbcTabella.gridx = 0;
         gbcTabella.gridy = 0;
         gbcTabella.fill = GridBagConstraints.BOTH;
@@ -190,9 +170,7 @@ public class GestionePersonaleView extends JFrame {
 
         contenuto.add(creaCardTabella(), gbcTabella);
 
-        GridBagConstraints gbcOperazioni =
-                new GridBagConstraints();
-
+        GridBagConstraints gbcOperazioni = new GridBagConstraints();
         gbcOperazioni.gridx = 0;
         gbcOperazioni.gridy = 1;
         gbcOperazioni.fill = GridBagConstraints.HORIZONTAL;
@@ -200,14 +178,9 @@ public class GestionePersonaleView extends JFrame {
         gbcOperazioni.weighty = 0.0;
         gbcOperazioni.insets = new Insets(0, 0, 10, 0);
 
-        contenuto.add(
-                creaPannelloOperazioni(),
-                gbcOperazioni
-        );
+        contenuto.add(creaPannelloOperazioni(), gbcOperazioni);
 
-        GridBagConstraints gbcBarra =
-                new GridBagConstraints();
-
+        GridBagConstraints gbcBarra = new GridBagConstraints();
         gbcBarra.gridx = 0;
         gbcBarra.gridy = 2;
         gbcBarra.fill = GridBagConstraints.HORIZONTAL;
@@ -215,7 +188,6 @@ public class GestionePersonaleView extends JFrame {
         gbcBarra.weighty = 0.0;
 
         contenuto.add(creaBarraAzioni(), gbcBarra);
-
         add(contenuto, BorderLayout.CENTER);
     }
 
@@ -227,13 +199,9 @@ public class GestionePersonaleView extends JFrame {
     private JPanel creaHeader() {
         JPanel header = new JPanel(new BorderLayout());
         header.setBackground(COLORE_SFONDO);
-        header.setBorder(
-                new EmptyBorder(22, 24, 12, 24)
-        );
+        header.setBorder(new EmptyBorder(22, 24, 12, 24));
 
-        JLabel titolo =
-                new JLabel("Gestione Personale");
-
+        JLabel titolo = new JLabel("Gestione Personale");
         titolo.setFont(FONT_TITOLO);
         titolo.setForeground(COLORE_TESTO);
 
@@ -243,19 +211,14 @@ public class GestionePersonaleView extends JFrame {
         );
 
         sottotitolo.setFont(FONT_SOTTOTITOLO);
-        sottotitolo.setForeground(
-                COLORE_TESTO_SECONDARIO
-        );
+        sottotitolo.setForeground(COLORE_TESTO_SECONDARIO);
 
-        JPanel testi =
-                new JPanel(new BorderLayout(0, 4));
-
+        JPanel testi = new JPanel(new BorderLayout(0, 4));
         testi.setBackground(COLORE_SFONDO);
         testi.add(titolo, BorderLayout.NORTH);
         testi.add(sottotitolo, BorderLayout.CENTER);
 
         header.add(testi, BorderLayout.CENTER);
-
         return header;
     }
 
@@ -265,30 +228,19 @@ public class GestionePersonaleView extends JFrame {
      * @return pannello della tabella
      */
     private JPanel creaCardTabella() {
-        JPanel card =
-                creaCard("Elenco Personal Trainer");
+        JPanel card = creaCard("Elenco Personal Trainer");
 
         creaTabella();
 
-        JScrollPane scrollPane =
-                new JScrollPane(tabellaPT);
-
+        JScrollPane scrollPane = new JScrollPane(tabellaPT);
         scrollPane.setBorder(
-                BorderFactory.createLineBorder(
-                        COLORE_BORDO
-                )
+                BorderFactory.createLineBorder(COLORE_BORDO)
         );
 
-        scrollPane.getViewport().setBackground(
-                Color.WHITE
-        );
-
-        scrollPane.setPreferredSize(
-                new Dimension(900, 260)
-        );
+        scrollPane.getViewport().setBackground(Color.WHITE);
+        scrollPane.setPreferredSize(new Dimension(900, 260));
 
         card.add(scrollPane, BorderLayout.CENTER);
-
         return card;
     }
 
@@ -305,20 +257,15 @@ public class GestionePersonaleView extends JFrame {
                 "Attivo"
         };
 
-        modelloTabella =
-                new DefaultTableModel(colonne, 0) {
+        modelloTabella = new DefaultTableModel(colonne, 0) {
 
-                    @Override
-                    public boolean isCellEditable(
-                            int row,
-                            int column) {
-
-                        return false;
-                    }
-                };
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
 
         tabellaPT = new JTable(modelloTabella);
-
         configuraTabella();
     }
 
@@ -329,37 +276,18 @@ public class GestionePersonaleView extends JFrame {
         tabellaPT.setFont(FONT_BASE);
         tabellaPT.setForeground(COLORE_TESTO);
         tabellaPT.setRowHeight(32);
-
-        tabellaPT.setSelectionMode(
-                ListSelectionModel.SINGLE_SELECTION
-        );
-
+        tabellaPT.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         tabellaPT.setShowGrid(false);
-
-        tabellaPT.setIntercellSpacing(
-                new Dimension(0, 0)
-        );
-
+        tabellaPT.setIntercellSpacing(new Dimension(0, 0));
         tabellaPT.setFillsViewportHeight(true);
+        tabellaPT.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 
-        tabellaPT.setAutoResizeMode(
-                JTable.AUTO_RESIZE_ALL_COLUMNS
-        );
-
-        JTableHeader header =
-                tabellaPT.getTableHeader();
-
+        JTableHeader header = tabellaPT.getTableHeader();
         header.setFont(FONT_SEZIONE);
         header.setForeground(COLORE_TESTO);
         header.setBackground(COLORE_HEADER_TABELLA);
         header.setReorderingAllowed(false);
-
-        header.setPreferredSize(
-                new Dimension(
-                        header.getWidth(),
-                        34
-                )
-        );
+        header.setPreferredSize(new Dimension(header.getWidth(), 34));
 
         tabellaPT.setDefaultRenderer(
                 Object.class,
@@ -385,13 +313,8 @@ public class GestionePersonaleView extends JFrame {
                                 );
 
                         if (isSelected) {
-                            componente.setBackground(
-                                    COLORE_SELEZIONE
-                            );
-
-                            componente.setForeground(
-                                    COLORE_TESTO
-                            );
+                            componente.setBackground(COLORE_SELEZIONE);
+                            componente.setForeground(COLORE_TESTO);
 
                         } else {
                             componente.setBackground(
@@ -400,48 +323,21 @@ public class GestionePersonaleView extends JFrame {
                                             : COLORE_RIGA_ALTERNATA
                             );
 
-                            componente.setForeground(
-                                    COLORE_TESTO
-                            );
+                            componente.setForeground(COLORE_TESTO);
                         }
 
-                        setBorder(
-                                new EmptyBorder(
-                                        0,
-                                        10,
-                                        0,
-                                        10
-                                )
-                        );
-
+                        setBorder(new EmptyBorder(0, 10, 0, 10));
                         return componente;
                     }
                 }
         );
 
-        tabellaPT.getColumnModel()
-                .getColumn(0)
-                .setPreferredWidth(90);
-
-        tabellaPT.getColumnModel()
-                .getColumn(1)
-                .setPreferredWidth(180);
-
-        tabellaPT.getColumnModel()
-                .getColumn(2)
-                .setPreferredWidth(260);
-
-        tabellaPT.getColumnModel()
-                .getColumn(3)
-                .setPreferredWidth(160);
-
-        tabellaPT.getColumnModel()
-                .getColumn(4)
-                .setPreferredWidth(140);
-
-        tabellaPT.getColumnModel()
-                .getColumn(5)
-                .setPreferredWidth(80);
+        tabellaPT.getColumnModel().getColumn(0).setPreferredWidth(90);
+        tabellaPT.getColumnModel().getColumn(1).setPreferredWidth(180);
+        tabellaPT.getColumnModel().getColumn(2).setPreferredWidth(260);
+        tabellaPT.getColumnModel().getColumn(3).setPreferredWidth(160);
+        tabellaPT.getColumnModel().getColumn(4).setPreferredWidth(140);
+        tabellaPT.getColumnModel().getColumn(5).setPreferredWidth(80);
     }
 
     /**
@@ -450,43 +346,27 @@ public class GestionePersonaleView extends JFrame {
      * @return contenitore delle operazioni
      */
     private JPanel creaPannelloOperazioni() {
-        JPanel contenitore =
-                new JPanel(new GridBagLayout());
-
+        JPanel contenitore = new JPanel(new GridBagLayout());
         contenitore.setOpaque(false);
 
-        GridBagConstraints gbc =
-                new GridBagConstraints();
-
+        GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridy = 0;
         gbc.fill = GridBagConstraints.BOTH;
         gbc.weightx = 1.0;
         gbc.weighty = 0.0;
 
-        JPanel cardAssunzione =
-                creaCard("Assunzione Personal Trainer");
-
-        cardAssunzione.add(
-                creaFormAssunzione(),
-                BorderLayout.CENTER
-        );
+        JPanel cardAssunzione = creaCard("Assunzione Personal Trainer");
+        cardAssunzione.add(creaFormAssunzione(), BorderLayout.CENTER);
 
         gbc.gridx = 0;
         gbc.insets = new Insets(0, 0, 0, 12);
-
         contenitore.add(cardAssunzione, gbc);
 
-        JPanel cardLicenziamento =
-                creaCard("Licenziamento e sostituzione");
-
-        cardLicenziamento.add(
-                creaFormLicenziamento(),
-                BorderLayout.CENTER
-        );
+        JPanel cardLicenziamento = creaCard("Licenziamento e sostituzione");
+        cardLicenziamento.add(creaFormLicenziamento(), BorderLayout.CENTER);
 
         gbc.gridx = 1;
         gbc.insets = new Insets(0, 12, 0, 0);
-
         contenitore.add(cardLicenziamento, gbc);
 
         return contenitore;
@@ -498,9 +378,7 @@ public class GestionePersonaleView extends JFrame {
      * @return pannello del form
      */
     private JPanel creaFormAssunzione() {
-        JPanel form =
-                new JPanel(new GridBagLayout());
-
+        JPanel form = new JPanel(new GridBagLayout());
         form.setOpaque(false);
 
         txtNome = creaCampoTesto();
@@ -510,51 +388,17 @@ public class GestionePersonaleView extends JFrame {
         txtIdTrainer = creaCampoTesto();
         txtIdTrainer.setText(TESTO_ID_AUTOMATICO);
         txtIdTrainer.setEditable(false);
-
-        txtIdTrainer.setBackground(
-                COLORE_CAMPO_NON_MODIFICABILE
-        );
+        txtIdTrainer.setBackground(COLORE_CAMPO_NON_MODIFICABILE);
 
         txtSpecializzazione = creaCampoTesto();
         txtImportoRetribuzione = creaCampoTesto();
-
         comboTipoRetribuzione = creaComboBox();
 
-        aggiungiRigaForm(
-                form,
-                0,
-                "Nome",
-                txtNome
-        );
-
-        aggiungiRigaForm(
-                form,
-                1,
-                "Cognome",
-                txtCognome
-        );
-
-        aggiungiRigaForm(
-                form,
-                2,
-                "Email",
-                txtEmail
-        );
-
-        aggiungiRigaForm(
-                form,
-                3,
-                "ID Trainer",
-                txtIdTrainer
-        );
-
-        aggiungiRigaForm(
-                form,
-                4,
-                "Specializzazione",
-                txtSpecializzazione
-        );
-
+        aggiungiRigaForm(form, 0, "Nome", txtNome);
+        aggiungiRigaForm(form, 1, "Cognome", txtCognome);
+        aggiungiRigaForm(form, 2, "Email", txtEmail);
+        aggiungiRigaForm(form, 3, "ID Trainer", txtIdTrainer);
+        aggiungiRigaForm(form, 4, "Specializzazione", txtSpecializzazione);
         aggiungiRigaForm(
                 form,
                 5,
@@ -571,19 +415,13 @@ public class GestionePersonaleView extends JFrame {
 
         btnAssumi = creaBottone("Assumi PT");
 
-        GridBagConstraints gbcBottone =
-                new GridBagConstraints();
-
+        GridBagConstraints gbcBottone = new GridBagConstraints();
         gbcBottone.gridx = 1;
         gbcBottone.gridy = 7;
-        gbcBottone.fill =
-                GridBagConstraints.HORIZONTAL;
-
-        gbcBottone.insets =
-                new Insets(10, 8, 0, 0);
+        gbcBottone.fill = GridBagConstraints.HORIZONTAL;
+        gbcBottone.insets = new Insets(10, 8, 0, 0);
 
         form.add(btnAssumi, gbcBottone);
-
         return form;
     }
 
@@ -593,23 +431,15 @@ public class GestionePersonaleView extends JFrame {
      * @return pannello del form
      */
     private JPanel creaFormLicenziamento() {
-        JPanel form =
-                new JPanel(new GridBagLayout());
-
+        JPanel form = new JPanel(new GridBagLayout());
         form.setOpaque(false);
 
         txtIdDaLicenziare = creaCampoTesto();
         txtIdDaLicenziare.setEditable(false);
-
-        txtIdDaLicenziare.setBackground(
-                COLORE_CAMPO_NON_MODIFICABILE
-        );
+        txtIdDaLicenziare.setBackground(COLORE_CAMPO_NON_MODIFICABILE);
 
         comboSostituto = creaComboBox();
-
-        comboSostituto.addItem(
-                TESTO_SELEZIONA_SOSTITUTO
-        );
+        comboSostituto.addItem(TESTO_SELEZIONA_SOSTITUTO);
 
         aggiungiRigaForm(
                 form,
@@ -632,68 +462,38 @@ public class GestionePersonaleView extends JFrame {
         );
 
         nota.setFont(FONT_SOTTOTITOLO);
-        nota.setForeground(
-                COLORE_TESTO_SECONDARIO
-        );
+        nota.setForeground(COLORE_TESTO_SECONDARIO);
 
-        GridBagConstraints gbcNota =
-                new GridBagConstraints();
-
+        GridBagConstraints gbcNota = new GridBagConstraints();
         gbcNota.gridx = 0;
         gbcNota.gridy = 2;
         gbcNota.gridwidth = 2;
-        gbcNota.fill =
-                GridBagConstraints.HORIZONTAL;
-
-        gbcNota.insets =
-                new Insets(8, 0, 6, 0);
+        gbcNota.fill = GridBagConstraints.HORIZONTAL;
+        gbcNota.insets = new Insets(8, 0, 6, 0);
 
         form.add(nota, gbcNota);
 
         btnLicenziaConSostituto =
-                creaBottone(
-                        "Licenzia con sostituto"
-                );
+                creaBottone("Licenzia con sostituto");
 
-        GridBagConstraints gbcConSostituto =
-                new GridBagConstraints();
-
+        GridBagConstraints gbcConSostituto = new GridBagConstraints();
         gbcConSostituto.gridx = 1;
         gbcConSostituto.gridy = 3;
+        gbcConSostituto.fill = GridBagConstraints.HORIZONTAL;
+        gbcConSostituto.insets = new Insets(10, 8, 0, 0);
 
-        gbcConSostituto.fill =
-                GridBagConstraints.HORIZONTAL;
-
-        gbcConSostituto.insets =
-                new Insets(10, 8, 0, 0);
-
-        form.add(
-                btnLicenziaConSostituto,
-                gbcConSostituto
-        );
+        form.add(btnLicenziaConSostituto, gbcConSostituto);
 
         btnLicenziaSenzaSostituto =
-                creaBottone(
-                        "Licenzia senza sostituto"
-                );
+                creaBottone("Licenzia senza sostituto");
 
-        GridBagConstraints gbcSenzaSostituto =
-                new GridBagConstraints();
-
+        GridBagConstraints gbcSenzaSostituto = new GridBagConstraints();
         gbcSenzaSostituto.gridx = 1;
         gbcSenzaSostituto.gridy = 4;
+        gbcSenzaSostituto.fill = GridBagConstraints.HORIZONTAL;
+        gbcSenzaSostituto.insets = new Insets(8, 8, 0, 0);
 
-        gbcSenzaSostituto.fill =
-                GridBagConstraints.HORIZONTAL;
-
-        gbcSenzaSostituto.insets =
-                new Insets(8, 8, 0, 0);
-
-        form.add(
-                btnLicenziaSenzaSostituto,
-                gbcSenzaSostituto
-        );
-
+        form.add(btnLicenziaSenzaSostituto, gbcSenzaSostituto);
         return form;
     }
 
@@ -703,33 +503,21 @@ public class GestionePersonaleView extends JFrame {
      * @return barra delle azioni
      */
     private JPanel creaBarraAzioni() {
-        JPanel barra =
-                new JPanel(new BorderLayout());
-
+        JPanel barra = new JPanel(new BorderLayout());
         barra.setOpaque(false);
 
         lblStato = new JLabel("Pronto.");
         lblStato.setFont(FONT_SOTTOTITOLO);
-        lblStato.setForeground(
-                COLORE_TESTO_SECONDARIO
-        );
+        lblStato.setForeground(COLORE_TESTO_SECONDARIO);
 
-        JPanel pulsanti =
-                new JPanel(
-                        new FlowLayout(
-                                FlowLayout.RIGHT,
-                                10,
-                                0
-                        )
-                );
+        JPanel pulsanti = new JPanel(
+                new FlowLayout(FlowLayout.RIGHT, 10, 0)
+        );
 
         pulsanti.setOpaque(false);
 
-        btnAggiorna =
-                creaBottone("Aggiorna elenco");
-
-        btnCalcolaRetribuzioni =
-                creaBottone("Calcola retribuzioni");
+        btnAggiorna = creaBottone("Aggiorna elenco");
+        btnCalcolaRetribuzioni = creaBottone("Calcola retribuzioni");
 
         pulsanti.add(btnAggiorna);
         pulsanti.add(btnCalcolaRetribuzioni);
@@ -747,33 +535,20 @@ public class GestionePersonaleView extends JFrame {
      * @return pannello configurato
      */
     private JPanel creaCard(String titoloSezione) {
-        JPanel card =
-                new JPanel(new BorderLayout(0, 12));
-
+        JPanel card = new JPanel(new BorderLayout(0, 12));
         card.setBackground(COLORE_CARD);
-
         card.setBorder(
                 BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(
-                                COLORE_BORDO
-                        ),
-                        new EmptyBorder(
-                                16,
-                                18,
-                                18,
-                                18
-                        )
+                        BorderFactory.createLineBorder(COLORE_BORDO),
+                        new EmptyBorder(16, 18, 18, 18)
                 )
         );
 
-        JLabel titolo =
-                new JLabel(titoloSezione);
-
+        JLabel titolo = new JLabel(titoloSezione);
         titolo.setFont(FONT_SEZIONE);
         titolo.setForeground(COLORE_TESTO);
 
         card.add(titolo, BorderLayout.NORTH);
-
         return card;
     }
 
@@ -787,22 +562,11 @@ public class GestionePersonaleView extends JFrame {
 
         campo.setFont(FONT_BASE);
         campo.setForeground(COLORE_TESTO);
-
-        campo.setPreferredSize(
-                new Dimension(250, 32)
-        );
-
+        campo.setPreferredSize(new Dimension(250, 32));
         campo.setBorder(
                 BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(
-                                COLORE_BORDO
-                        ),
-                        new EmptyBorder(
-                                5,
-                                9,
-                                5,
-                                9
-                        )
+                        BorderFactory.createLineBorder(COLORE_BORDO),
+                        new EmptyBorder(5, 9, 5, 9)
                 )
         );
 
@@ -815,16 +579,12 @@ public class GestionePersonaleView extends JFrame {
      * @return combo box configurata
      */
     private JComboBox<String> creaComboBox() {
-        JComboBox<String> combo =
-                new JComboBox<>();
+        JComboBox<String> combo = new JComboBox<>();
 
         combo.setFont(FONT_BASE);
         combo.setForeground(COLORE_TESTO);
         combo.setBackground(Color.WHITE);
-
-        combo.setPreferredSize(
-                new Dimension(250, 32)
-        );
+        combo.setPreferredSize(new Dimension(250, 32));
 
         return combo;
     }
@@ -836,15 +596,11 @@ public class GestionePersonaleView extends JFrame {
      * @return pulsante configurato
      */
     private JButton creaBottone(String testo) {
-        JButton bottone =
-                new JButton(testo);
+        JButton bottone = new JButton(testo);
 
         bottone.setFont(FONT_BOTTONE);
         bottone.setFocusPainted(false);
-
-        bottone.setPreferredSize(
-                new Dimension(190, 34)
-        );
+        bottone.setPreferredSize(new Dimension(190, 34));
 
         return bottone;
     }
@@ -863,36 +619,23 @@ public class GestionePersonaleView extends JFrame {
             String testoLabel,
             Component componenteInput) {
 
-        JLabel label =
-                new JLabel(testoLabel);
-
+        JLabel label = new JLabel(testoLabel);
         label.setFont(FONT_BASE);
         label.setForeground(COLORE_TESTO);
+        label.setHorizontalAlignment(SwingConstants.LEFT);
 
-        label.setHorizontalAlignment(
-                SwingConstants.LEFT
-        );
-
-        GridBagConstraints gbcLabel =
-                new GridBagConstraints();
-
+        GridBagConstraints gbcLabel = new GridBagConstraints();
         gbcLabel.gridx = 0;
         gbcLabel.gridy = riga;
         gbcLabel.anchor = GridBagConstraints.WEST;
-        gbcLabel.insets =
-                new Insets(5, 0, 5, 8);
+        gbcLabel.insets = new Insets(5, 0, 5, 8);
 
-        GridBagConstraints gbcInput =
-                new GridBagConstraints();
-
+        GridBagConstraints gbcInput = new GridBagConstraints();
         gbcInput.gridx = 1;
         gbcInput.gridy = riga;
-        gbcInput.fill =
-                GridBagConstraints.HORIZONTAL;
-
+        gbcInput.fill = GridBagConstraints.HORIZONTAL;
         gbcInput.weightx = 1.0;
-        gbcInput.insets =
-                new Insets(5, 8, 5, 0);
+        gbcInput.insets = new Insets(5, 8, 5, 0);
 
         form.add(label, gbcLabel);
         form.add(componenteInput, gbcInput);
@@ -960,8 +703,7 @@ public class GestionePersonaleView extends JFrame {
     }
 
     public String getTipoRetribuzioneSelezionato() {
-        Object selezione =
-                comboTipoRetribuzione.getSelectedItem();
+        Object selezione = comboTipoRetribuzione.getSelectedItem();
 
         if (selezione == null) {
             return null;
@@ -980,16 +722,13 @@ public class GestionePersonaleView extends JFrame {
      * @return indice nel modello grafico, oppure -1
      */
     public int getIndiceTrainerSelezionato() {
-        int indiceVista =
-                tabellaPT.getSelectedRow();
+        int indiceVista = tabellaPT.getSelectedRow();
 
         if (indiceVista < 0) {
             return -1;
         }
 
-        return tabellaPT.convertRowIndexToModel(
-                indiceVista
-        );
+        return tabellaPT.convertRowIndexToModel(indiceVista);
     }
 
     /**
@@ -999,15 +738,11 @@ public class GestionePersonaleView extends JFrame {
      * @return indice dell'opzione reale, oppure -1
      */
     public int getIndiceSostitutoSelezionato() {
-        int indiceCombo =
-                comboSostituto.getSelectedIndex();
-
-        int indiceSostituto =
-                indiceCombo - 1;
+        int indiceCombo = comboSostituto.getSelectedIndex();
+        int indiceSostituto = indiceCombo - 1;
 
         if (indiceSostituto < 0
-                || indiceSostituto
-                        >= numeroSostitutiVisualizzati) {
+                || indiceSostituto >= numeroSostitutiVisualizzati) {
 
             return -1;
         }
@@ -1044,9 +779,7 @@ public class GestionePersonaleView extends JFrame {
      *
      * @param tipiRetribuzione testi da visualizzare
      */
-    public void mostraTipiRetribuzione(
-            String[] tipiRetribuzione) {
-
+    public void mostraTipiRetribuzione(String[] tipiRetribuzione) {
         comboTipoRetribuzione.removeAllItems();
 
         if (tipiRetribuzione == null) {
@@ -1071,21 +804,13 @@ public class GestionePersonaleView extends JFrame {
      */
     public void mostraSostituti(String[] descrizioni) {
         comboSostituto.removeAllItems();
-
-        comboSostituto.addItem(
-                TESTO_SELEZIONA_SOSTITUTO
-        );
+        comboSostituto.addItem(TESTO_SELEZIONA_SOSTITUTO);
 
         numeroSostitutiVisualizzati =
-                descrizioni == null
-                        ? 0
-                        : descrizioni.length;
+                descrizioni == null ? 0 : descrizioni.length;
 
         if (numeroSostitutiVisualizzati == 0) {
-            comboSostituto.addItem(
-                    TESTO_NESSUN_SOSTITUTO
-            );
-
+            comboSostituto.addItem(TESTO_NESSUN_SOSTITUTO);
             return;
         }
 
@@ -1101,13 +826,9 @@ public class GestionePersonaleView extends JFrame {
      *
      * @param idTrainer testo da visualizzare
      */
-    public void mostraIdTrainerDaLicenziare(
-            String idTrainer) {
-
+    public void mostraIdTrainerDaLicenziare(String idTrainer) {
         txtIdDaLicenziare.setText(
-                idTrainer == null
-                        ? ""
-                        : idTrainer
+                idTrainer == null ? "" : idTrainer
         );
     }
 
@@ -1118,9 +839,7 @@ public class GestionePersonaleView extends JFrame {
      */
     public void mostraStato(String messaggio) {
         lblStato.setText(
-                messaggio == null
-                        ? ""
-                        : messaggio
+                messaggio == null ? "" : messaggio
         );
     }
 
@@ -1161,9 +880,7 @@ public class GestionePersonaleView extends JFrame {
      *
      * @param totale valore da visualizzare
      */
-    public void mostraTotaleRetribuzioni(
-            double totale) {
-
+    public void mostraTotaleRetribuzioni(double totale) {
         mostraSuccesso(
                 String.format(
                         "Totale retribuzioni mensili: %.2f €",
@@ -1198,9 +915,6 @@ public class GestionePersonaleView extends JFrame {
         numeroSostitutiVisualizzati = 0;
 
         comboSostituto.removeAllItems();
-
-        comboSostituto.addItem(
-                TESTO_SELEZIONA_SOSTITUTO
-        );
+        comboSostituto.addItem(TESTO_SELEZIONA_SOSTITUTO);
     }
 }

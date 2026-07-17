@@ -26,9 +26,7 @@ public final class GestorePersonale {
     };
 
     private final GestionePersonaleView view;
-
-    private final ServizioContrattiPersonale
-            servizioContratti;
+    private final ServizioContrattiPersonale servizioContratti;
 
     /*
      * Dati attualmente rappresentati nella schermata.
@@ -36,11 +34,8 @@ public final class GestorePersonale {
      * Il Controller li conserva per associare gli indici grafici restituiti
      * dalla View ai corrispondenti identificativi applicativi.
      */
-    private List<DatiVisualizzazioneTrainer>
-            trainerVisualizzati = List.of();
-
-    private List<DatiVisualizzazioneTrainer>
-            sostitutiVisualizzati = List.of();
+    private List<DatiVisualizzazioneTrainer> trainerVisualizzati = List.of();
+    private List<DatiVisualizzazioneTrainer> sostitutiVisualizzati = List.of();
 
     /**
      * Crea il Controller e registra gli eventi della View.
@@ -59,11 +54,10 @@ public final class GestorePersonale {
                 "La View non può essere null."
         );
 
-        this.servizioContratti =
-                Objects.requireNonNull(
-                        servizioContratti,
-                        "Il Service non può essere null."
-                );
+        this.servizioContratti = Objects.requireNonNull(
+                servizioContratti,
+                "Il Service non può essere null."
+        );
 
         registraListener();
     }
@@ -72,10 +66,7 @@ public final class GestorePersonale {
      * Inizializza i dati della schermata.
      */
     public void inizializza() {
-        view.mostraTipiRetribuzione(
-                TIPI_RETRIBUZIONE.clone()
-        );
-
+        view.mostraTipiRetribuzione(TIPI_RETRIBUZIONE.clone());
         aggiornaElencoPersonalTrainer();
     }
 
@@ -91,32 +82,23 @@ public final class GestorePersonale {
                 evento -> gestisciAssunzione()
         );
 
-        view.getBtnLicenziaSenzaSostituto()
-                .addActionListener(
-                        evento ->
-                                gestisciLicenziamentoSenzaSostituto()
-                );
+        view.getBtnLicenziaSenzaSostituto().addActionListener(
+                evento -> gestisciLicenziamentoSenzaSostituto()
+        );
 
-        view.getBtnLicenziaConSostituto()
-                .addActionListener(
-                        evento ->
-                                gestisciLicenziamentoConSostituto()
-                );
+        view.getBtnLicenziaConSostituto().addActionListener(
+                evento -> gestisciLicenziamentoConSostituto()
+        );
 
-        view.getBtnCalcolaRetribuzioni()
-                .addActionListener(
-                        evento ->
-                                gestisciCalcoloRetribuzioni()
-                );
+        view.getBtnCalcolaRetribuzioni().addActionListener(
+                evento -> gestisciCalcoloRetribuzioni()
+        );
 
-        view.getTabellaPT()
-                .getSelectionModel()
-                .addListSelectionListener(evento -> {
-
-                    if (!evento.getValueIsAdjusting()) {
-                        gestisciSelezioneTrainer();
-                    }
-                });
+        view.getTabellaPT().getSelectionModel().addListSelectionListener(evento -> {
+            if (!evento.getValueIsAdjusting()) {
+                gestisciSelezioneTrainer();
+            }
+        });
     }
 
     /**
@@ -126,21 +108,17 @@ public final class GestorePersonale {
     private void aggiornaElencoPersonalTrainer() {
         try {
             List<DatiVisualizzazioneTrainer> trainer =
-                    servizioContratti
-                            .getElencoPersonalTrainer();
+                    servizioContratti.getElencoPersonalTrainer();
 
-            trainerVisualizzati =
-                    trainer == null
-                            ? List.of()
-                            : List.copyOf(trainer);
+            trainerVisualizzati = trainer == null
+                    ? List.of()
+                    : List.copyOf(trainer);
 
             sostitutiVisualizzati = List.of();
 
-            Object[][] righe =
-                    GestionePersonaleViewMapper
-                            .creaRigheTrainer(
-                                    trainerVisualizzati
-                            );
+            Object[][] righe = GestionePersonaleViewMapper.creaRigheTrainer(
+                    trainerVisualizzati
+            );
 
             view.mostraRigheTrainer(righe);
             view.mostraSostituti(new String[0]);
@@ -151,13 +129,8 @@ public final class GestorePersonale {
             trainerVisualizzati = List.of();
             sostitutiVisualizzati = List.of();
 
-            view.mostraRigheTrainer(
-                    new Object[0][0]
-            );
-
-            view.mostraSostituti(
-                    new String[0]
-            );
+            view.mostraRigheTrainer(new Object[0][0]);
+            view.mostraSostituti(new String[0]);
 
             view.mostraErrore(
                     "Errore durante il caricamento "
@@ -171,12 +144,9 @@ public final class GestorePersonale {
      */
     private void gestisciAssunzione() {
         try {
-            double importoRetribuzione =
-                    GestionePersonaleViewMapper
-                            .convertiImporto(
-                                    view
-                                            .getImportoRetribuzioneInserito()
-                            );
+            double importoRetribuzione = GestionePersonaleViewMapper.convertiImporto(
+                    view.getImportoRetribuzioneInserito()
+            );
 
             servizioContratti.assumiPersonalTrainer(
                     view.getNomeInserito(),
@@ -188,7 +158,6 @@ public final class GestorePersonale {
             );
 
             view.pulisciFormAssunzione();
-
             aggiornaElencoPersonalTrainer();
 
             view.mostraSuccesso(
@@ -201,9 +170,7 @@ public final class GestorePersonale {
                     + "deve essere numerico."
             );
 
-        } catch (TrainerGiaAssuntoException |
-                 TrainerNonValidoException e) {
-
+        } catch (TrainerGiaAssuntoException | TrainerNonValidoException e) {
             view.mostraErrore(e.getMessage());
 
         } catch (RuntimeException e) {
@@ -218,26 +185,18 @@ public final class GestorePersonale {
      * Coordina la selezione di un trainer nella tabella.
      */
     private void gestisciSelezioneTrainer() {
-        int indiceSelezionato =
-                view.getIndiceTrainerSelezionato();
+        int indiceSelezionato = view.getIndiceTrainerSelezionato();
 
-        String idTrainer =
-                GestionePersonaleViewMapper
-                        .trovaIdTrainer(
-                                trainerVisualizzati,
-                                indiceSelezionato
-                        );
+        String idTrainer = GestionePersonaleViewMapper.trovaIdTrainer(
+                trainerVisualizzati,
+                indiceSelezionato
+        );
 
-        if (idTrainer == null
-                || idTrainer.isBlank()) {
-
+        if (idTrainer == null || idTrainer.isBlank()) {
             return;
         }
 
-        view.mostraIdTrainerDaLicenziare(
-                idTrainer
-        );
-
+        view.mostraIdTrainerDaLicenziare(idTrainer);
         caricaSostitutiCompatibili(idTrainer);
     }
 
@@ -247,49 +206,35 @@ public final class GestorePersonale {
      *
      * @param idTrainerDaLicenziare identificativo del trainer
      */
-    private void caricaSostitutiCompatibili(
-            String idTrainerDaLicenziare) {
-
+    private void caricaSostitutiCompatibili(String idTrainerDaLicenziare) {
         try {
-            List<DatiVisualizzazioneTrainer>
-                    sostituti =
-                            servizioContratti
-                                    .getSostitutiCompatibili(
-                                            idTrainerDaLicenziare
-                                    );
+            List<DatiVisualizzazioneTrainer> sostituti =
+                    servizioContratti.getSostitutiCompatibili(
+                            idTrainerDaLicenziare
+                    );
 
-            sostitutiVisualizzati =
-                    sostituti == null
-                            ? List.of()
-                            : List.copyOf(sostituti);
+            sostitutiVisualizzati = sostituti == null
+                    ? List.of()
+                    : List.copyOf(sostituti);
 
             String[] descrizioni =
-                    GestionePersonaleViewMapper
-                            .creaDescrizioniSostituti(
-                                    sostitutiVisualizzati
-                            );
+                    GestionePersonaleViewMapper.creaDescrizioniSostituti(
+                            sostitutiVisualizzati
+                    );
 
             view.mostraSostituti(descrizioni);
-
-            view.mostraStato(
-                    "Personal Trainer selezionato."
-            );
+            view.mostraStato("Personal Trainer selezionato.");
 
         } catch (TrainerNonValidoException e) {
             sostitutiVisualizzati = List.of();
 
-            view.mostraSostituti(
-                    new String[0]
-            );
-
+            view.mostraSostituti(new String[0]);
             view.mostraErrore(e.getMessage());
 
         } catch (RuntimeException e) {
             sostitutiVisualizzati = List.of();
 
-            view.mostraSostituti(
-                    new String[0]
-            );
+            view.mostraSostituti(new String[0]);
 
             view.mostraErrore(
                     "Errore durante il caricamento "
@@ -303,13 +248,11 @@ public final class GestorePersonale {
      */
     private void gestisciLicenziamentoSenzaSostituto() {
         try {
-            servizioContratti
-                    .licenziaPersonalTrainerSenzaSostituto(
-                            view.getIdTrainerDaLicenziare()
-                    );
+            servizioContratti.licenziaPersonalTrainerSenzaSostituto(
+                    view.getIdTrainerDaLicenziare()
+            );
 
             view.pulisciFormLicenziamento();
-
             aggiornaElencoPersonalTrainer();
 
             view.mostraSuccesso(
@@ -317,9 +260,7 @@ public final class GestorePersonale {
                     + "correttamente senza sostituto."
             );
 
-        } catch (TrainerNonValidoException |
-                 TrainerNonLicenziabileException e) {
-
+        } catch (TrainerNonValidoException | TrainerNonLicenziabileException e) {
             view.mostraErrore(e.getMessage());
 
         } catch (RuntimeException e) {
@@ -335,19 +276,14 @@ public final class GestorePersonale {
      */
     private void gestisciLicenziamentoConSostituto() {
         try {
-            int indiceSostituto =
-                    view.getIndiceSostitutoSelezionato();
+            int indiceSostituto = view.getIndiceSostitutoSelezionato();
 
-            String idSostituto =
-                    GestionePersonaleViewMapper
-                            .trovaIdTrainer(
-                                    sostitutiVisualizzati,
-                                    indiceSostituto
-                            );
+            String idSostituto = GestionePersonaleViewMapper.trovaIdTrainer(
+                    sostitutiVisualizzati,
+                    indiceSostituto
+            );
 
-            if (idSostituto == null
-                    || idSostituto.isBlank()) {
-
+            if (idSostituto == null || idSostituto.isBlank()) {
                 view.mostraErrore(
                         "Selezionare un sostituto valido."
                 );
@@ -355,14 +291,12 @@ public final class GestorePersonale {
                 return;
             }
 
-            servizioContratti
-                    .licenziaPersonalTrainerConSostituto(
-                            view.getIdTrainerDaLicenziare(),
-                            idSostituto
-                    );
+            servizioContratti.licenziaPersonalTrainerConSostituto(
+                    view.getIdTrainerDaLicenziare(),
+                    idSostituto
+            );
 
             view.pulisciFormLicenziamento();
-
             aggiornaElencoPersonalTrainer();
 
             view.mostraSuccesso(
@@ -370,9 +304,7 @@ public final class GestorePersonale {
                     + "correttamente con sostituto."
             );
 
-        } catch (TrainerNonValidoException |
-                 SostitutoNonValidoException e) {
-
+        } catch (TrainerNonValidoException | SostitutoNonValidoException e) {
             view.mostraErrore(e.getMessage());
 
         } catch (RuntimeException e) {
@@ -389,8 +321,7 @@ public final class GestorePersonale {
     private void gestisciCalcoloRetribuzioni() {
         try {
             double totale =
-                    servizioContratti
-                            .calcolaTotaleRetribuzioniMensili();
+                    servizioContratti.calcolaTotaleRetribuzioniMensili();
 
             view.mostraTotaleRetribuzioni(totale);
 
