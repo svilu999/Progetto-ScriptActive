@@ -1,0 +1,75 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unita:
+    name: Test di unità
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ScriptActive
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # Non richiedono né database né display
+      - name: Compila ed esegue i test di unità
+        run: mvn -B test
+
+  integrazione:
+    name: Test di integrazione (MySQL)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ScriptActive
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Crea e popola il database
+        run: mysql --protocol=tcp -h 127.0.0.1 -uroot -proot < database/schemadb.sql
+
+      # Credenziali del database temporaneo creato qui sopra, valide solo per questa esecuzione
+      - name: Configura la connessione
+        run: |
+          cat > src/db.properties <<'PROPERTIES'
+          db.url=jdbc:mysql://127.0.0.1:3306/scriptactive_db
+          db.user=root
+          db.password=root
+          PROPERTIES
+
+      - name: Esegue i test di integrazione e di sistema
+        run: mvn -B test -Pintegrazione

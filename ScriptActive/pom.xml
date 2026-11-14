@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>it.unipv.poingsfw</groupId>
+    <artifactId>scriptactive</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+    <name>ScriptActive</name>
+    <description>Gestionale desktop per una catena di palestre (Java Swing + MySQL)</description>
+
+    <properties>
+        <maven.compiler.release>21</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <junit.version>5.10.2</junit.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>9.7.0</version>
+        </dependency>
+
+        <!-- Il progetto contiene test JUnit 5 e JUnit 4: il motore Vintage esegue i secondi -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <!--
+            Il progetto mantiene la struttura di Eclipse: codice applicativo e test stanno
+            entrambi sotto "src", con i test nel package it.unipv.poingsfw.test. Maven legge la
+            stessa cartella due volte: tutto tranne i test come codice applicativo, solo i
+            test come codice di test.
+        -->
+        <sourceDirectory>src</sourceDirectory>
+        <testSourceDirectory>src</testSourceDirectory>
+
+        <resources>
+            <!-- File di connessione al database, se presente (è escluso dal repository) -->
+            <resource>
+                <directory>src</directory>
+                <includes>
+                    <include>db.properties</include>
+                </includes>
+            </resource>
+        </resources>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <excludes>
+                        <exclude>it/unipv/poingsfw/test/**</exclude>
+                    </excludes>
+                    <testIncludes>
+                        <testInclude>it/unipv/poingsfw/test/**</testInclude>
+                    </testIncludes>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+                <configuration>
+                    <!-- "mvn test" esegue solo i test di unità, che non richiedono il database -->
+                    <includes>
+                        <include>it/unipv/poingsfw/test/unit/**/*Test.java</include>
+                    </includes>
+                    <!-- I test non devono mai aprire finestre -->
+                    <argLine>-Djava.awt.headless=true</argLine>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.1</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>it.unipv.poingsfw.bootstrap.Main</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <!--
+            mvn test -Pintegrazione
+            Esegue i test che usano MySQL reale. Richiede il database creato con
+            database/schemadb.sql e il file src/db.properties.
+        -->
+        <profile>
+            <id>integrazione</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <includes combine.self="override">
+                                <include>it/unipv/poingsfw/test/integration/**/*Test.java</include>
+                                <include>it/unipv/poingsfw/test/system/**/*Test.java</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>

@@ -1,5 +1,7 @@
 # ScriptActive
 
+[![Test](https://github.com/svilu999/Progetto-ScriptActive/actions/workflows/test.yml/badge.svg)](https://github.com/svilu999/Progetto-ScriptActive/actions/workflows/test.yml)
+
 Gestionale desktop per una catena di palestre, sviluppato da cinque studenti per il corso di
 **Programmazione a Oggetti e Ingegneria del Software** dell'Università di Pavia.
 
@@ -91,7 +93,8 @@ indicando file e riga se un package importa uno strato che non deve conoscere.
 
 ## Come eseguirlo
 
-**Requisiti:** JDK 21, MySQL 8, Eclipse (il progetto contiene `.project` e `.classpath`).
+**Requisiti:** JDK 21 e MySQL 8. Per compilare si può usare Eclipse (il progetto contiene
+`.project` e `.classpath`) oppure Maven.
 
 1. Crea e popola il database:
 
@@ -110,8 +113,21 @@ indicando file e riga se un package importa uno strato che non deve conoscere.
 
    `db.properties` è escluso dal repository.
 
-3. Importa la cartella `ScriptActive` in Eclipse (*File → Import → Existing Projects into Workspace*)
-   ed esegui la classe `it.unipv.poingsfw.bootstrap.Main`.
+3. Avvia l'applicazione in uno dei due modi:
+
+   - **Eclipse:** importa la cartella `ScriptActive` (*File → Import → Existing Projects into
+     Workspace*) ed esegui la classe `it.unipv.poingsfw.bootstrap.Main`.
+   - **Maven:** dalla cartella `ScriptActive` compila e poi lancia la classe principale.
+
+     ```bash
+     mvn -DskipTests package dependency:copy-dependencies -DincludeScope=runtime
+     ```
+
+     ```bash
+     java -cp "target/scriptactive-1.0.0.jar:target/dependency/*" it.unipv.poingsfw.bootstrap.Main
+     ```
+
+     Su Windows il separatore del classpath è `;` al posto di `:`.
 
 **Utenti di esempio** (password `1234` per tutti):
 
@@ -124,8 +140,19 @@ indicando file e riga se un package importa uno strato che non deve conoscere.
 
 ## Test
 
-I test sono in `ScriptActive/src/it/unipv/poingsfw/test` e si eseguono da Eclipse con
-*Run As → JUnit Test*.
+I test sono in `ScriptActive/src/it/unipv/poingsfw/test`. Si eseguono da Eclipse con
+*Run As → JUnit Test* oppure con Maven dalla cartella `ScriptActive`:
+
+```bash
+mvn test
+```
+
+```bash
+mvn test -Pintegrazione
+```
+
+Il primo comando esegue i test di unità; il secondo quelli di integrazione e di sistema, e
+richiede il database.
 
 | Package | Che cosa verifica | Che cosa richiede |
 |---|---|---|
@@ -135,6 +162,13 @@ I test sono in `ScriptActive/src/it/unipv/poingsfw/test` e si eseguono da Eclips
 | `test.fake` | Implementazioni in memoria di DAO, viste e navigazione usate dai test | — |
 
 I test di integrazione modificano il database: riesegui `schemadb.sql` dopo averli lanciati.
+
+A ogni push su `main` e a ogni pull request, una GitHub Action
+([`.github/workflows/test.yml`](.github/workflows/test.yml)) esegue entrambe le suite: quella di
+integrazione su un MySQL temporaneo creato per l'occasione.
+
+Il progetto conserva la struttura di Eclipse, con codice e test sotto la stessa cartella `src`:
+il `pom.xml` li distingue in base al package `test`.
 
 ## Storia del progetto
 
@@ -171,5 +205,3 @@ Il progetto è un prototipo didattico. Questi aspetti non sono stati affrontati:
   avviato da `Main`.
 - **Documentazione UML.** I diagrammi in `Documenti` descrivono la versione consegnata all'esame
   e non riportano le classi introdotte con la revisione.
-- **Build.** Il progetto si compila da Eclipse; non c'è ancora un build automatico (Maven o Gradle)
-  né integrazione continua.
