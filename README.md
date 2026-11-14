@@ -2,41 +2,47 @@
 
 [![Test](https://github.com/svilu999/Progetto-ScriptActive/actions/workflows/test.yml/badge.svg)](https://github.com/svilu999/Progetto-ScriptActive/actions/workflows/test.yml)
 
-Gestionale desktop per una catena di palestre, sviluppato da cinque studenti per il corso di
-**Programmazione a Oggetti e Ingegneria del Software** dell'Università di Pavia.
+**English** · [Italiano](README.it.md)
 
-L'applicazione è scritta in **Java 21** con interfaccia **Swing** e persistenza su **MySQL** via JDBC.
-Non usa framework: l'architettura a livelli, l'iniezione delle dipendenze e i pattern sono
-realizzati a mano, perché erano l'oggetto del corso.
+A desktop management system for a chain of gyms, built by five students for the
+**Object-Oriented Programming and Software Engineering** course at the University of Pavia, Italy.
 
-## Funzionalità
+The application is written in **Java 21** with a **Swing** user interface and **MySQL** persistence
+over JDBC. It uses no frameworks: the layered architecture, dependency injection and design
+patterns are implemented by hand, because they were the subject of the course.
 
-| Attore | Che cosa può fare |
+> **A note on language.** This was an Italian university project, so class names, method names,
+> comments and the user interface are in Italian. The [glossary](#glossary) below maps the terms
+> you will meet most often in the code.
+
+## Features
+
+| Actor | What they can do |
 |---|---|
-| Visitatore | Registrarsi scegliendo sede, tipo e durata dell'abbonamento, con pagamento simulato (UC1) |
-| Cliente | Accedere, consultare il palinsesto, prenotare un corso o entrare in lista d'attesa, annullare una prenotazione (UC2) |
-| Cliente Premium | Registrare le sessioni di allenamento e consultarne lo storico (UC4) |
-| Direttore | Pubblicare e annullare corsi (UC3); assumere e licenziare Personal Trainer, riassegnarne i corsi a un sostituto, calcolare le retribuzioni mensili (UC5) |
-| Personal Trainer | Accedere e consultare il palinsesto |
-| Tutti | Autenticazione con instradamento per ruolo e rinnovo dell'abbonamento scaduto (UC6) |
+| Visitor | Sign up by choosing a gym location, membership type and duration, with a simulated payment (UC1) |
+| Member | Log in, browse the course schedule, book a course or join its waiting list, cancel a booking (UC2) |
+| Premium member | Record workout sessions and review their history (UC4) |
+| Manager | Publish and cancel courses (UC3); hire and dismiss personal trainers, reassign their courses to a substitute, compute monthly payroll (UC5) |
+| Personal trainer | Log in and browse the course schedule |
+| Everyone | Authentication with role-based routing, and renewal of an expired membership (UC6) |
 
-L'analisi (visione, requisiti, casi d'uso, modello di dominio, diagrammi di classe, di sequenza ed ER)
-è nella cartella [`ScriptActive/Documenti`](ScriptActive/Documenti).
+The analysis documents (vision, requirements, use cases, domain model, class, sequence and ER
+diagrams) are in [`ScriptActive/Documenti`](ScriptActive/Documenti), in Italian.
 
-## Architettura
+## Architecture
 
-Il codice è organizzato a livelli secondo **MVC**, con un livello di persistenza isolato dal pattern **DAO**.
-I package sono sotto `ScriptActive/src/it/unipv/poingsfw`.
+The code is layered according to **MVC**, with persistence isolated behind the **DAO** pattern.
+The packages live under `ScriptActive/src/it/unipv/poingsfw`.
 
 ```mermaid
 flowchart TD
     bootstrap["bootstrap<br/>Main, NavigatoreSwing<br/><i>composition root</i>"]
-    view["view<br/>finestre Swing"]
-    controller["controller<br/>logica applicativa<br/>+ interfacce Vista*, Navigatore"]
-    service["service<br/>servizi applicativi"]
-    dao["dao<br/>interfacce di persistenza"]
-    database["database<br/>implementazioni MySQL"]
-    domain["domain<br/>entità e regole di dominio"]
+    view["view<br/>Swing windows"]
+    controller["controller<br/>application logic<br/>+ Vista*, Navigatore interfaces"]
+    service["service<br/>application services"]
+    dao["dao<br/>persistence interfaces"]
+    database["database<br/>MySQL implementations"]
+    domain["domain<br/>entities and domain rules"]
 
     bootstrap --> view
     bootstrap --> controller
@@ -45,79 +51,79 @@ flowchart TD
     controller --> service
     controller --> dao
     service --> dao
-    database -. implementa .-> dao
-    view -. implementa .-> controller
+    database -. implements .-> dao
+    view -. implements .-> controller
     controller --> domain
     service --> domain
     dao --> domain
     view --> domain
 ```
 
-| Package | Responsabilità | Non deve conoscere |
+| Package | Responsibility | Must not know about |
 |---|---|---|
-| `domain` | Entità (`Utente`, `Cliente`, `Corso`, `Abbonamento`…) e regole di dominio (`Tariffario`) | Nessun altro strato, né Swing, né JDBC |
-| `dao` | Interfacce di accesso ai dati | L'implementazione MySQL |
-| `database` | Implementazioni MySQL dei DAO | View e controller |
-| `service` | Servizi applicativi senza interfaccia utente (contratti del personale, retribuzioni, pagamenti, rinnovi) | View, controller, MySQL |
-| `controller` | Logica dei casi d'uso; definisce le interfacce `Vista*` e `Navigatore` di cui ha bisogno | View concrete, Swing, MySQL |
-| `view` | Finestre Swing: mostrano i dati e inoltrano i gesti dell'utente al controller | DAO e database |
-| `bootstrap` | Avvio: crea gli oggetti concreti e li collega | — |
+| `domain` | Entities (`Utente`, `Cliente`, `Corso`, `Abbonamento`…) and domain rules (`Tariffario`) | Any other layer, Swing or JDBC |
+| `dao` | Data access interfaces | The MySQL implementation |
+| `database` | MySQL implementations of the DAOs | Views and controllers |
+| `service` | Application services with no user interface (staff contracts, payroll, payments, renewals) | Views, controllers, MySQL |
+| `controller` | Use-case logic; defines the `Vista*` and `Navigatore` interfaces it depends on | Concrete views, Swing, MySQL |
+| `view` | Swing windows: display data and forward user actions to the controller | DAOs and the database |
+| `bootstrap` | Startup: creates the concrete objects and wires them together | — |
 
-Queste regole non sono solo documentazione: le verifica
-[`ArchitetturaTest`](ScriptActive/src/it/unipv/poingsfw/test/unit/ArchitetturaTest.java), che fallisce
-indicando file e riga se un package importa uno strato che non deve conoscere.
+These rules are more than documentation: they are enforced by
+[`ArchitetturaTest`](ScriptActive/src/it/unipv/poingsfw/test/unit/ArchitetturaTest.java), which
+fails with the offending file and line if a package imports a layer it must not know about.
 
-### Come sono collegate le parti
+### How the parts are wired
 
-- **Dependency Injection manuale.** Controller e servizi ricevono le dipendenze dal costruttore e
-  conoscono solo interfacce. Gli oggetti concreti sono creati una sola volta in
-  [`Main`](ScriptActive/src/it/unipv/poingsfw/bootstrap/Main.java), il *composition root*.
-- **Navigazione.** Un controller decide *quando* cambiare schermata chiamando l'interfaccia
-  `Navigatore`; *come* si costruisce la schermata lo sa solo `NavigatoreSwing`. Né le view né i
-  controller si istanziano a vicenda.
-- **Viste come interfacce.** I controller che aggiornano una schermata dipendono da un'interfaccia
-  (`VistaLogin`, `VistaStoricoAllenamenti`, …) che la finestra Swing implementa. Nei test viene
-  sostituita da un oggetto fittizio.
+- **Manual dependency injection.** Controllers and services receive their dependencies through
+  the constructor and only know interfaces. Concrete objects are created once in
+  [`Main`](ScriptActive/src/it/unipv/poingsfw/bootstrap/Main.java), the *composition root*.
+- **Navigation.** A controller decides *when* to change screen by calling the `Navigatore`
+  interface; only `NavigatoreSwing` knows *how* a screen is built. Views and controllers never
+  instantiate each other.
+- **Views as interfaces.** Controllers that update a screen depend on an interface
+  (`VistaLogin`, `VistaStoricoAllenamenti`, …) implemented by the Swing window. In tests it is
+  replaced by a fake.
 
-### Pattern utilizzati
+### Design patterns
 
-| Pattern | Dove | A che cosa serve |
+| Pattern | Where | What it is for |
 |---|---|---|
-| MVC | `domain` / `view` / `controller` | Separare dati, presentazione e logica applicativa |
-| DAO | `dao` + `database` | Isolare SQL e JDBC dal resto del sistema |
-| Strategy | `strategy` | Calcolo della retribuzione dei trainer (fissa mensile o a lezione) |
-| Double Dispatch | `Utente.accediAreaRiservata(InstradatoreUtente)` | Aprire l'area riservata giusta per ogni ruolo senza `instanceof` |
-| Observer | `Corso` (Subject) / `Cliente` (Observer) | Notificare gli iscritti delle variazioni di un corso |
-| Singleton | `DatabaseManager` | Unico punto di caricamento della configurazione JDBC |
-| DTO | `dto` | Trasportare i dati dei trainer tra persistenza, servizi e controller |
+| MVC | `domain` / `view` / `controller` | Separating data, presentation and application logic |
+| DAO | `dao` + `database` | Isolating SQL and JDBC from the rest of the system |
+| Strategy | `strategy` | Computing trainer pay (fixed monthly or per lesson) |
+| Double Dispatch | `Utente.accediAreaRiservata(InstradatoreUtente)` | Opening the right area for each role without `instanceof` |
+| Observer | `Corso` (Subject) / `Cliente` (Observer) | Notifying enrolled members when a course changes |
+| Singleton | `DatabaseManager` | Single loading point for the JDBC configuration |
+| DTO | `dto` | Carrying trainer data between persistence, services and controllers |
 
-## Come eseguirlo
+## Getting started
 
-**Requisiti:** JDK 21 e MySQL 8. Per compilare si può usare Eclipse (il progetto contiene
-`.project` e `.classpath`) oppure Maven.
+**Requirements:** JDK 21 and MySQL 8. You can build with Eclipse (the project includes `.project`
+and `.classpath`) or with Maven.
 
-1. Crea e popola il database:
+1. Create and populate the database:
 
    ```bash
    mysql -u root -p < ScriptActive/database/schemadb.sql
    ```
 
-   Lo script elimina e ricrea `scriptactive_db`. Le date dei dati di esempio sono relative al
-   giorno in cui lo esegui, quindi i corsi sono sempre futuri e gli abbonamenti sempre validi.
+   The script drops and recreates `scriptactive_db`. Sample data uses dates relative to the day
+   you run it, so courses are always in the future and memberships are always valid.
 
-2. Configura la connessione copiando il file di esempio e inserendo le tue credenziali:
+2. Configure the connection by copying the example file and filling in your credentials:
 
    ```bash
    cp ScriptActive/src/db.properties.example ScriptActive/src/db.properties
    ```
 
-   `db.properties` è escluso dal repository.
+   `db.properties` is excluded from the repository.
 
-3. Avvia l'applicazione in uno dei due modi:
+3. Start the application in one of two ways:
 
-   - **Eclipse:** importa la cartella `ScriptActive` (*File → Import → Existing Projects into
-     Workspace*) ed esegui la classe `it.unipv.poingsfw.bootstrap.Main`.
-   - **Maven:** dalla cartella `ScriptActive` compila e poi lancia la classe principale.
+   - **Eclipse:** import the `ScriptActive` folder (*File → Import → Existing Projects into
+     Workspace*) and run the class `it.unipv.poingsfw.bootstrap.Main`.
+   - **Maven:** from the `ScriptActive` folder, build and then launch the main class.
 
      ```bash
      mvn -DskipTests package dependency:copy-dependencies -DincludeScope=runtime
@@ -127,21 +133,21 @@ indicando file e riga se un package importa uno strato che non deve conoscere.
      java -cp "target/scriptactive-1.0.0.jar:target/dependency/*" it.unipv.poingsfw.bootstrap.Main
      ```
 
-     Su Windows il separatore del classpath è `;` al posto di `:`.
+     On Windows the classpath separator is `;` instead of `:`.
 
-**Utenti di esempio** (password `1234` per tutti):
+**Sample users** (password `1234` for all of them):
 
-| Email | Ruolo |
+| Email | Role |
 |---|---|
-| `direttore@scriptactive.it` | Direttore |
-| `trainer@scriptactive.it` | Personal Trainer |
-| `mario.rossi@email.it` | Cliente Premium |
-| `lorenzo@studenti.unipv.it` | Cliente Base |
+| `direttore@scriptactive.it` | Manager |
+| `trainer@scriptactive.it` | Personal trainer |
+| `mario.rossi@email.it` | Premium member |
+| `lorenzo@studenti.unipv.it` | Basic member |
 
-## Test
+## Tests
 
-I test sono in `ScriptActive/src/it/unipv/poingsfw/test`. Si eseguono da Eclipse con
-*Run As → JUnit Test* oppure con Maven dalla cartella `ScriptActive`:
+Tests live in `ScriptActive/src/it/unipv/poingsfw/test`. Run them from Eclipse with
+*Run As → JUnit Test*, or with Maven from the `ScriptActive` folder:
 
 ```bash
 mvn test
@@ -151,57 +157,73 @@ mvn test
 mvn test -Pintegrazione
 ```
 
-Il primo comando esegue i test di unità; il secondo quelli di integrazione e di sistema, e
-richiede il database.
+The first command runs the unit tests; the second runs the integration and system tests, and
+needs the database.
 
-| Package | Che cosa verifica | Che cosa richiede |
+| Package | What it checks | What it needs |
 |---|---|---|
-| `test.unit` | Controller, servizi e regole di architettura, con persistenza e viste fittizie | Niente: né database né display |
-| `test.integration` | Controller assemblati con i DAO MySQL reali | MySQL popolato con `schemadb.sql` |
-| `test.system` | Casi d'uso di login e storico allenamenti dal controller al database | MySQL popolato con `schemadb.sql` |
-| `test.fake` | Implementazioni in memoria di DAO, viste e navigazione usate dai test | — |
+| `test.unit` | Controllers, services and architecture rules, with fake persistence and views | Nothing: no database, no display |
+| `test.integration` | Controllers wired to the real MySQL DAOs | MySQL populated with `schemadb.sql` |
+| `test.system` | Login and workout-history use cases, from controller to database | MySQL populated with `schemadb.sql` |
+| `test.fake` | In-memory implementations of DAOs, views and navigation used by the tests | — |
 
-I test di integrazione modificano il database: riesegui `schemadb.sql` dopo averli lanciati.
+Integration tests modify the database: run `schemadb.sql` again after them.
 
-A ogni push su `main` e a ogni pull request, una GitHub Action
-([`.github/workflows/test.yml`](.github/workflows/test.yml)) esegue entrambe le suite: quella di
-integrazione su un MySQL temporaneo creato per l'occasione.
+On every push to `main` and on every pull request, a GitHub Action
+([`.github/workflows/test.yml`](.github/workflows/test.yml)) runs both suites, the integration
+one against a temporary MySQL instance created for the run.
 
-Il progetto conserva la struttura di Eclipse, con codice e test sotto la stessa cartella `src`:
-il `pom.xml` li distingue in base al package `test`.
+The project keeps its Eclipse layout, with application code and tests under the same `src`
+folder: the `pom.xml` tells them apart by the `test` package.
 
-## Storia del progetto
+## Project history
 
-La versione consegnata all'esame funzionava ma violava in più punti la separazione MVC.
-Il progetto è stato poi rivisto per correggerla:
+The version submitted for the exam worked, but broke MVC separation in several places.
+The project was later revised to fix that:
 
-| Problema nella versione consegnata | Correzione |
+| Problem in the submitted version | Fix |
 |---|---|
-| Alcune view istanziavano i DAO MySQL e interrogavano il database | Le view ricevono i dati dal controller; nessuna view importa `dao` o `database` |
-| I controller creavano i DAO MySQL con `new` o tramite Singleton | Dipendenze passate dal costruttore; i Singleton dei controller sono stati rimossi |
-| I controller costruivano le finestre Swing e i relativi listener | Interfacce `Vista*` e `Navigatore`; le finestre sono create solo in `bootstrap` |
-| Il dominio dipendeva da un controller (`Utente.accediAreaRiservata(LoginController)`) | Il parametro è ora un'interfaccia del dominio, `InstradatoreUtente` |
-| `System.out` nei controller e `Main` nel package `domain` | Logging con `java.util.logging`; `Main` spostato in `bootstrap` |
-| I test di unità richiedevano MySQL e un display, e due si bloccavano su un dialog modale | I test di unità usano oggetti fittizi e girano in automatico |
+| Some views instantiated MySQL DAOs and queried the database | Views get their data from the controller; no view imports `dao` or `database` |
+| Controllers created MySQL DAOs with `new` or through Singletons | Dependencies are passed through the constructor; controller Singletons were removed |
+| Controllers built Swing windows and their listeners | `Vista*` and `Navigatore` interfaces; windows are created only in `bootstrap` |
+| The domain depended on a controller (`Utente.accediAreaRiservata(LoginController)`) | The parameter is now a domain interface, `InstradatoreUtente` |
+| `System.out` in controllers, and `Main` in the `domain` package | Logging through `java.util.logging`; `Main` moved to `bootstrap` |
+| Unit tests needed MySQL and a display, and two of them hung on a modal dialog | Unit tests use fakes and run unattended |
 
-Durante la revisione sono stati corretti anche alcuni difetti di comportamento: la registrazione
-segnalava successo anche quando il salvataggio falliva; chiudere il palinsesto, la registrazione
-o il rinnovo terminava l'applicazione invece di tornare alla schermata precedente; il palinsesto
-aperto senza un cliente autenticato andava in errore alla prenotazione.
+The revision also fixed a few behavioural defects: sign-up reported success even when saving
+failed; closing the schedule, sign-up or renewal window quit the application instead of going
+back to the previous screen; the schedule opened without a logged-in member crashed on booking.
 
-## Limiti noti
+## Known limitations
 
-Il progetto è un prototipo didattico. Questi aspetti non sono stati affrontati:
+This is a teaching prototype. The following were not addressed:
 
-- **Password in chiaro.** La colonna si chiama `PasswordHash` ma contiene la password così com'è.
-- **Connessioni JDBC.** Diversi DAO aprono una connessione per ogni operazione senza chiuderla e
-  non usano un pool.
-- **Errori di persistenza.** Molti DAO intercettano le `SQLException`, le stampano e restituiscono
-  un valore neutro: il chiamante non sempre può distinguere "nessun risultato" da "errore".
-- **Pagamenti simulati.** Il sistema di pagamento è uno stub: rifiuta gli IBAN che contengono `ERRORE`.
-- **Rinnovo manuale.** La schermata di rinnovo mostra prezzi propri e non addebita tramite il
-  sistema di pagamento; l'upgrade da Base a Premium non è implementato.
-- **Rinnovi automatici in background.** `GestoreRinnovi` è implementato e testato ma non viene
-  avviato da `Main`.
-- **Documentazione UML.** I diagrammi in `Documenti` descrivono la versione consegnata all'esame
-  e non riportano le classi introdotte con la revisione.
+- **Plain-text passwords.** The column is called `PasswordHash` but stores the password as typed.
+- **JDBC connections.** Several DAOs open a connection per operation without closing it, and
+  there is no connection pool.
+- **Persistence errors.** Many DAOs catch `SQLException`, print it and return a neutral value,
+  so the caller cannot always tell "no result" from "error".
+- **Simulated payments.** The payment system is a stub: it rejects any IBAN containing `ERRORE`.
+- **Manual renewal.** The renewal screen shows its own prices and does not charge through the
+  payment system; upgrading from Basic to Premium is not implemented.
+- **Background auto-renewal.** `GestoreRinnovi` is implemented and tested but is not started by
+  `Main`.
+- **UML documentation.** The diagrams in `Documenti` describe the version submitted for the exam
+  and do not include the classes introduced by the revision.
+
+## Glossary
+
+| Italian | English |
+|---|---|
+| `Utente`, `Cliente`, `Direttore` | User, member (customer), manager |
+| `Abbonamento`, `Rinnovo` | Membership (subscription), renewal |
+| `Corso`, `Palinsesto` | Course, course schedule |
+| `Prenotazione`, lista d'attesa | Booking, waiting list |
+| `Sede` | Gym location |
+| `SessioneAllenamento`, `Storico` | Workout session, history |
+| `Registrazione` | Sign-up |
+| `Pagamento`, `Tariffario` | Payment, price list |
+| `Retribuzione`, `Contratto` | Pay, contract |
+| `Gestore…` | "Manager of…": a controller or service for one area |
+| `Vista`, `Navigatore` | View, navigator |
+| `Instradatore` | Router |
