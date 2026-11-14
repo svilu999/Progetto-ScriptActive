@@ -1,18 +1,30 @@
 package it.unipv.poingsfw.test.unit;
 
-import static org.junit.Assert.*;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.Calendar;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import it.unipv.poingsfw.controller.LoginController;
-import it.unipv.poingsfw.dao.UtenteDAO;
+import it.unipv.poingsfw.domain.Abbonamento;
 import it.unipv.poingsfw.domain.Cliente;
-import it.unipv.poingsfw.domain.Utente;
-import it.unipv.poingsfw.view.LoginView;
+import it.unipv.poingsfw.domain.Direttore;
+import it.unipv.poingsfw.domain.LivelloAbbonamento;
+import it.unipv.poingsfw.domain.PersonalTrainer;
+import it.unipv.poingsfw.domain.TipoAbbonamento;
+import it.unipv.poingsfw.test.fake.NavigatoreFake;
+import it.unipv.poingsfw.test.fake.UtenteDAOFake;
+import it.unipv.poingsfw.test.fake.VistaLoginFake;
 
 /**
  * La classe {@code AutenticazioneTest} costituisce la suite di <b>Testing di Unità</b> (Unit Testing) 
- * implementata avvalendosi del framework <b>JUnit 4</b> per collaudare in isolamento la logica di autenticazione.
+ * che collauda in isolamento la logica di autenticazione.
  * <p>
  * <b>Tracciabilità Requisiti:</b><br>
  * Questa suite automatizza la verifica dello <b>Use Case UC6: Autenticazione (Login)</b>. 
@@ -21,151 +33,176 @@ import it.unipv.poingsfw.view.LoginView;
  * del requisito di sistema RS3 relativo al controllo degli accessi.
  * </p>
  * <p>
- * Nel pieno rispetto delle linee guida di Ingegneria del Software, l'attività di test dei difetti isola il componente sotto test 
- * (il {@link LoginController}) svincolandolo dall'effettiva connessione al database. Ciò è ottenuto fornendo una implementazione 
- * fittizia (Mock) dell'interfaccia {@link UtenteDAO} mediante l'impiego di una classe anonima, perchè mi risultava piu semplice.
+ * Il componente sotto test (il {@link LoginController}) dipende soltanto da interfacce: la persistenza,
+ * la vista e la navigazione sono sostituite da oggetti fittizi. I test non aprono finestre, non mostrano
+ * dialog e non richiedono il database: possono quindi essere eseguiti in automatico su qualsiasi macchina.
  * </p>
  * 
  * @author Simone
- * @version 1.0
- * @see org.junit.Test
+ * @version 2.0
  * @see it.unipv.poingsfw.controller.LoginController
  */
-public class AutenticazioneTest {
+class AutenticazioneTest {
 
     private LoginController controller;
-    private LoginView view;
-    
-    /**
-     * Riferimento all'interfaccia DAO utilizzata per simulare e isolare l'accesso al livello di persistenza.
-     */
-    private UtenteDAO testDao;
-    
-    /**
-     * Oggetto di dominio utilizzato per forzare lo stato di ritorno del DAO mockato durante l'esecuzione del test.
-     */
-    private Utente utenteDaRestituire;
+    private VistaLoginFake view;
+    private UtenteDAOFake dao;
+    private NavigatoreFake navigatore;
 
-    /**
-     * Metodo annotato con {@link org.junit.Before} per l'esecuzione preliminare automatica prima di ogni test.
-     * <p>
-     * <b>Motivazione Architetturale:</b> Questa fase costituisce il <i>Setup</i> architetturale del test. 
-     * Per testare il Controller in totale isolamento (Unit Testing puro), viene creata una <b>Classe Anonima</b> che 
-     * implementa formalmente l'interfaccia {@code UtenteDAO}. Questa tecnica elimina l'accoppiamento con il livello 
-     * di persistenza reale (database MySQL), permettendo al test di governare artificialmente l'input di ritorno 
-     * attraverso l'attributo {@code utenteDaRestituire}.
-     * </p>
-     */
-    @Before
-    public void setUp() {
-        // Fase di SETUP: Inizializzazione della vista delegata (Top-level container Swing fittizio).
-        view = new LoginView();
-        
-        // Iniezione di una dipendenza (Mocking) tramite Classe Anonima per l'interfaccia Data Access Object.
-        testDao = new UtenteDAO() {
-            @Override
-            public Utente effettuaLogin(String email, String password) {
-                // Restituisce l'oggetto preconfigurato dal test case, eludendo la reale esecuzione della query SQL.
-                return utenteDaRestituire;
-            }
-
-            @Override
-            public void registraCliente(String cf, String nome, String cognome, String email, String passwordHash) {
-                // Metodo astratto implementato ma non invocato in questa partizione di test dedicata all'UC6.
-            }
-        };
-        
-        // Inizializzazione del Controller con le dipendenze mockate (Pattern Architetturale MVC).
-        controller = new LoginController(view, testDao);
+    @BeforeEach
+    void setUp() {
+        view = new VistaLoginFake();
+        dao = new UtenteDAOFake();
+        navigatore = new NavigatoreFake();
+        controller = new LoginController(view, dao, navigatore);
     }
+
+    /** Crea un cliente attivo il cui abbonamento scade tra {@code mesiAllaScadenza} mesi (negativo = già scaduto). */
+    private Cliente creaCliente(int mesiAllaScadenza) {
+        Cliente cliente = new Cliente("Mario", "Rossi", "m@m.it", "CF1", TipoAbbonamento.BASE);
+        cliente.setStato("Attivo");
+
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.MONTH, mesiAllaScadenza);
+        Abbonamento abbonamento = new Abbonamento("CF1", LivelloAbbonamento.ANNUALE, TipoAbbonamento.BASE, false, "IBAN123");
+        abbonamento.setDataScadenza(cal.getTime());
+        cliente.setAbbonamentoAttivo(abbonamento);
+        return cliente;
+    }
+
+    // --- MAIN SUCCESS SCENARIO ---
 
     /**
      * Verifica il <b>Main Success Scenario dello Use Case UC6</b> (Login con credenziali corrette).
-     * <p>
-     * Avvalendosi di una partizione di equivalenza di correttezza (input di autenticazione validi), il test accerta che 
-     * il Controller aggiorni in modo affidabile lo stato dell'applicazione, intercettando e memorizzando l'utente 
-     * restituito dal DAO come entità attiva nel sistema. La validazione è operata dai metodi di asserzione 
-     * {@link org.junit.Assert#assertNotNull(String, Object)} e {@link org.junit.Assert#assertEquals(String, Object, Object)}.
-     * </p>
+     * Il controller memorizza l'utente autenticato, chiude il login e instrada il cliente alla sua dashboard.
      */
+    @Test
+    void testEffettuaLogin_Successo() {
+        dao.setUtenteDaRestituire(creaCliente(12));
+
+        controller.effettuaLogin("m@m.it", "password123");
+
+        assertNotNull(controller.getUtenteLoggato(),
+                "L'utente loggato deve essere presente in memoria dopo un'autenticazione riuscita");
+        assertEquals("m@m.it", controller.getUtenteLoggato().getEmail());
+        assertTrue(view.isChiusa(), "La schermata di login deve essere chiusa dopo l'accesso");
+        assertEquals(NavigatoreFake.DASHBOARD_CLIENTE, navigatore.getUltimaDestinazione());
+        assertTrue(view.getErrori().isEmpty());
+    }
+
+    /** Il Double Dispatch instrada ogni ruolo verso la propria area riservata. */
+    @Test
+    void testEffettuaLogin_DirettoreInstradatoAllaSuaDashboard() {
+        Direttore direttore = new Direttore("Anna", "Bianchi", "direttore@scriptactive.it", "DIR-001");
+        direttore.setStato("Attivo");
+        dao.setUtenteDaRestituire(direttore);
+
+        controller.effettuaLogin("direttore@scriptactive.it", "1234");
+
+        assertEquals(NavigatoreFake.DASHBOARD_DIRETTORE, navigatore.getUltimaDestinazione());
+    }
 
     @Test
-    public void testEffettuaLogin_Successo() {
-        // Fase di SETUP: Creiamo un utente perfetto per evitare che il Controller lo blocchi
-        Cliente clientePerfetto = new Cliente("Mario", "Rossi", "m@m.it", "CF1", null);
-        
-        // 1. Assicuriamoci che l'account sia attivo
-        clientePerfetto.setStato("Attivo"); 
-        
-        // 2. Creiamo un abbonamento valido (che scade l'anno prossimo)
-        java.util.Calendar cal = java.util.Calendar.getInstance();
-        cal.add(java.util.Calendar.YEAR, 1);
-        
-        it.unipv.poingsfw.domain.Abbonamento abbonamentoValido = new it.unipv.poingsfw.domain.Abbonamento(
-                "CF1", 
-                it.unipv.poingsfw.domain.LivelloAbbonamento.ANNUALE, 
-                null, 
-                false, 
-                "IBAN123"
-        );
-        abbonamentoValido.setDataScadenza(cal.getTime());
-        
-        // 3. Associamo l'abbonamento al cliente
-        clientePerfetto.setAbbonamentoAttivo(abbonamentoValido);
-        
-        // Diciamo al Mock di restituire questo utente inattaccabile
-        utenteDaRestituire = clientePerfetto;
-        
-        // Fase di ACTION: Tentiamo il login
-        controller.effettuaLogin("m@m.it", "password123");
-        
-        // Fase di ASSERTION: Ora l'utente non sarà null!
-        assertNotNull("L'utente loggato deve essere presente in memoria dopo un'autenticazione riuscita", controller.getUtenteLoggato());
-        assertEquals("m@m.it", controller.getUtenteLoggato().getEmail());
+    void testEffettuaLogin_TrainerInstradatoAllaSuaArea() {
+        PersonalTrainer trainer = new PersonalTrainer("Marco", "Verdi", "trainer@scriptactive.it", "2");
+        trainer.setStato("Attivo");
+        dao.setUtenteDaRestituire(trainer);
+
+        controller.effettuaLogin("trainer@scriptactive.it", "1234");
+
+        assertEquals(NavigatoreFake.AREA_TRAINER, navigatore.getUltimaDestinazione());
     }
+
+    // --- FLUSSI ALTERNATIVI ---
 
     /**
      * Verifica i <b>Flussi Alternativi dello Use Case UC6</b> (Login con credenziali errate o inesistenti).
-     * <p>
-     * Avvalendosi di una partizione di non correttezza (deviazione del comportamento atteso), il test forza il sistema 
-     * a elaborare un input illecito. Accerta che, nel caso in cui il livello dati restituisca {@code null} 
-     * (record non rintracciato), l'architettura blocchi l'accesso mantenendo vuoto lo stato dell'oggetto Controller. 
-     * La convalida avviene mediante l'asserzione mirata {@link org.junit.Assert#assertNull(String, Object)}.
-     * </p>
+     * Se il livello dati non trova l'utente, il controller blocca l'accesso e lo comunica tramite la vista.
      */
     @Test
-    public void testEffettuaLogin_CredenzialiErrate() {
-        // Fase di SETUP: Configurazione dell'ambiente isolato per simulare un riscontro negativo del database.
-        utenteDaRestituire = null;
-        
-        // Fase di ACTION: Invocazione del metodo del Controller iniettando i parametri della partizione di non correttezza.
+    void testEffettuaLogin_CredenzialiErrate() {
+        dao.setUtenteDaRestituire(null);
+
         controller.effettuaLogin("wrong@email.it", "wrong");
-        
-        // Fase di ASSERTION: Verifica della solidità del sistema e del mantenimento delle barriere di autenticazione.
-        assertNull("Il controller non deve registrare alcun utente in stato di loggato a fronte di credenziali errate", controller.getUtenteLoggato());
+
+        assertNull(controller.getUtenteLoggato(),
+                "Il controller non deve registrare alcun utente in stato di loggato a fronte di credenziali errate");
+        assertEquals(1, view.getErrori().size(), "La vista deve mostrare un errore");
+        assertFalse(view.isChiusa(), "La schermata di login deve restare aperta");
+        assertNull(navigatore.getUltimaDestinazione(), "Non deve avvenire alcuna navigazione");
     }
-    /**
-     * Verifica il Flusso Alternativo 2 (Account disabilitato o sospeso).
-     * Sviluppato da [Tuo Nome].
-     */
+
+    /** Verifica il Flusso Alternativo 2 (Account disabilitato o sospeso). */
     @Test
-    public void testEffettuaLogin_AccountDisabilitato() {
-        // Fase di SETUP: Creo un utente con credenziali corrette, MA con stato "Inattivo"
-        Cliente clienteSospeso = new Cliente("Luigi", "Verdi", "luigi@email.it", "CF2", null);
-        
-        // ATTENZIONE: Usa il metodo corretto della vostra classe Cliente/Utente per disabilitarlo!
-        clienteSospeso.setStato("Inattivo"); 
-        
-        // Dico al finto DAO di restituire questo utente (le credenziali sono giuste, lui esiste!)
-        utenteDaRestituire = clienteSospeso;
-        
-        // Fase di ACTION: Provo a fare il login
+    void testEffettuaLogin_AccountDisabilitato() {
+        Cliente clienteSospeso = creaCliente(12);
+        clienteSospeso.setStato("Inattivo");
+        dao.setUtenteDaRestituire(clienteSospeso);
+
         controller.effettuaLogin("luigi@email.it", "password123");
-        
-        // Fase di ASSERTION: Il controller DEVE rifiutare l'accesso perché è inattivo
-        assertNull("Il controller non deve far accedere un utente con stato Inattivo", controller.getUtenteLoggato());
-        
-        // NOTA: Se il vostro LoginController lancia un'eccezione (es. AccountSospesoException) 
-        // invece di lasciare semplicemente vuoto l'utente, dovrai usare assertThrows come abbiamo fatto prima!
+
+        assertNull(controller.getUtenteLoggato(),
+                "Il controller non deve far accedere un utente con stato Inattivo");
+        assertEquals(1, view.getErrori().size());
+        assertNull(navigatore.getUltimaDestinazione());
+    }
+
+    @Test
+    void testEffettuaLogin_CampiVuoti() {
+        controller.effettuaLogin("", "");
+
+        assertNull(controller.getUtenteLoggato());
+        assertEquals(1, view.getErrori().size());
+        assertNull(navigatore.getUltimaDestinazione());
+    }
+
+    // --- ABBONAMENTO SCADUTO ---
+
+    @Test
+    void testEffettuaLogin_AbbonamentoScaduto_UtenteAccettaIlRinnovo() {
+        dao.setUtenteDaRestituire(creaCliente(-1));
+        view.setRispostaRinnovo(true);
+
+        controller.effettuaLogin("m@m.it", "password123");
+
+        assertNull(controller.getUtenteLoggato(), "Con l'abbonamento scaduto l'accesso non deve essere concesso");
+        assertNotNull(view.getMessaggioRinnovo(), "La vista deve proporre il rinnovo");
+        assertEquals(NavigatoreFake.RINNOVO, navigatore.getUltimaDestinazione());
+        assertEquals("m@m.it", navigatore.getEmailRinnovo());
+        assertTrue(view.isChiusa());
+    }
+
+    @Test
+    void testEffettuaLogin_AbbonamentoScaduto_UtenteRifiutaIlRinnovo() {
+        dao.setUtenteDaRestituire(creaCliente(-1));
+        view.setRispostaRinnovo(false);
+
+        controller.effettuaLogin("m@m.it", "password123");
+
+        assertNull(controller.getUtenteLoggato());
+        assertNull(navigatore.getUltimaDestinazione(), "Senza conferma non si apre la schermata di rinnovo");
+        assertFalse(view.isChiusa(), "La schermata di login deve restare aperta");
+    }
+
+    @Test
+    void testEffettuaLogin_AbbonamentoScaduto_SbloccatoDalRinnovoAutomatico() {
+        dao.setUtenteDaRestituire(creaCliente(-1));
+        dao.setEsitoRinnovoSilenzioso(true);
+
+        controller.effettuaLogin("m@m.it", "password123");
+
+        assertNotNull(controller.getUtenteLoggato(),
+                "Se il rinnovo automatico è andato a buon fine l'accesso deve essere concesso");
+        assertEquals(NavigatoreFake.DASHBOARD_CLIENTE, navigatore.getUltimaDestinazione());
+    }
+
+    // --- DIRAMAZIONE VERSO LA REGISTRAZIONE ---
+
+    @Test
+    void testRichiediRegistrazione_ApreIlModuloDiRegistrazione() {
+        controller.richiediRegistrazione();
+
+        assertTrue(view.isChiusa());
+        assertEquals(NavigatoreFake.REGISTRAZIONE, navigatore.getUltimaDestinazione());
     }
 }

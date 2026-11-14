@@ -64,8 +64,8 @@ public class Cliente extends Utente implements Observer {
      */
     
     @Override
-    public void accediAreaRiservata(it.unipv.poingsfw.controller.LoginController router) {
-        router.apriDashboardCliente(this);
+    public void accediAreaRiservata(InstradatoreUtente router) {
+        router.instradaCliente(this);
     }
     
     /**

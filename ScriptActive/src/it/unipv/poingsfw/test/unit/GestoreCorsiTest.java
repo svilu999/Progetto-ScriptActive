@@ -1,163 +1,192 @@
 package it.unipv.poingsfw.test.unit;
 
-/**
- * Classe dedicata al Testing di Integrazione per il componente {@link GestoreCorsi}.
- * * In conformità con le linee guida del corso sulla Verifica e Convalida, questa classe
- * implementa test funzionali automatizzati volti ad accertare la correttezza del 
- * comportamento del sistema rispetto ai requisiti di UC3. 
- * * Per garantire il Principio di Isolamento e Ripetibilità dei test su un database 
- * relazionale persistente, la suite utilizza il pattern Teardown (@AfterEach) per 
- * effettuare il rollback fisico delle scritture al termine di ogni scenario.
- *
- * @author Lorenzo
- * @version 3.0
- * @see GestoreCorsi
- */
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Set;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import it.unipv.poingsfw.controller.GestoreCorsi;
 import it.unipv.poingsfw.domain.Corso;
 import it.unipv.poingsfw.domain.StatoCorso;
+import it.unipv.poingsfw.exceptions.CorsoNonTrovatoException;
+import it.unipv.poingsfw.exceptions.SostitutoNonValidoException;
 import it.unipv.poingsfw.exceptions.SovrapposizioneOrarioException;
 import it.unipv.poingsfw.exceptions.TrainerNonValidoException;
-import it.unipv.poingsfw.util.DatabaseManager;
+import it.unipv.poingsfw.test.fake.CorsoDAOInMemoria;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.time.LocalDateTime;
-import java.util.List;
+/**
+ * Test di unità del componente {@link GestoreCorsi} (UC3 - organizzazione del palinsesto).
+ * <p>
+ * Il gestore riceve un {@code CorsoDAO} in memoria: ogni test parte da uno stato pulito
+ * e non richiede il database né operazioni di pulizia al termine. La verifica contro
+ * MySQL reale è nella suite {@code test.integration.GestoreCorsiIntegrationTest}.
+ * </p>
+ *
+ * @author Lorenzo
+ * @version 4.0
+ * @see GestoreCorsi
+ */
+class GestoreCorsiTest {
 
-public class GestoreCorsiTest {
+    private static final String TRAINER = "PT-10";
+    private static final String ALTRO_TRAINER = "PT-11";
 
+    private CorsoDAOInMemoria corsoDAO;
     private GestoreCorsi gestore;
 
-    // --- SETUP: Viene eseguito PRIMA di ogni test ---
     @BeforeEach
-    public void setUp() {
-        gestore = GestoreCorsi.getInstance();
+    void setUp() {
+        // Nel sistema simulato esistono solo i trainer 10 e 11
+        corsoDAO = new CorsoDAOInMemoria(Set.of("10", "11"));
+        gestore = new GestoreCorsi(corsoDAO);
     }
 
-    // --- TEARDOWN: Viene eseguito DOPO ogni test ---
-    @AfterEach
-    public void tearDown() {
-        /*
-         * Pattern Teardown: Pulizia fisica del database.
-         * Evita il problema dello "Stato Persistente" assicurando che ogni test
-         * trovi un ambiente pulito, permettendo l'esecuzione ripetibile all'infinito.
-         */
-        System.out.println("[TEARDOWN] Ripulitura ambiente di test in corso...");
-        String sql = "DELETE FROM Corso WHERE Nome IN ('Yoga Mattutino', 'Crossfit', 'Pilates', 'Zumba', 'Functional Training')";
-        
-        try (Connection conn = DatabaseManager.getInstance().getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            
-            int righeCancellate = stmt.executeUpdate();
-            System.out.println("[TEARDOWN] Rimossi " + righeCancellate + " record di test dal database.\n");
-            
-        } catch (Exception e) {
-            System.err.println("[TEARDOWN] Errore durante la pulizia: " + e.getMessage());
+    private Corso trovaPerNome(String nome) {
+        for (Corso corso : gestore.getElencoCorsi()) {
+            if (corso.getNome().equals(nome)) {
+                return corso;
+            }
         }
+        return null;
     }
 
- // ==========================================
+    // ==========================================
     // 1. TEST DI SUCCESSO (Flusso Principale)
     // ==========================================
     @Test
-    public void testOrganizzaNuovoCorso_Successo() {
-        try {
-            // Spostiamo la data al 2030 per bypassare i "fantasmi" delle esecuzioni precedenti
-            LocalDateTime orario = LocalDateTime.of(2030, 11, 20, 10, 0);
-            gestore.organizzaNuovoCorso("Yoga Mattutino", orario, 15, "PT-10");
-            
-            assertNotNull(gestore); 
-            
-        } catch (Exception e) {
-            e.printStackTrace(); 
-            fail("Non doveva lanciare un'eccezione per un inserimento valido!");
-        }
+    void testOrganizzaNuovoCorso_Successo() throws Exception {
+        LocalDateTime orario = LocalDateTime.of(2030, 11, 20, 10, 0);
+
+        gestore.organizzaNuovoCorso("Yoga Mattutino", orario, 15, TRAINER);
+
+        Corso creato = trovaPerNome("Yoga Mattutino");
+        assertNotNull(creato, "Il corso deve essere stato salvato");
+        assertEquals(orario, creato.getDataOra());
+        assertEquals(15, creato.getCapienzaMassima());
+        assertEquals(15, creato.getPostiDisponibili(), "Un corso nuovo ha tutti i posti disponibili");
+        assertEquals(StatoCorso.ATTIVO, creato.getStato());
     }
 
     // ==========================================
     // 2. TEST DI FALLIMENTO (Prevenzione Sovrapposizioni)
     // ==========================================
     @Test
-    public void testSovrapposizioneOrario_LanciaEccezione() {
-        LocalDateTime orario = LocalDateTime.of(2026, 12, 10, 18, 0);
-        
-        try {
-            // Primo inserimento (deve riuscire)
-            gestore.organizzaNuovoCorso("Crossfit", orario, 20, "PT-10");
-        } catch (Exception e) {
-            e.printStackTrace();
-            fail("Il primo inserimento doveva riuscire senza errori.");
-        }
-        
-        // Secondo inserimento identico (deve essere bloccato)
-        assertThrows(SovrapposizioneOrarioException.class, () -> {
-            gestore.organizzaNuovoCorso("Pilates", orario, 20, "PT-10");
-        });
+    void testSovrapposizioneOrario_LanciaEccezione() throws Exception {
+        LocalDateTime orario = LocalDateTime.of(2030, 12, 10, 18, 0);
+        gestore.organizzaNuovoCorso("Crossfit", orario, 20, TRAINER);
+
+        assertThrows(SovrapposizioneOrarioException.class,
+                () -> gestore.organizzaNuovoCorso("Pilates", orario, 20, TRAINER));
+        assertEquals(1, gestore.getElencoCorsi().size(), "Il secondo corso non deve essere stato salvato");
+    }
+
+    @Test
+    void testStessoOrarioTrainerDiversi_Consentito() throws Exception {
+        LocalDateTime orario = LocalDateTime.of(2030, 12, 10, 18, 0);
+        gestore.organizzaNuovoCorso("Crossfit", orario, 20, TRAINER);
+
+        gestore.organizzaNuovoCorso("Pilates", orario, 20, ALTRO_TRAINER);
+
+        assertEquals(2, gestore.getElencoCorsi().size());
     }
 
     // ==========================================
     // 3. TEST FLUSSO ALTERNATIVO (Trainer Non Valido)
     // ==========================================
     @Test
-    public void testOrganizzaNuovoCorso_TrainerInesistente_LanciaEccezione() {
-        LocalDateTime orario = LocalDateTime.of(2027, 1, 15, 10, 0);
-        
-        // Verifica che l'Exception Translation intercetti la Foreign Key fallita
-        assertThrows(TrainerNonValidoException.class, () -> {
-            gestore.organizzaNuovoCorso("Zumba", orario, 20, "PT-999999");
-        });
+    void testOrganizzaNuovoCorso_TrainerInesistente_LanciaEccezione() {
+        LocalDateTime orario = LocalDateTime.of(2031, 1, 15, 10, 0);
+
+        // Verifica che l'Exception Translation intercetti la violazione di chiave esterna
+        assertThrows(TrainerNonValidoException.class,
+                () -> gestore.organizzaNuovoCorso("Zumba", orario, 20, "PT-999999"));
+        assertTrue(gestore.getElencoCorsi().isEmpty());
+    }
+
+    @Test
+    void testOrganizzaNuovoCorso_IdTrainerVuoto_LanciaEccezione() {
+        LocalDateTime orario = LocalDateTime.of(2031, 1, 15, 10, 0);
+
+        assertThrows(TrainerNonValidoException.class,
+                () -> gestore.organizzaNuovoCorso("Zumba", orario, 20, "  "));
     }
 
     // ==========================================
     // 4. TEST CICLO DI VITA (Annullamento Corso)
     // ==========================================
     @Test
-    public void testAnnullaCorso_Successo() {
-        LocalDateTime orario = LocalDateTime.of(2027, 2, 10, 11, 0);
-        
-        try {
-            // Setup del test
-            gestore.organizzaNuovoCorso("Functional Training", orario, 10, "PT-10");
-            
-            // Recupero dell'ID generato
-            List<Corso> palinsesto = gestore.getElencoCorsi();
-            String idCorso = null;
-            for (Corso c : palinsesto) {
-                if (c.getNome().equals("Functional Training")) {
-                    idCorso = c.getIdCorso();
-                    break;
-                }
-            }
-            
-            assertNotNull(idCorso, "Il corso non è stato trovato nel database.");
+    void testAnnullaCorso_Successo() throws Exception {
+        LocalDateTime orario = LocalDateTime.of(2031, 2, 10, 11, 0);
+        gestore.organizzaNuovoCorso("Functional Training", orario, 10, TRAINER);
+        String idCorso = trovaPerNome("Functional Training").getIdCorso();
 
-            // Esecuzione dell'azione da testare
-            gestore.annullaCorso(idCorso);
-            
-            // Verifica (Assertion) del cambiamento di stato
-            Corso corsoAnnullato = null;
-            for (Corso c : gestore.getElencoCorsi()) {
-                if (c.getIdCorso().equals(idCorso)) {
-                    corsoAnnullato = c;
-                    break;
-                }
-            }
-            
-            assertNotNull(corsoAnnullato);
-            assertEquals(StatoCorso.CANCELLATO, corsoAnnullato.getStato(), 
-                    "Lo stato del corso deve essere aggiornato a CANCELLATO.");
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-            fail("Il flusso di annullamento ha lanciato un'eccezione imprevista.");
-        }
+        gestore.annullaCorso(idCorso);
+
+        assertEquals(StatoCorso.CANCELLATO, trovaPerNome("Functional Training").getStato(),
+                "Lo stato del corso deve essere aggiornato a CANCELLATO.");
+        assertTrue(gestore.getPalinsestoCorsi().isEmpty(), "Un corso annullato non compare nel palinsesto");
+    }
+
+    @Test
+    void testAnnullaCorso_Inesistente_LanciaEccezione() {
+        assertThrows(CorsoNonTrovatoException.class, () -> gestore.annullaCorso("NON-ESISTE"));
+    }
+
+    // ==========================================
+    // 5. INTEGRAZIONE CON LA GESTIONE DEL PERSONALE
+    // ==========================================
+    @Test
+    void testHaCorsiAttiviOFuturi() throws Exception {
+        gestore.organizzaNuovoCorso("Yoga", LocalDateTime.now().plusDays(10), 15, TRAINER);
+
+        assertTrue(gestore.haCorsiAttiviOFuturi(TRAINER));
+        assertFalse(gestore.haCorsiAttiviOFuturi(ALTRO_TRAINER));
+        assertFalse(gestore.haCorsiImminenti(TRAINER), "Un corso tra dieci giorni non è imminente");
+    }
+
+    @Test
+    void testSostituisciTrainerNeiCorsi() throws Exception {
+        gestore.organizzaNuovoCorso("Yoga", LocalDateTime.now().plusDays(10), 15, TRAINER);
+        gestore.organizzaNuovoCorso("Pilates", LocalDateTime.now().plusDays(11), 15, TRAINER);
+
+        int riassegnati = gestore.sostituisciTrainerNeiCorsi(TRAINER, ALTRO_TRAINER);
+
+        assertEquals(2, riassegnati);
+        assertFalse(gestore.haCorsiAttiviOFuturi(TRAINER));
+        assertTrue(gestore.haCorsiAttiviOFuturi(ALTRO_TRAINER));
+    }
+
+    @Test
+    void testSostituisciTrainer_SostitutoUgualeAlTitolare_LanciaEccezione() {
+        assertThrows(SostitutoNonValidoException.class,
+                () -> gestore.sostituisciTrainerNeiCorsi(TRAINER, TRAINER));
+    }
+
+    @Test
+    void testSostituisciTrainer_SostitutoGiaImpegnato_LanciaEccezione() throws Exception {
+        LocalDateTime orario = LocalDateTime.now().plusDays(10).withNano(0);
+        gestore.organizzaNuovoCorso("Yoga", orario, 15, TRAINER);
+        gestore.organizzaNuovoCorso("Pilates", orario, 15, ALTRO_TRAINER);
+
+        assertThrows(SostitutoNonValidoException.class,
+                () -> gestore.sostituisciTrainerNeiCorsi(TRAINER, ALTRO_TRAINER));
+    }
+
+    @Test
+    void testGetElencoCorsi_RestituisceTuttiICorsi() throws Exception {
+        gestore.organizzaNuovoCorso("Yoga", LocalDateTime.of(2030, 5, 1, 9, 0), 15, TRAINER);
+        gestore.organizzaNuovoCorso("Pilates", LocalDateTime.of(2030, 5, 2, 9, 0), 15, TRAINER);
+
+        List<Corso> elenco = gestore.getElencoCorsi();
+
+        assertEquals(2, elenco.size());
     }
 }

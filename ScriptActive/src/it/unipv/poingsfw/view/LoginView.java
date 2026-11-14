@@ -3,6 +3,7 @@ package it.unipv.poingsfw.view;
 import javax.swing.*;
 
 import it.unipv.poingsfw.controller.LoginController;
+import it.unipv.poingsfw.controller.vista.VistaLogin;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -24,11 +25,11 @@ import java.awt.event.ActionEvent;
  * di <b>Registrazione</b> per i nuovi utenti.
  * </p>
  * * @author Vilucchi
- * @version 1.3
+ * @version 2.0
  * @see javax.swing.JFrame
  * @see it.unipv.poingsfw.controller.LoginController
  */
-public class LoginView extends JFrame {
+public class LoginView extends JFrame implements VistaLogin {
     
     private JTextField txtEmail;
     private JPasswordField txtPassword;
@@ -126,14 +127,14 @@ public class LoginView extends JFrame {
         btnRegistrati.setForeground(new Color(77, 43, 107)); 
   
         /*
-         * Gestione del routing UI interno.
-         * Rilascia le risorse allocate per il modulo di Login e istanzia il frame dedicato 
-         * alla fase di Registrazione (transizione di stato della View).
+         * Event Delegation: la vista segnala al Controller l'intenzione dell'utente di
+         * registrarsi. La transizione verso il modulo di Registrazione è decisa dal
+         * Controller: la vista non istanzia altre finestre.
          */
         btnRegistrati.addActionListener(e -> {
-            this.dispose();
-            RegistrazioneView regView = new RegistrazioneView();
-            regView.setVisible(true);
+            if (controller != null) {
+                controller.richiediRegistrazione();
+            }
         });
         
         panelBottoni.add(btnAccedi);
@@ -152,16 +153,22 @@ public class LoginView extends JFrame {
      * </p>
      * * @param messaggio Il payload testuale descrittivo della causa di fallimento (es. "Credenziali errate").
      */
+    @Override
     public void mostraErrore(String messaggio) {
         JOptionPane.showMessageDialog(this, messaggio, "Errore di Accesso", JOptionPane.ERROR_MESSAGE);
     }
     /**
-     * Mostra un dialog interattivo per il rinnovo dell'abbonamento.
-     * Se l'utente accetta, chiude il login e apre la View di rinnovo.
-     * * @param email L'email dell'utente bloccato, da passare alla schermata di rinnovo
-     * @param messaggio Il messaggio di errore catturato dall'eccezione
+     * Mostra un dialog interattivo che informa dell'abbonamento scaduto e chiede
+     * se procedere al rinnovo.
+     * <p>
+     * La vista si limita a raccogliere la scelta dell'utente: che cosa fare dopo
+     * (aprire la schermata di rinnovo) lo decide il Controller.
+     * </p>
+     * * @param messaggio Il messaggio di errore catturato dall'eccezione
+     * @return {@code true} se l'utente vuole procedere subito al rinnovo
      */
-    public void mostraPopupRinnovo(String email, String messaggio) {
+    @Override
+    public boolean chiediConfermaRinnovo(String messaggio) {
         int scelta = JOptionPane.showConfirmDialog(
             this,
             messaggio + "\n\nVuoi procedere subito al rinnovo?",
@@ -170,12 +177,11 @@ public class LoginView extends JFrame {
             JOptionPane.WARNING_MESSAGE
         );
 
-        if (scelta == JOptionPane.YES_OPTION) {
-            this.dispose(); // Chiude la schermata di login
-            
-            // Apre la tua nuova schermata passando l'email
-            RinnovoView schermataRinnovo = new RinnovoView(email);
-            schermataRinnovo.setVisible(true);
-        }
+        return scelta == JOptionPane.YES_OPTION;
+    }
+
+    @Override
+    public void chiudi() {
+        dispose();
     }
 }

@@ -42,11 +42,15 @@ public abstract class Utente {
     }
  
     /**
-     * Metodo astratto per instradare l'utente alla corretta area riservata.
+     * Metodo astratto per instradare l'utente alla corretta area riservata (Double Dispatch).
      * Ogni classe figlia (Cliente, PT, Direttore) fornirà la propria implementazione.
-     * * @param router Il controller che gestisce il cambio vista.
+     * <p>
+     * Il parametro è un'interfaccia del dominio ({@link InstradatoreUtente}) e non un
+     * controller concreto: in questo modo il Model non dipende dagli strati superiori.
+     * </p>
+     * @param router Il componente che sa quale area riservata aprire per ciascun ruolo.
      */
-    public abstract void accediAreaRiservata(it.unipv.poingsfw.controller.LoginController router);
+    public abstract void accediAreaRiservata(InstradatoreUtente router);
     
     /**
      * Controlla se l'account dell'utente è stato disabilitato manualmente dal Direttore.

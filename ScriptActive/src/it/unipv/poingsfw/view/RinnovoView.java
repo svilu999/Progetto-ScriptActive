@@ -1,10 +1,14 @@
 package it.unipv.poingsfw.view;
 
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+
 import javax.swing.*;
 
-import it.unipv.poingsfw.controller.LoginController;
-import it.unipv.poingsfw.database.UtenteDAOMySQL;
+import it.unipv.poingsfw.controller.RinnovoController;
+import it.unipv.poingsfw.controller.vista.VistaRinnovo;
+import it.unipv.poingsfw.domain.LivelloAbbonamento;
 
 /**
  * La classe {@code RinnovoView} gestisce l'interfaccia grafica per il rinnovo 
@@ -13,25 +17,34 @@ import it.unipv.poingsfw.database.UtenteDAOMySQL;
  * Implementata con <b>Java Swing</b>, questa finestra viene 
  * tipicamente innescata durante la fase di autenticazione, qualora il sistema rilevi 
  * che l'utente possiede credenziali valide ma un piano di abbonamento non più attivo.
- * Permette all'utente di selezionare un nuovo piano tariffario e simula il pagamento 
- * ripristinando l'accesso al sistema.
+ * Permette all'utente di selezionare un nuovo piano tariffario.
+ * </p>
+ * <p>
+ * La vista si limita a raccogliere la scelta dell'utente e a mostrarne l'esito:
+ * l'aggiornamento dell'abbonamento e il ritorno al login sono compito del
+ * {@link RinnovoController}.
  * </p>
  * * @author Arianna Padula
- * @version 1.0
+ * @version 2.0
  */
 
-public class RinnovoView extends JFrame {
+public class RinnovoView extends JFrame implements VistaRinnovo {
+
+    /* Le voci del menu seguono l'ordine dei valori di LivelloAbbonamento */
+    private static final LivelloAbbonamento[] LIVELLI = {
+            LivelloAbbonamento.MENSILE, LivelloAbbonamento.SEMESTRALE, LivelloAbbonamento.ANNUALE
+    };
+    private static final String[] PIANI = { "Mensile - €40.00", "Semestrale - €200.00", "Annuale - €360.00" };
+
     private JComboBox<String> comboPiani;
     private JButton btnPaga;
     private JLabel lblMessaggio;
-    private String emailUtente;
+    private RinnovoController controller;
 
-    public RinnovoView(String emailUtente) {
-        this.emailUtente = emailUtente;
-        
+    public RinnovoView() {
         setTitle("Rinnovo Abbonamento");
         setSize(400, 250);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setLocationRelativeTo(null); // Centra la finestra
         setLayout(new BorderLayout(10, 10));
 
@@ -46,10 +59,8 @@ public class RinnovoView extends JFrame {
         
         pnlCentro.add(new JLabel("Scegli la durata del nuovo abbonamento:"));
         
-        String[] piani = { "Mensile - €40.00", "Semestrale - €200.00", "Annuale - €360.00" };
-        comboPiani = new JComboBox<>(piani);
+        comboPiani = new JComboBox<>(PIANI);
         pnlCentro.add(comboPiani);
-        
         add(pnlCentro, BorderLayout.CENTER);
 
         JPanel pnlSud = new JPanel();
@@ -57,39 +68,51 @@ public class RinnovoView extends JFrame {
         btnPaga.setFont(new Font("Arial", Font.BOLD, 14));
         
         btnPaga.addActionListener(e -> {
-            effettuaRinnovo();
+            if (controller != null) {
+                controller.confermaRinnovo(getLivelloSelezionato());
+            }
         });
         
         pnlSud.add(btnPaga);
         add(pnlSud, BorderLayout.SOUTH);
+
+        /* Chiudere la finestra equivale a rinunciare al rinnovo: decide il Controller dove tornare */
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                if (controller != null) {
+                    controller.annulla();
+                } else {
+                    dispose();
+                }
+            }
+        });
     }
 
-    private void effettuaRinnovo() {
-        String pianoSelezionato = (String) comboPiani.getSelectedItem();
-        int mesiDaAggiungere = 1;
-        String tipoAbbonamento = "MENSILE";
+    public void setController(RinnovoController controller) {
+        this.controller = controller;
+    }
 
-        if (pianoSelezionato.contains("Semestrale")) {
-            mesiDaAggiungere = 6;
-            tipoAbbonamento = "SEMESTRALE";
-        } else if (pianoSelezionato.contains("Annuale")) {
-            mesiDaAggiungere = 12;
-            tipoAbbonamento = "ANNUALE";
-        }
+    private LivelloAbbonamento getLivelloSelezionato() {
+        int indice = comboPiani.getSelectedIndex();
+        return indice >= 0 ? LIVELLI[indice] : null;
+    }
 
-        UtenteDAOMySQL dao = new UtenteDAOMySQL();
-        dao.eseguiRinnovo(emailUtente, mesiDaAggiungere, tipoAbbonamento);
-        
+    @Override
+    public void mostraRinnovoCompletato(LivelloAbbonamento livello) {
         JOptionPane.showMessageDialog(this, 
-            "Pagamento simulato con successo!\nIl tuo abbonamento è stato aggiornato con il piano: " + tipoAbbonamento, 
+            "Pagamento simulato con successo!\nIl tuo abbonamento è stato aggiornato con il piano: " + livello, 
             "Rinnovo Completato", 
             JOptionPane.INFORMATION_MESSAGE);
-            
-        this.dispose(); 
-        
-        LoginView login = new LoginView();
-        LoginController controller = new LoginController(login, dao);
-        login.setController(controller);
-        login.setVisible(true);
+    }
+
+    @Override
+    public void mostraErrore(String messaggio) {
+        JOptionPane.showMessageDialog(this, messaggio, "Errore", JOptionPane.ERROR_MESSAGE);
+    }
+
+    @Override
+    public void chiudi() {
+        dispose();
     }
 }

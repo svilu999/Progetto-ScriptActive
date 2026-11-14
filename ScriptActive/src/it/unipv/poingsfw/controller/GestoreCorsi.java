@@ -12,45 +12,42 @@ import it.unipv.poingsfw.service.ServizioSwapCorsi;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.logging.Logger;
 
+/**
+ * Controller dello Use Case UC3 (organizzazione del palinsesto corsi).
+ * <p>
+ * Riceve il {@link CorsoDAO} dal costruttore (<i>Dependency Injection</i>): conosce
+ * solo l'interfaccia di persistenza e mai l'implementazione MySQL. L'istanza è creata
+ * una sola volta nel Composition Root, quindi non serve un Singleton.
+ * </p>
+ */
 public class GestoreCorsi implements ServizioSwapCorsi {
 
-    // --- PATTERN SINGLETON ---
-    private static GestoreCorsi istanza;
+    private static final Logger LOG = Logger.getLogger(GestoreCorsi.class.getName());
 
     // --- DIPENDENZE (DEPENDENCY INVERSION) ---
-    private CorsoDAO corsoDAO;
+    private final CorsoDAO corsoDAO;
 
-    private GestoreCorsi() {
-        /*
-         * Raccordo UC3/MySQL: Disattiviamo il mock in memoria
-         * e colleghiamo l'intera applicazione al database reale.
-         */
-        this.corsoDAO = new it.unipv.poingsfw.database.CorsoDAOMySQL();
-    }
-
-    public static synchronized GestoreCorsi getInstance() {
-        if (istanza == null) {
-            istanza = new GestoreCorsi();
-        }
-        return istanza;
+    public GestoreCorsi(CorsoDAO corsoDAO) {
+        this.corsoDAO = Objects.requireNonNull(corsoDAO, "corsoDAO non può essere null");
     }
 
     // =========================================================
     // UC3 - organizzazione del palinsesto corsi
     // =========================================================
 
-    // RISPETTARE IL PATTERN MVC:
     public synchronized List<Corso> getPalinsestoCorsi() {
-        // Il controller delega al DAO MySQL l'estrazione filtrata del palinsesto
+        // Il controller delega al DAO l'estrazione filtrata del palinsesto
         return corsoDAO.getPalinsesto();
     }
     
     public synchronized void organizzaNuovoCorso(String nome, LocalDateTime orario, int capienza, String idPT)
             throws TrainerNonValidoException, SovrapposizioneOrarioException {
 
-        System.out.println("[CONTROLLER] Richiesta inserimento corso: " + nome + " in data " + orario);
+        LOG.fine(() -> "Richiesta inserimento corso: " + nome + " in data " + orario);
 
         if (!convalidaTrainer(idPT)) {
             throw new TrainerNonValidoException(
@@ -70,7 +67,7 @@ public class GestoreCorsi implements ServizioSwapCorsi {
         try {
             // Proviamo a salvare il corso sul database
             corsoDAO.insert(nuovoCorso);
-            System.out.println("[CONTROLLER] Nuovo corso registrato con ID: " + idCorsoUnivoco);
+            LOG.info("Nuovo corso registrato con ID: " + idCorsoUnivoco);
             
         } catch (RuntimeException ex) {
             /* * EXCEPTION TRANSLATION:
@@ -89,7 +86,6 @@ public class GestoreCorsi implements ServizioSwapCorsi {
     }
 
     public synchronized void annullaCorso(String idCorso) throws CorsoNonTrovatoException {
-        System.out.println("[CONTROLLER] Richiesta annullamento corso ID: " + idCorso);
 
         Corso corso = corsoDAO.findById(idCorso);
         if (corso == null) {
@@ -98,7 +94,7 @@ public class GestoreCorsi implements ServizioSwapCorsi {
 
         corso.setStato(StatoCorso.CANCELLATO);
         corsoDAO.insert(corso);
-        System.out.println("[CONTROLLER] Corso " + idCorso + " annullato correttamente. Notifiche inviate.");
+        LOG.info("Corso " + idCorso + " annullato.");
     }
 
     public synchronized List<Corso> getElencoCorsi() {

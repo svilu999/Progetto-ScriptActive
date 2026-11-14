@@ -3,11 +3,12 @@ package it.unipv.poingsfw.view;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
+import it.unipv.poingsfw.controller.DashboardClienteController;
+import it.unipv.poingsfw.controller.vista.VistaDashboardCliente;
 import it.unipv.poingsfw.domain.Cliente;
 import it.unipv.poingsfw.domain.Corso;
 
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -33,7 +34,7 @@ import java.util.List;
  * @see it.unipv.poingsfw.domain.Cliente
  * @see it.unipv.poingsfw.domain.Corso
  */
-public class DashboardClienteView extends JFrame {
+public class DashboardClienteView extends JFrame implements VistaDashboardCliente {
     
     private Cliente utenteCorrente;
 
@@ -41,13 +42,14 @@ public class DashboardClienteView extends JFrame {
     private JLabel lblAbbonamento;
     private JPanel panelPrenotazioni;
     
-    /* * Risoluzione Violazione Architetturale: Information Hiding.
-     * I bottoni sono ora privati. I Controller esterni non possono più invocare direttamente 
-     * btnAreaPremium.addActionListener(), ma devono passare attraverso i metodi setter dedicati,
-     * riducendo l'accoppiamento strutturale.
+    /* * Information Hiding: i bottoni sono privati e non vengono esposti all'esterno.
+     * La Vista cattura il click e lo traduce in una chiamata al proprio Controller
+     * (Event Delegation), che decide che cosa fare.
      */
     private JButton btnAreaPremium;
     private JButton btnPrenotaCorsi; 
+
+    private DashboardClienteController controller;
     
     private final Font fontTitolo = new Font("SansSerif", Font.BOLD, 22);
     private final Font fontSottotitolo = new Font("SansSerif", Font.PLAIN, 16);
@@ -70,6 +72,7 @@ public class DashboardClienteView extends JFrame {
         ((JPanel)getContentPane()).setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         inizializzaComponenti();
+        collegaEventi();
     }
 
     /**
@@ -139,6 +142,7 @@ public class DashboardClienteView extends JFrame {
      * </p>
      * * @param cliente L'istanza dell'entità di dominio {@code Cliente} attualmente autenticata nel sistema.
      */
+    @Override
     public void impostaDatiCliente(Cliente cliente) {
         this.utenteCorrente = cliente;
         
@@ -187,6 +191,7 @@ public class DashboardClienteView extends JFrame {
      * </p>
      * * @param corsi La lista parametrizzata di oggetti {@link Corso} restituiti dal livello architetturale sottostante (es. DAO).
      */
+    @Override
     public void mostraCorsiPrenotati(List<Corso> corsi) {
         panelPrenotazioni.removeAll();
 
@@ -259,25 +264,34 @@ public class DashboardClienteView extends JFrame {
     }
     
     /**
-     * Registra un {@link java.awt.event.ActionListener} sul componente grafico delegato all'accesso all'Area Premium.
-     * <p>
-     * Implementa rigorosamente il principio dell'<b>Information Hiding</b>. La Vista nasconde la propria implementazione interna
-     * rendendo privato il bottone, e permette al Controller di registrarsi agli eventi UI tramite questo metodo pubblico.
-     * </p>
-     * * @param listener L'ascoltatore degli eventi fornito dal Controller per gestire il click sull'Area Premium.
+     * Associa il Controller che riceverà i gesti dell'utente e collega i bottoni
+     * alle corrispondenti operazioni (<b>Event Delegation</b>).
+     * * @param controller Il Controller della dashboard.
      */
-    public void addAreaPremiumListener(ActionListener listener) {
-        this.btnAreaPremium.addActionListener(listener);
+    public void setController(DashboardClienteController controller) {
+        this.controller = controller;
     }
 
-    /**
-     * Registra un {@link java.awt.event.ActionListener} sul componente grafico delegato alla prenotazione dei corsi.
-     * <p>
-     * Risolve l'accoppiamento strutturale con il Controller applicando il pattern <b>Event Delegation</b>.
-     * </p>
-     * * @param listener L'ascoltatore degli eventi fornito dal Controller per gestire il click sul Palinsesto.
-     */
-    public void addPrenotaCorsiListener(ActionListener listener) {
-        this.btnPrenotaCorsi.addActionListener(listener);
+    private void collegaEventi() {
+        btnAreaPremium.addActionListener(e -> {
+            if (controller != null) {
+                controller.apriAreaPremium();
+            }
+        });
+        btnPrenotaCorsi.addActionListener(e -> {
+            if (controller != null) {
+                controller.apriPalinsesto();
+            }
+        });
+    }
+
+    @Override
+    public void mostraErrore(String messaggio) {
+        mostraMessaggioPrenotazioni(messaggio);
+    }
+
+    @Override
+    public void chiudi() {
+        dispose();
     }
 }

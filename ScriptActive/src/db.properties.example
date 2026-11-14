@@ -1,0 +1,8 @@
+# Parametri di connessione a MySQL.
+#
+# Copia questo file in "src/db.properties" (stessa cartella) e inserisci le tue credenziali.
+# "db.properties" è escluso dal repository tramite .gitignore: le credenziali non vanno
+# mai salvate nel codice sorgente.
+db.url=jdbc:mysql://localhost:3306/scriptactive_db
+db.user=root
+db.password=LA_TUA_PASSWORD

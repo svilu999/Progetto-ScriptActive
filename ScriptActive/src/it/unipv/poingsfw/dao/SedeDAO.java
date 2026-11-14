@@ -26,13 +26,6 @@ public interface SedeDAO {
     void aggiungiSede(String nomeSede);
     
     /**
-     * Recupera tutte le sedi presenti nel database e ne direziona l'output direttamente 
-     * sullo standard output (console).
-     */
-    
-    void stampaTutteLeSedi();
-    
-    /**
      * Recupera l'elenco completo di tutte le sedi memorizzate nel database (Operazione di Read).
      * * @return Una {@link List} di oggetti {@link Sede} contenente tutti i record presenti nella persistenza. 
      * Se non sono presenti sedi, restituisce una lista vuota.

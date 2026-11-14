@@ -14,21 +14,27 @@ package it.unipv.poingsfw.view;
  * Controller competente (GestoreCorsi), rispettando i flussi definiti nei diagrammi 
  * di sequenza di progetto.
  * 
+ * Il Controller viene ricevuto dal costruttore e la navigazione verso gli altri moduli
+ * è delegata a callback registrate dall'esterno: la View non istanzia altre finestre,
+ * non usa Singleton e non conosce il modo in cui il sistema viene assemblato.
+ * 
  * @author Lorenzo
- * @version 2.0
+ * @version 3.0
  * @see GestoreCorsi
  * @see Direttore
  */
 import javax.swing.*;
 
 import it.unipv.poingsfw.controller.GestoreCorsi;
-import it.unipv.poingsfw.bootstrap.GestionePersonaleBootstrap;
+import it.unipv.poingsfw.exceptions.CorsoNonTrovatoException;
+import it.unipv.poingsfw.exceptions.SovrapposizioneOrarioException;
+import it.unipv.poingsfw.exceptions.TrainerNonValidoException;
 
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.Objects;
 
 public class DashboardDirettoreView extends JFrame {
 
@@ -37,7 +43,18 @@ public class DashboardDirettoreView extends JFrame {
     private JButton btnOrganizza, btnAnnulla, btnVediPalinsesto, btnGestionePersonale;
     private JTextArea areaLog;
 
-    public DashboardDirettoreView() {
+    private static final DateTimeFormatter FORMATO_DATA_ORA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+    private final GestoreCorsi gestoreCorsi;
+    private Runnable azioneVisualizzaPalinsesto = () -> { };
+    private Runnable azioneGestionePersonale = () -> { };
+
+    /**
+     * @param gestoreCorsi Controller dello UC3 a cui inoltrare le richieste dell'utente.
+     */
+    public DashboardDirettoreView(GestoreCorsi gestoreCorsi) {
+        this.gestoreCorsi = Objects.requireNonNull(gestoreCorsi, "Il Controller non può essere null.");
+
         // 1. Impostazioni base della finestra
         setTitle("ScriptActive - Dashboard Direttore");
         setSize(550, 650); 
@@ -116,70 +133,94 @@ public class DashboardDirettoreView extends JFrame {
         configuraEventi();
     }
 
+    /**
+     * Registra l'azione da eseguire quando il Direttore chiede di consultare il palinsesto.
+     */
+    public void onVisualizzaPalinsesto(Runnable azione) {
+        this.azioneVisualizzaPalinsesto = Objects.requireNonNull(azione);
+    }
+
+    /**
+     * Registra l'azione da eseguire quando il Direttore apre il modulo Gestione Personale.
+     */
+    public void onGestionePersonale(Runnable azione) {
+        this.azioneGestionePersonale = Objects.requireNonNull(azione);
+    }
+
     private void configuraEventi() {
-        // Click sul bottone ORGANIZZA
-        btnOrganizza.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    String nome = txtNomeCorso.getText();
-                    int capienza = Integer.parseInt(txtCapienza.getText());
-                    String idPT = txtIdPT.getText();
-                    
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-                    LocalDateTime dataOra = LocalDateTime.parse(txtDataOra.getText(), formatter);
+        btnOrganizza.addActionListener(e -> organizzaCorso());
+        btnAnnulla.addActionListener(e -> annullaCorso());
 
-                    // CHIAMATA AL CONTROLLER (UC3)
-                    GestoreCorsi.getInstance().organizzaNuovoCorso(nome, dataOra, capienza, idPT);
-                    
-                    areaLog.append("[SUCCESS] Corso '" + nome + "' creato correttamente.\n");
-                    JOptionPane.showMessageDialog(null, "Corso creato con successo!");
-
-                } catch (Exception ex) {
-                    areaLog.append("[ERRORE] " + ex.getMessage() + "\n");
-                    JOptionPane.showMessageDialog(null, ex.getMessage(), "Errore", JOptionPane.ERROR_MESSAGE);
-                }
-            }
+        btnVediPalinsesto.addActionListener(e -> {
+            azioneVisualizzaPalinsesto.run();
+            areaLog.append("[VIEW] Apertura finestra Palinsesto Corsi.\n");
         });
 
-        // Click sul bottone ANNULLA
-        btnAnnulla.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    String id = txtIdAnnulla.getText();
-                    GestoreCorsi.getInstance().annullaCorso(id);
-                    areaLog.append("[SUCCESS] Corso " + id + " annullato. Notifiche inviate agli iscritti.\n");
-                    JOptionPane.showMessageDialog(null, "Corso annullato con successo!");
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(null, ex.getMessage(), "Errore", JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        });
-
-        // Click sul bottone VISUALIZZA PALINSESTO
-        btnVediPalinsesto.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                PalinsestoCorsiView finestraPalinsesto = new PalinsestoCorsiView();
-                finestraPalinsesto.setVisible(true);
-                areaLog.append("[VIEW] Apertura finestra Palinsesto Corsi.\n");
-            }
-        });
-
-     // Click sul bottone GESTIONE PERSONALE
-        btnGestionePersonale.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                GestionePersonaleBootstrap.apriModulo();
-                areaLog.append("[VIEW] Apertura finestra Gestione Personale.\n");
-            }
+        btnGestionePersonale.addActionListener(e -> {
+            azioneGestionePersonale.run();
+            areaLog.append("[VIEW] Apertura finestra Gestione Personale.\n");
         });
     }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            new DashboardDirettoreView().setVisible(true);
-        });
+    /**
+     * Raccoglie i dati del form, li converte nei tipi attesi dal Controller e gli inoltra
+     * la richiesta di creazione del corso (UC3). Gli errori di formato sono errori di input
+     * e vengono segnalati direttamente dalla View.
+     */
+    private void organizzaCorso() {
+        String nome = txtNomeCorso.getText().trim();
+        String idPT = txtIdPT.getText().trim();
+        int capienza;
+        LocalDateTime dataOra;
+
+        try {
+            capienza = Integer.parseInt(txtCapienza.getText().trim());
+        } catch (NumberFormatException ex) {
+            mostraErrore("La capienza deve essere un numero intero.");
+            return;
+        }
+
+        try {
+            dataOra = LocalDateTime.parse(txtDataOra.getText().trim(), FORMATO_DATA_ORA);
+        } catch (DateTimeParseException ex) {
+            mostraErrore("Data e ora non valide. Usa il formato dd/MM/yyyy HH:mm.");
+            return;
+        }
+
+        try {
+            // CHIAMATA AL CONTROLLER (UC3)
+            gestoreCorsi.organizzaNuovoCorso(nome, dataOra, capienza, idPT);
+
+            areaLog.append("[SUCCESS] Corso '" + nome + "' creato correttamente.\n");
+            JOptionPane.showMessageDialog(this, "Corso creato con successo!");
+        } catch (TrainerNonValidoException | SovrapposizioneOrarioException ex) {
+            mostraErrore(ex.getMessage());
+        } catch (RuntimeException ex) {
+            mostraErrore("Impossibile creare il corso. Controlla i dati inseriti e riprova.");
+        }
+    }
+
+    private void annullaCorso() {
+        String id = txtIdAnnulla.getText().trim();
+        if (id.isEmpty()) {
+            mostraErrore("Inserisci l'ID del corso da annullare.");
+            return;
+        }
+
+        try {
+            gestoreCorsi.annullaCorso(id);
+
+            areaLog.append("[SUCCESS] Corso " + id + " annullato. Notifiche inviate agli iscritti.\n");
+            JOptionPane.showMessageDialog(this, "Corso annullato con successo!");
+        } catch (CorsoNonTrovatoException ex) {
+            mostraErrore(ex.getMessage());
+        } catch (RuntimeException ex) {
+            mostraErrore("Impossibile annullare il corso: verifica che l'ID sia corretto.");
+        }
+    }
+
+    private void mostraErrore(String messaggio) {
+        areaLog.append("[ERRORE] " + messaggio + "\n");
+        JOptionPane.showMessageDialog(this, messaggio, "Errore", JOptionPane.ERROR_MESSAGE);
     }
 }

@@ -54,34 +54,6 @@ public class SedeDAOMySQL implements SedeDAO {
         }
     }
 
-	/**
-     * Metodo che consente allo sviluppatore di verificare il popolamento del database senza 
-     * transitare per le interfacce grafiche.
-     */
-	
-
-    public void stampaTutteLeSedi() {
-        String query = "SELECT ID_Sede, NomeSede FROM Sede";
-
-        try {
-        	Connection conn = DatabaseManager.getInstance().getConnection();
-            
-            try (PreparedStatement pstmt = conn.prepareStatement(query);
-                 ResultSet rs = pstmt.executeQuery()) {
-
-                System.out.println("--- ELENCO SEDI DAL DATABASE ---");
-                while (rs.next()) {
-                    int id = rs.getInt("ID_Sede");
-                    String nome = rs.getString("NomeSede");
-                    System.out.println("ID: " + id + " | Nome: " + nome);
-                }
-            }
-            
-        } catch (SQLException e) {
-            System.out.println("Errore in stampaTutteLeSedi: " + e.getMessage());
-        }
-    }
-    
     /**
      * Estrae tutti i record presenti nella tabella 'Sede' e applica il pattern 
      * Object-Relational Mapping (ORM) manuale.
@@ -93,6 +65,7 @@ public class SedeDAOMySQL implements SedeDAO {
      * * @return Una collezione (List) di oggetti {@link Sede}. Se la tabella è vuota, restituisce una lista vuota.
      */
     
+    @Override
     public List<Sede> getTutteLeSedi() {
         List<Sede> listaSedi = new ArrayList<>();
         String query = "SELECT ID_Sede, NomeSede FROM Sede";
@@ -112,16 +85,5 @@ public class SedeDAOMySQL implements SedeDAO {
             System.out.println("Errore in getTutteLeSedi: " + e.getMessage());
         }
         return listaSedi;
-    }
-
-    // ==========================================
-    // TEST AL VOLO
-    // ==========================================
-    public static void main(String[] args) {
-        SedeDAOMySQL dao = new SedeDAOMySQL();
-        
-        dao.aggiungiSede("Palestra Milano Nord");
-        
-        dao.stampaTutteLeSedi();
     }
 }

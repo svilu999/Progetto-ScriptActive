@@ -8,7 +8,8 @@ import it.unipv.poingsfw.controller.StoricoAllenamentiController;
 import it.unipv.poingsfw.database.SessioneDAOMySQL;
 import it.unipv.poingsfw.domain.*;
 import it.unipv.poingsfw.exceptions.*;
-import it.unipv.poingsfw.view.StoricoAllenamentiView;
+import it.unipv.poingsfw.test.fake.NavigatoreFake;
+import it.unipv.poingsfw.test.fake.VistaStoricoAllenamentiFake;
 
 /**
  * Suite di <b>System Test</b> per la validazione end-to-end dello Use Case UC4.
@@ -26,17 +27,16 @@ import it.unipv.poingsfw.view.StoricoAllenamentiView;
 public class RegistrazioniPrestazioniSystemTest {
 
     private StoricoAllenamentiController controller;
-    private StoricoAllenamentiView view;
+    private VistaStoricoAllenamentiFake view;
 
     /**
      * Setup della Test Fixture: istanziazione dei componenti reali del sistema.
      */
     @Before
     public void setUp() {
-        view = new StoricoAllenamentiView();
+        view = new VistaStoricoAllenamentiFake();
         /* Inizializzazione della dipendenza verso il database reale MySQL */
-        controller = new StoricoAllenamentiController(view, new SessioneDAOMySQL());
-        view.setController(controller);
+        controller = new StoricoAllenamentiController(view, new SessioneDAOMySQL(), new NavigatoreFake());
     }
 
     /**

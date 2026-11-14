@@ -2,36 +2,42 @@ package it.unipv.poingsfw.controller;
 
 import it.unipv.poingsfw.dao.CorsoDAO;
 import it.unipv.poingsfw.dao.PrenotazioneDAO;
-import it.unipv.poingsfw.database.CorsoDAOMySQL;
-import it.unipv.poingsfw.database.PrenotazioneDAOMySQL;
 import it.unipv.poingsfw.domain.Cliente;
 import it.unipv.poingsfw.domain.Corso;
 import it.unipv.poingsfw.exceptions.CorsoAlCompletoException;
 import it.unipv.poingsfw.exceptions.PrenotazioneGiaEffettuataException;
+import it.unipv.poingsfw.exceptions.PrenotazioneInesistenteException;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.logging.Logger;
 
 /**
  * Controller dedicato alla gestione delle prenotazioni dei corsi.
  * Implementa la logica per l'iscrizione, la gestione della capienza 
  * massima (Lista d'Attesa) e lo swap automatico in caso di annullamento.
- * Utilizza il pattern DAO per comunicare con il database.
+ * Utilizza il pattern DAO per comunicare con il database: riceve le interfacce
+ * {@link PrenotazioneDAO} e {@link CorsoDAO} dal costruttore (Dependency Injection)
+ * e non conosce l'implementazione MySQL.
  * * @author Matteo
  * @version 1.0
  */
 
 public class GestorePrenotazioni {
 
-    private PrenotazioneDAO prenotazioneDAO;
-    private CorsoDAO corsoDAO;
+    private static final Logger LOG = Logger.getLogger(GestorePrenotazioni.class.getName());
 
-    public GestorePrenotazioni() {
- 
-        this.prenotazioneDAO = new PrenotazioneDAOMySQL();
-        this.corsoDAO = new CorsoDAOMySQL();
+    private static final String STATO_CONFERMATA = "Confermata";
+    private static final String STATO_LISTA_ATTESA = "InListaAttesa";
+
+    private final PrenotazioneDAO prenotazioneDAO;
+    private final CorsoDAO corsoDAO;
+
+    public GestorePrenotazioni(PrenotazioneDAO prenotazioneDAO, CorsoDAO corsoDAO) {
+        this.prenotazioneDAO = Objects.requireNonNull(prenotazioneDAO, "prenotazioneDAO non può essere null");
+        this.corsoDAO = Objects.requireNonNull(corsoDAO, "corsoDAO non può essere null");
     }
 
-    
     /**
      * Registra un cliente a un corso specifico.
      * Se il corso ha posti disponibili, la prenotazione viene confermata scalandone la disponibilità.
@@ -45,29 +51,27 @@ public class GestorePrenotazioni {
     
     public void prenotaCorso(Cliente cliente, Corso corso) throws Exception { 
         
-        it.unipv.poingsfw.dao.PrenotazioneDAO prenotazioneDB = new it.unipv.poingsfw.database.PrenotazioneDAOMySQL();
-        it.unipv.poingsfw.dao.CorsoDAO corsoDB = new it.unipv.poingsfw.database.CorsoDAOMySQL();
 
         String idCliente = String.valueOf(cliente.getId());
         String idCorso = corso.getIdCorso();
 
-        if (prenotazioneDB.esistePrenotazione(idCliente, idCorso)) {
-            throw new it.unipv.poingsfw.exceptions.PrenotazioneGiaEffettuataException("Sei già registrato a questo corso (o sei già in lista d'attesa)!");
+        if (prenotazioneDAO.esistePrenotazione(idCliente, idCorso)) {
+            throw new PrenotazioneGiaEffettuataException("Sei già registrato a questo corso (o sei già in lista d'attesa)!");
         }
 
         if (corso.getPostiDisponibili() > 0) {
-            boolean successo = prenotazioneDB.inserisciPrenotazione(idCliente, idCorso, "Confermata");
+            boolean successo = prenotazioneDAO.inserisciPrenotazione(idCliente, idCorso, STATO_CONFERMATA);
             if (successo) {
                 corso.setPostiDisponibili(corso.getPostiDisponibili() - 1);
-                corsoDB.updatePostiDisponibili(corso);
+                corsoDAO.updatePostiDisponibili(corso);
             } else {
 
                 throw new Exception("Errore interno: impossibile salvare la prenotazione nel Database!");
             }
         } else {
-            boolean successo = prenotazioneDB.inserisciPrenotazione(idCliente, idCorso, "InListaAttesa");
+            boolean successo = prenotazioneDAO.inserisciPrenotazione(idCliente, idCorso, STATO_LISTA_ATTESA);
             if (successo) {
-                throw new it.unipv.poingsfw.exceptions.CorsoAlCompletoException("Il corso è pieno. Sei stato inserito in LISTA D'ATTESA!");
+                throw new CorsoAlCompletoException("Il corso è pieno. Sei stato inserito in LISTA D'ATTESA!");
             } else {
                 throw new Exception("Errore interno: impossibile inserirti in lista d'attesa!");
             }
@@ -79,54 +83,53 @@ public class GestorePrenotazioni {
      * Annulla una prenotazione esistente e gestisce l'avanzamento automatico della coda (Swap).
      * Dopo l'eliminazione della prenotazione del cliente, il sistema verifica la presenza 
      * di utenti in Lista d'Attesa. Se presenti, il primo utente in coda viene promosso 
-     * allo stato "Confermata"; altrimenti, viene liberato un posto nel corso.
+     * allo stato STATO_CONFERMATA; altrimenti, viene liberato un posto nel corso.
      * * @param cliente Il cliente che richiede l'annullamento.
      * @param corso Il corso dal quale il cliente vuole disiscriversi.
      * @throws PrenotazioneInesistenteException Se non viene trovata alcuna prenotazione attiva per la coppia Cliente-Corso.
      * @throws Exception In caso di errori generici nel processo di cancellazione o di swap.
      */
     
-    public void annullaPrenotazione(Cliente cliente, Corso corso) throws it.unipv.poingsfw.exceptions.PrenotazioneInesistenteException {
+    public void annullaPrenotazione(Cliente cliente, Corso corso) throws PrenotazioneInesistenteException {
         
 
-        it.unipv.poingsfw.dao.PrenotazioneDAO prenotazioneDB = new it.unipv.poingsfw.database.PrenotazioneDAOMySQL();
-        it.unipv.poingsfw.dao.CorsoDAO corsoDB = new it.unipv.poingsfw.database.CorsoDAOMySQL();
         
 
         String idCliente = String.valueOf(cliente.getId());
         String idCorso = corso.getIdCorso();
 
  
-        if (!prenotazioneDB.esistePrenotazione(idCliente, idCorso)) {
-            throw new it.unipv.poingsfw.exceptions.PrenotazioneInesistenteException("Impossibile disiscriversi: non sei prenotato a questo corso!");
+        if (!prenotazioneDAO.esistePrenotazione(idCliente, idCorso)) {
+            throw new PrenotazioneInesistenteException("Impossibile disiscriversi: non sei prenotato a questo corso!");
         }
 
 
-        boolean eliminato = prenotazioneDB.eliminaPrenotazione(idCliente, idCorso);
+        boolean eliminato = prenotazioneDAO.eliminaPrenotazione(idCliente, idCorso);
         
         if (eliminato) {
 
-            String idPrimoInAttesa = prenotazioneDB.getPrimoInListaAttesa(idCorso);
+            String idPrimoInAttesa = prenotazioneDAO.getPrimoInListaAttesa(idCorso);
             
             if (idPrimoInAttesa != null) {
-                prenotazioneDB.aggiornaStatoPrenotazione(idPrimoInAttesa, idCorso, "Confermata");
-                System.out.println("Il posto liberato è stato assegnato automaticamente all'utente ID: " + idPrimoInAttesa);
+                prenotazioneDAO.aggiornaStatoPrenotazione(idPrimoInAttesa, idCorso, STATO_CONFERMATA);
+                LOG.info("Posto liberato assegnato automaticamente all'utente ID: " + idPrimoInAttesa);
             } else {
                 corso.setPostiDisponibili(corso.getPostiDisponibili() + 1);
-                corsoDB.updatePostiDisponibili(corso); 
+                corsoDAO.updatePostiDisponibili(corso); 
             }
         } else {
-            System.err.println("Errore durante l'eliminazione della prenotazione nel database.");
+            LOG.warning("Eliminazione della prenotazione non riuscita nel livello di persistenza.");
         }
     }
 
-    // ========================================================
-    // NUOVO METODO: RECUPERA I CORSI PRENOTATI DAL CLIENTE
-    // ========================================================
+    /**
+     * Recupera i corsi prenotati dal cliente indicato.
+     * * @param cliente Il cliente di cui si vogliono conoscere le prenotazioni.
+     * @return La lista dei corsi prenotati (vuota se non ce ne sono).
+     */
     public List<Corso> getCorsiPrenotatiDalCliente(Cliente cliente) {
         String idCliente = String.valueOf(cliente.getId());
         
-        // Chiediamo al DAO delle prenotazioni (istanziato nel costruttore) di pescare i corsi
         return prenotazioneDAO.getCorsiPerCliente(idCliente);
     }
 }

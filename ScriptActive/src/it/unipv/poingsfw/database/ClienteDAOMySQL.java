@@ -221,6 +221,7 @@ public class ClienteDAOMySQL implements ClienteDAO {
     /**
      * Recupera tutti gli abbonamenti scaduti (o in scadenza oggi) che hanno il rinnovo automatico attivo.
      */
+    @Override
     public java.util.List<Abbonamento> getAbbonamentiInScadenzaConRinnovo() {
         java.util.List<Abbonamento> lista = new java.util.ArrayList<>();
         // CURDATE() prende la data di oggi dal server MySQL
@@ -259,6 +260,7 @@ public class ClienteDAOMySQL implements ClienteDAO {
     /**
      * Aggiorna la data di scadenza di un abbonamento a seguito di un rinnovo avvenuto con successo.
      */
+    @Override
     public void aggiornaScadenzaAbbonamento(int idAbbonamento, java.util.Date nuovaData) {
         String query = "UPDATE Abbonamento SET DataScadenza = ? WHERE ID_Abbonamento = ?";
         try {
@@ -276,6 +278,7 @@ public class ClienteDAOMySQL implements ClienteDAO {
     /**
      * Disattiva il rinnovo automatico se la carta/IBAN viene rifiutata.
      */
+    @Override
     public void disattivaRinnovoAutomatico(int idAbbonamento) {
         String query = "UPDATE Abbonamento SET RinnovoAutomatico = 0 WHERE ID_Abbonamento = ?";
         try {

@@ -8,28 +8,29 @@ package it.unipv.poingsfw.view;
  * né accede direttamente alla persistenza, ma delega le operazioni di sistema ai Controller 
  * competenti (GestoreCorsi e GestorePrenotazioni) realizzando il Low Coupling.
  * 
- * La classe implementa l'interfaccia Observer per supportare il meccanismo di "Push from below", 
- * permettendo al Modello di Dominio di notificare i cambiamenti di stato (es. cancellazione 
- * corsi in UC3) senza creare accoppiamento diretto verso lo strato di presentazione.
+ * I Controller vengono ricevuti dal costruttore: la View non li istanzia e non usa Singleton.
+ * Se viene aperta senza un cliente autenticato (Direttore, Personal Trainer) funziona in sola
+ * consultazione e nasconde i comandi di prenotazione. Il ritorno alla schermata precedente
+ * è delegato a una callback registrata dall'esterno.
  * 
  * @author Lorenzo
- * @version 2.0
- * @see Observer
+ * @version 3.0
  * @see GestoreCorsi
+ * @see GestorePrenotazioni
  */
 import javax.swing.*;
 
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.List;
+import java.util.Objects;
 
 import it.unipv.poingsfw.controller.GestoreCorsi;
 import it.unipv.poingsfw.controller.GestorePrenotazioni;
-import it.unipv.poingsfw.dao.CorsoDAO;
-import it.unipv.poingsfw.database.CorsoDAOMySQL;
 import it.unipv.poingsfw.domain.Cliente;
 import it.unipv.poingsfw.domain.Corso;
-import it.unipv.poingsfw.domain.TipoAbbonamento;
 import it.unipv.poingsfw.exceptions.CorsoAlCompletoException;
 import it.unipv.poingsfw.exceptions.PrenotazioneGiaEffettuataException;
 import it.unipv.poingsfw.exceptions.PrenotazioneInesistenteException;
@@ -49,12 +50,26 @@ public class PalinsestoCorsiView extends JFrame {
      * corrispondente alla riga selezionata nella tabella.
      */
     private List<Corso> corsiAttuali;
-    private Cliente clienteLoggato;
 
-    public PalinsestoCorsiView() {
+    private final GestoreCorsi gestoreCorsi;
+    private final GestorePrenotazioni gestorePrenotazioni;
+    private final Cliente clienteLoggato;
+    private Runnable azioneIndietro = () -> { };
+
+    /**
+     * @param gestoreCorsi        Controller da cui ottenere il palinsesto.
+     * @param gestorePrenotazioni Controller a cui inoltrare prenotazioni e annullamenti.
+     * @param clienteLoggato      Il cliente autenticato, oppure {@code null} per la sola consultazione.
+     */
+    public PalinsestoCorsiView(GestoreCorsi gestoreCorsi, GestorePrenotazioni gestorePrenotazioni,
+                               Cliente clienteLoggato) {
+        this.gestoreCorsi = Objects.requireNonNull(gestoreCorsi, "Il Controller dei corsi non può essere null.");
+        this.gestorePrenotazioni = Objects.requireNonNull(gestorePrenotazioni, "Il Controller delle prenotazioni non può essere null.");
+        this.clienteLoggato = clienteLoggato;
+
         setTitle("ScriptActive - Palinsesto Completo");
         setSize(750, 450);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(10, 10));
 
@@ -90,7 +105,12 @@ public class PalinsestoCorsiView extends JFrame {
         btnAggiorna = new JButton("Aggiorna Palinsesto");
         btnPrenota = new JButton("Prenota Corso Selezionato");
         btnAnnulla = new JButton("Annulla Prenotazione");
-        btnIndietro = new JButton("Torna alla Dashboard");
+        btnIndietro = new JButton("Indietro");
+
+        /* Senza un cliente autenticato il palinsesto è in sola consultazione */
+        boolean prenotazioniAbilitate = clienteLoggato != null;
+        btnPrenota.setVisible(prenotazioniAbilitate);
+        btnAnnulla.setVisible(prenotazioniAbilitate);
 
         pnlBottoni.add(btnAggiorna);
         pnlBottoni.add(btnPrenota);
@@ -102,15 +122,36 @@ public class PalinsestoCorsiView extends JFrame {
         btnAggiorna.addActionListener(e -> caricaDati());
         btnPrenota.addActionListener(e -> prenotaCorsoCliccato());
         btnAnnulla.addActionListener(e -> annullaCorsoCliccato());
-        btnIndietro.addActionListener(e -> dispose());
+        btnIndietro.addActionListener(e -> tornaIndietro());
+
+        /* La chiusura della finestra equivale al comando "Indietro" */
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                tornaIndietro();
+            }
+        });
 
         caricaDati();
+    }
+
+    /**
+     * Registra l'azione da eseguire dopo la chiusura del palinsesto
+     * (es. riaprire la dashboard da cui si proviene).
+     */
+    public void onIndietro(Runnable azione) {
+        this.azioneIndietro = Objects.requireNonNull(azione);
+    }
+
+    private void tornaIndietro() {
+        dispose();
+        azioneIndietro.run();
     }
 
     public void caricaDati() {
         modelloTabella.setRowCount(0);
 
-        corsiAttuali = GestoreCorsi.getInstance().getPalinsestoCorsi(); // MVC PURO
+        corsiAttuali = gestoreCorsi.getPalinsestoCorsi();
 
         for (Corso c : corsiAttuali) {
             String nomeCompletoTrainer = "Nessun trainer";
@@ -153,10 +194,8 @@ public class PalinsestoCorsiView extends JFrame {
 
         
 
-        GestorePrenotazioni gestore = new GestorePrenotazioni();
-
         try {
-            gestore.prenotaCorso(clienteLoggato, corsoDaPrenotare);
+            gestorePrenotazioni.prenotaCorso(clienteLoggato, corsoDaPrenotare);
 
             JOptionPane.showMessageDialog(
                     this,
@@ -199,13 +238,6 @@ public class PalinsestoCorsiView extends JFrame {
         }
     }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            PalinsestoCorsiView view = new PalinsestoCorsiView();
-            view.setVisible(true);
-        });
-    }
-    
     private void annullaCorsoCliccato() {
         int rigaSelezionata = tabellaCorsi.getSelectedRow();
 
@@ -223,10 +255,8 @@ public class PalinsestoCorsiView extends JFrame {
 
        
 
-        GestorePrenotazioni gestore = new GestorePrenotazioni();
-
         try {
-            gestore.annullaPrenotazione(clienteLoggato, corsoDaAnnullare);
+            gestorePrenotazioni.annullaPrenotazione(clienteLoggato, corsoDaAnnullare);
 
             JOptionPane.showMessageDialog(
                     this,
@@ -254,16 +284,5 @@ public class PalinsestoCorsiView extends JFrame {
                     JOptionPane.ERROR_MESSAGE
             );
         }
-    }
-    
-    /**
-     * Inietta l'utente loggato all'interno della vista.
-     * Utilizzato per mantenere l'integrità col sistema di Login senza alterare 
-     * il costruttore originale della View.
-     * * @param cliente Il cliente attualmente autenticato nel sistema.
-     */
-    
-    public void setClienteLoggato(Cliente cliente) {
-        this.clienteLoggato = cliente;
     }
 }

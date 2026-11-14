@@ -1,17 +1,23 @@
 package it.unipv.poingsfw.controller;
 
 import java.util.Calendar;
+import java.util.List;
+import java.util.Objects;
+import java.util.logging.Logger;
 
 import it.unipv.poingsfw.dao.ClienteDAO;
-import it.unipv.poingsfw.database.ClienteDAOMySQL;
+import it.unipv.poingsfw.dao.SedeDAO;
 import it.unipv.poingsfw.domain.Abbonamento;
 import it.unipv.poingsfw.domain.Cliente;
 import it.unipv.poingsfw.domain.LivelloAbbonamento;
 import it.unipv.poingsfw.domain.Sede;
+import it.unipv.poingsfw.domain.Tariffario;
 import it.unipv.poingsfw.domain.TipoAbbonamento;
 import it.unipv.poingsfw.exceptions.DatiRegistrazioneNonValidiException;
 import it.unipv.poingsfw.exceptions.PagamentoFallitoException;
+import it.unipv.poingsfw.exceptions.SalvataggioFallitoException;
 import it.unipv.poingsfw.exceptions.UtenteGiaEsistenteException;
+import it.unipv.poingsfw.service.ServizioPagamenti;
 
 /**
  * La classe {@code GestoreRegistrazione} agisce come <b>Controller</b> nel pattern architetturale <b>MVC (Model-View-Controller) per 
@@ -24,27 +30,41 @@ import it.unipv.poingsfw.exceptions.UtenteGiaEsistenteException;
  * </p>
  * <p>
  * <b>Scelte Architetturali:</b><br>
- * Applica il pattern creazionale <b>Singleton</b> per garantire che esista una sola istanza 
- * globale del gestore, ottimizzando la memoria della Java Virtual Machine (JVM) durante l'utilizzo dell'applicazione.
+ * Le dipendenze verso la persistenza ({@link ClienteDAO}, {@link SedeDAO}) e verso il
+ * sistema di pagamento ({@link ServizioPagamenti}) arrivano dal costruttore
+ * (<i>Dependency Injection</i>): il gestore conosce solo interfacce e può essere
+ * collaudato con oggetti fittizi, senza database. L'istanza è creata una sola volta
+ * nel Composition Root, quindi non serve un Singleton.
  * </p>
  * * @author Arianna Padula
- * @version 1.0
+ * @version 2.0
  */
 
 public class GestoreRegistrazione {
 
-    private static GestoreRegistrazione istanza;
-    private ClienteDAO clienteDAO;
+    private static final Logger LOG = Logger.getLogger(GestoreRegistrazione.class.getName());
 
-    private GestoreRegistrazione() {
-        this.clienteDAO = new ClienteDAOMySQL();
+    private static final int LUNGHEZZA_MINIMA_PASSWORD = 6;
+    private static final int LUNGHEZZA_MINIMA_IBAN = 15;
+
+    private final ClienteDAO clienteDAO;
+    private final SedeDAO sedeDAO;
+    private final ServizioPagamenti servizioPagamenti;
+
+    public GestoreRegistrazione(ClienteDAO clienteDAO, SedeDAO sedeDAO, ServizioPagamenti servizioPagamenti) {
+        this.clienteDAO = Objects.requireNonNull(clienteDAO, "clienteDAO non può essere null");
+        this.sedeDAO = Objects.requireNonNull(sedeDAO, "sedeDAO non può essere null");
+        this.servizioPagamenti = Objects.requireNonNull(servizioPagamenti, "servizioPagamenti non può essere null");
     }
 
-    public static GestoreRegistrazione getIstanza() {
-        if (istanza == null) {
-            istanza = new GestoreRegistrazione();
-        }
-        return istanza;
+    /**
+     * Restituisce le sedi tra cui il nuovo cliente può scegliere.
+     * La Vista le riceve dal Controller e non interroga mai direttamente la persistenza.
+     *
+     * @return l'elenco delle sedi disponibili
+     */
+    public List<Sede> getSediDisponibili() {
+        return sedeDAO.getTutteLeSedi();
     }
 
     /**
@@ -64,16 +84,16 @@ public class GestoreRegistrazione {
      * @throws UtenteGiaEsistenteException       Se il DAO rintraccia un record duplicato in fase pre-inserimento.
      * @throws DatiRegistrazioneNonValidiException      Se viene violata l'integrità dei dati o le regole di sicurezza (es. password corta).
      * @throws PagamentoFallitoException        (Alternative Flow 1).
+     * @throws SalvataggioFallitoException      Se il livello di persistenza non conferma l'inserimento del nuovo profilo.
      */
     
     public void registraNuovoCliente(String nome, String cognome, String email, String password, 
                                      String codiceFiscale, Sede sedeScelta, 
                                      TipoAbbonamento tipo, LivelloAbbonamento livello, 
                                      boolean rinnovoAutomatico, String iban) 
-                                     throws UtenteGiaEsistenteException, DatiRegistrazioneNonValidiException, PagamentoFallitoException {
+                                     throws UtenteGiaEsistenteException, DatiRegistrazioneNonValidiException,
+                                            PagamentoFallitoException, SalvataggioFallitoException {
         
-        System.out.println("\n--- AVVIO PROCESSO DI REGISTRAZIONE ---");
-
         if (nome == null || nome.trim().isEmpty() ||
             cognome == null || cognome.trim().isEmpty() ||
             email == null || email.trim().isEmpty() ||
@@ -87,8 +107,14 @@ public class GestoreRegistrazione {
             throw new DatiRegistrazioneNonValidiException("Errore: Selezionare una sede di riferimento.");
         }
         
-        if (password.length() < 6) {
+        if (password.length() < LUNGHEZZA_MINIMA_PASSWORD) {
             throw new DatiRegistrazioneNonValidiException("Errore: La password deve contenere almeno 6 caratteri.");
+        }
+
+        String ibanNormalizzato = iban.trim();
+        if (ibanNormalizzato.length() < LUNGHEZZA_MINIMA_IBAN || !ibanNormalizzato.toUpperCase().startsWith("IT")) {
+            throw new DatiRegistrazioneNonValidiException(
+                    "Errore: L'IBAN inserito non è nel formato valido. Deve iniziare con 'IT' ed avere almeno 15 caratteri.");
         }
 
         Cliente clienteEsistente = clienteDAO.getClienteByCF(codiceFiscale);
@@ -99,34 +125,25 @@ public class GestoreRegistrazione {
         Cliente nuovoCliente = new Cliente(nome, cognome, email, codiceFiscale, sedeScelta, tipo);
         nuovoCliente.setPassword(password);
 
-        double importo = 0.0;
-        if (livello == LivelloAbbonamento.MENSILE) importo = 50.0;
-        else if (livello == LivelloAbbonamento.SEMESTRALE) importo = 250.0;
-        else if (livello == LivelloAbbonamento.ANNUALE) importo = 450.0;
-        
-        if (tipo == TipoAbbonamento.PREMIUM) {
-            importo += 15.0; 
-        }
+        double importo = Tariffario.calcolaImporto(tipo, livello);
+        servizioPagamenti.elaboraPagamento(ibanNormalizzato, importo);
 
-        GestorePagamenti banca = GestorePagamenti.getIstanza();
-        banca.elaboraPagamento(iban, importo); 
-
-
-       
-        System.out.println("[DEBUG GESTORE] Il parametro arrivato al gestore vale: " + rinnovoAutomatico);
-
-        Abbonamento nuovoAbbonamento = new Abbonamento(codiceFiscale, livello, tipo, rinnovoAutomatico, iban);
+        Abbonamento nuovoAbbonamento = new Abbonamento(codiceFiscale, livello, tipo, rinnovoAutomatico, ibanNormalizzato);
         
         Calendar cal = Calendar.getInstance();
-        if (livello == LivelloAbbonamento.MENSILE) cal.add(Calendar.MONTH, 1);
-        else if (livello == LivelloAbbonamento.SEMESTRALE) cal.add(Calendar.MONTH, 6);
-        else if (livello == LivelloAbbonamento.ANNUALE) cal.add(Calendar.YEAR, 1);
+        if (livello != null) {
+            cal.add(Calendar.MONTH, livello.getMesi());
+        }
         
         nuovoAbbonamento.setDataScadenza(cal.getTime());
         nuovoCliente.setAbbonamentoAttivo(nuovoAbbonamento);
         
-        clienteDAO.inserisciCliente(nuovoCliente);
-        
-        System.out.println("[SUCCESS] Abbonamento attivato e Utente salvato nel database!");
+        boolean salvato = clienteDAO.inserisciCliente(nuovoCliente);
+        if (!salvato) {
+            throw new SalvataggioFallitoException(
+                    "Errore: impossibile salvare il profilo. Verificare che l'email non sia già registrata.");
+        }
+
+        LOG.info("Registrazione completata: abbonamento attivato e cliente salvato.");
     }
 }

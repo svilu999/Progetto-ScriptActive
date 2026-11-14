@@ -79,13 +79,13 @@ public class PersonalTrainer extends Utente {
     public void setAttivo(boolean isAttivo) { this.isAttivo = isAttivo; }
 
     /**
-     * Apre l'area riservata del PersonalTrainer tramite il LoginController.
+     * Apre l'area riservata del PersonalTrainer tramite l'instradatore ricevuto.
      *
-     * @param router controller incaricato di aprire la dashboard corretta
+     * @param router componente incaricato di aprire l'area corretta
      */
     @Override
-    public void accediAreaRiservata(it.unipv.poingsfw.controller.LoginController router) {
-        router.apriDashboardTrainer(this);
+    public void accediAreaRiservata(InstradatoreUtente router) {
+        router.instradaTrainer(this);
     }
 
     /**
