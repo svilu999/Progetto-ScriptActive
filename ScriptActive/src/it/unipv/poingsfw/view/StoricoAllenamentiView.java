@@ -4,13 +4,13 @@ import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
 import it.unipv.poingsfw.controller.StoricoAllenamentiController;
+import it.unipv.poingsfw.controller.vista.VistaStoricoAllenamenti;
 import it.unipv.poingsfw.domain.Cliente;
 import it.unipv.poingsfw.domain.DatiFormPojo;
 import it.unipv.poingsfw.domain.SessioneAllenamento;
 import it.unipv.poingsfw.exceptions.*;
 
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -35,7 +35,7 @@ import java.util.List;
  * @see javax.swing.JFrame
  * @see it.unipv.poingsfw.controller.StoricoAllenamentiController
  */
-public class StoricoAllenamentiView extends JFrame {
+public class StoricoAllenamentiView extends JFrame implements VistaStoricoAllenamenti {
 
     /**
      * Riferimento al <b>Controller</b> associato a questa vista.
@@ -52,10 +52,9 @@ public class StoricoAllenamentiView extends JFrame {
     
     private JPanel panelStoricoContainer; 
     
-    /* * Risoluzione Violazione Architetturale: Information Hiding.
-     * I componenti UI sono stati resi privati. L'accesso dall'esterno (es. dal Controller) 
-     * avviene esclusivamente tramite i metodi pubblici di registrazione dei listener,
-     * garantendo un basso accoppiamento e incapsulando la struttura interna della View.
+    /* * Information Hiding: i componenti UI sono privati e non vengono esposti all'esterno.
+     * La Vista cattura il gesto dell'utente e lo traduce in una chiamata al proprio
+     * Controller (Event Delegation), incapsulando la struttura interna dell'interfaccia.
      */
     private JButton btnSimulaAccesso; 
     private JButton btnIndietro; 
@@ -87,6 +86,7 @@ public class StoricoAllenamentiView extends JFrame {
         ((JPanel)getContentPane()).setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         inizializzaComponenti();
+        collegaEventiNavigazione();
     }
 
     /**
@@ -217,29 +217,24 @@ public class StoricoAllenamentiView extends JFrame {
     }
 
     /**
-     * Registra un {@link java.awt.event.ActionListener} sul componente grafico delegato all'azione "Indietro".
+     * Collega i comandi di navigazione alle corrispondenti operazioni del Controller.
      * <p>
-     * Implementa rigorosamente il principio dell'<b>Information Hiding</b>. Mantenendo il componente 
-     * {@code btnIndietro} privato, la Vista nasconde la propria implementazione interna (basso accoppiamento).
-     * Il Controller funge da <i>Observer</i> registrandosi agli eventi UI tramite questo metodo pubblico,
-     * conformemente al pattern <i>Event Delegation Model</i>.
+     * Applicazione del principio di <b>Incapsulamento</b>: la Vista espone al Controller solo
+     * l'intento semantico dell'azione (tornare indietro, richiedere l'upgrade), senza rivelare
+     * da quale componente Swing sia scaturito l'evento.
      * </p>
-     * * @param listener L'ascoltatore degli eventi fornito dal Controller per gestire l'azione di ritorno.
      */
-    public void addIndietroListener(ActionListener listener) {
-        this.btnIndietro.addActionListener(listener);
-    }
-
-    /**
-     * Registra un {@link java.awt.event.ActionListener} sul componente grafico delegato all'azione "Simula Accesso / Upgrade Premium".
-     * <p>
-     * Applicazione del principio di <b>Incapsulamento</b>: la Vista espone solo l'intento semantico dell'azione 
-     * (richiesta di upgrade), senza rivelare se l'evento è scaturito da un {@code JButton}, un menù o altro componente Swing.
-     * </p>
-     * * @param listener L'ascoltatore degli eventi fornito dal Controller per avviare il flusso di Upgrade.
-     */
-    public void addSimulaAccessoListener(ActionListener listener) {
-        this.btnSimulaAccesso.addActionListener(listener);
+    private void collegaEventiNavigazione() {
+        btnIndietro.addActionListener(e -> {
+            if (controller != null) {
+                controller.tornaAllaDashboard();
+            }
+        });
+        btnSimulaAccesso.addActionListener(e -> {
+            if (controller != null) {
+                controller.richiediUpgradePremium();
+            }
+        });
     }
 
     /**
@@ -398,6 +393,7 @@ public class StoricoAllenamentiView extends JFrame {
      * lo stato applicativo sul Thread della GUI (EDT).
      * </p>
      */
+    @Override
     public void mostraModuloInserimento() {
         panelForm.setVisible(true); 
         impostaStatoForm(true);
@@ -416,6 +412,7 @@ public class StoricoAllenamentiView extends JFrame {
      * </p>
      * * @param storico Lista degli allenamenti registrati dal dominio e recuperati dalla persistenza.
      */
+    @Override
     public void mostraStorico(List<SessioneAllenamento> storico) {
         panelStoricoContainer.removeAll(); 
 
@@ -501,6 +498,16 @@ public class StoricoAllenamentiView extends JFrame {
  
     public void mostraMessaggio(String messaggio, String titolo, int tipoMessaggio) {
         JOptionPane.showMessageDialog(this, messaggio, titolo, tipoMessaggio);
+    }
+
+    @Override
+    public void mostraAvviso(String messaggio) {
+        mostraMessaggio(messaggio, "Informazione", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    @Override
+    public void chiudi() {
+        dispose();
     }
 
     /**

@@ -8,6 +8,9 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.util.Objects;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -24,7 +27,6 @@ import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
 import it.unipv.poingsfw.controller.GestoreRegistrazione;
-import it.unipv.poingsfw.database.SedeDAOMySQL;
 import it.unipv.poingsfw.domain.LivelloAbbonamento;
 import it.unipv.poingsfw.domain.Sede;
 import it.unipv.poingsfw.domain.TipoAbbonamento;
@@ -39,14 +41,15 @@ import it.unipv.poingsfw.domain.TipoAbbonamento;
  * della compilazione in un'unica finestra.
  * </p>
  * * @author Arianna Padula
- * @version 1.2
+ * @version 2.0
  */
 
 public class RegistrazioneView extends JFrame {
 
     private CardLayout cardLayout;
     private JPanel mainPanel;
-    private GestoreRegistrazione gestore;
+    private final GestoreRegistrazione gestore;
+    private Runnable azioneChiusura = () -> { };
 
     // Campi dati (Step 1)
     private JTextField txtNome, txtCognome, txtCF, txtEmail;
@@ -66,21 +69,42 @@ public class RegistrazioneView extends JFrame {
     private final Dimension buttonSize = new Dimension(200, 45);
 
     /**
-     * Costruttore della vista. Inizializza il collegamento con il Controller 
+     * Costruttore della vista. Riceve il Controller a cui delegare le operazioni
      * e costruisce l'interfaccia utente.
+     * * @param gestore Il Controller dello Use Case UC1.
      */
     
-    public RegistrazioneView() {
-        this.gestore = GestoreRegistrazione.getIstanza();
+    public RegistrazioneView(GestoreRegistrazione gestore) {
+        this.gestore = Objects.requireNonNull(gestore, "Il Controller non può essere null.");
         initUI();
+    }
+
+    /**
+     * Registra l'azione da eseguire quando il modulo viene chiuso, sia al termine
+     * dell'iscrizione sia per rinuncia dell'utente (es. tornare al login).
+     */
+    public void onChiusura(Runnable azione) {
+        this.azioneChiusura = Objects.requireNonNull(azione);
+    }
+
+    private void chiudiModulo() {
+        dispose();
+        azioneChiusura.run();
     }
 
     private void initUI() {
         setTitle("Palestra POSFW - Iscrizione");
         setSize(500, 750); 
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setLocationRelativeTo(null);
         getContentPane().setBackground(Color.WHITE);
+
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                chiudiModulo();
+            }
+        });
 
         cardLayout = new CardLayout();
         mainPanel = new JPanel(cardLayout);
@@ -149,8 +173,8 @@ public class RegistrazioneView extends JFrame {
 
         comboSede = new JComboBox<>(); 
 
-        SedeDAOMySQL sedeDao = new SedeDAOMySQL();
-        java.util.List<Sede> listaSedi = sedeDao.getTutteLeSedi();
+        /* Le sedi sono fornite dal Controller: la View non accede alla persistenza */
+        java.util.List<Sede> listaSedi = gestore.getSediDisponibili();
 
         for (Sede s : listaSedi) {
             comboSede.addItem(s);
@@ -228,19 +252,10 @@ public class RegistrazioneView extends JFrame {
     
     private void handleFinalRegistration(ActionEvent e) {
         try {
-            String ibanInserito = txtIBAN.getText().trim();
-            if (ibanInserito.isEmpty() || ibanInserito.length() < 15 || !ibanInserito.toUpperCase().startsWith("IT")) {
-                JOptionPane.showMessageDialog(this, 
-                    "L'IBAN inserito non è nel formato valido.\nDeve iniziare con 'IT' ed avere almeno 15 caratteri.", 
-                    "IBAN Non Valido", 
-                    JOptionPane.WARNING_MESSAGE);
-                return; 
-            }
-
             Sede sedeSelezionata = (Sede) comboSede.getSelectedItem(); 
             boolean rinnovoScelto = chkRinnovo.isSelected(); // LETTURA DELLA SPUNTA
-            System.out.println("[DEBUG VIEW] La spunta nell'interfaccia vale: " + rinnovoScelto);
-            
+
+            /* La validazione dei dati (IBAN compreso) è una regola applicativa: la esegue il Controller */
             gestore.registraNuovoCliente(
                     txtNome.getText(), txtCognome.getText(), txtEmail.getText(),
                     new String(txtPassword.getPassword()), txtCF.getText(),
@@ -251,16 +266,18 @@ public class RegistrazioneView extends JFrame {
             );
 
             JOptionPane.showMessageDialog(this, "Iscrizione completata! Benvenuto in palestra.", "Successo", JOptionPane.INFORMATION_MESSAGE);
-            this.dispose(); 
+            chiudiModulo();
 
         } catch (it.unipv.poingsfw.exceptions.DatiRegistrazioneNonValidiException ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Dati Incompleti", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Dati Non Validi", JOptionPane.WARNING_MESSAGE);
         } catch (it.unipv.poingsfw.exceptions.UtenteGiaEsistenteException ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Utente Duplicato", JOptionPane.ERROR_MESSAGE);
             cardLayout.show(mainPanel, "STEP1"); 
         } catch (it.unipv.poingsfw.exceptions.PagamentoFallitoException ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Transazione Negata", JOptionPane.ERROR_MESSAGE);
-        } catch (Exception ex) {
+        } catch (it.unipv.poingsfw.exceptions.SalvataggioFallitoException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Iscrizione Non Salvata", JOptionPane.ERROR_MESSAGE);
+        } catch (RuntimeException ex) {
             JOptionPane.showMessageDialog(this, "Errore di sistema: " + ex.getMessage(), "Errore Critico", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -324,16 +341,5 @@ public class RegistrazioneView extends JFrame {
 
     public void mostraModuloRegistrazione() {
         this.setVisible(true);
-    }
-    
-    public static void main(String[] args) {
-        javax.swing.SwingUtilities.invokeLater(() -> {
-            try {
-                RegistrazioneView view = new RegistrazioneView();
-                view.mostraModuloRegistrazione(); 
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
     }
 }

@@ -48,4 +48,21 @@ public interface UtenteDAO {
     // Metodo per la registrazione
     void registraCliente(String cf, String nome, String cognome, String email, String passwordHash);
 
+
+    /**
+     * Rinnova l'abbonamento del cliente identificato dall'email.
+     *
+     * @param email           email del cliente
+     * @param mesiAggiuntivi  durata del nuovo periodo, in mesi a partire da oggi
+     * @param nuovoPiano      livello scelto (MENSILE, SEMESTRALE, ANNUALE)
+     */
+    void eseguiRinnovo(String email, int mesiAggiuntivi, String nuovoPiano);
+
+    /**
+     * Se l'abbonamento del cliente è scaduto e ha il rinnovo automatico attivo, lo rinnova.
+     *
+     * @param email email del cliente
+     * @return {@code true} se il rinnovo automatico è stato eseguito
+     */
+    boolean tentaRinnovoSilenzioso(String email);
 }

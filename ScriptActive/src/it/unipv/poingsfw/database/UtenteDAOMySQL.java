@@ -220,6 +220,7 @@ public class UtenteDAOMySQL implements UtenteDAO {
      * </p>
      */
 
+    @Override
     public void eseguiRinnovo(String email, int mesiAggiuntivi, String nuovoPiano) {
         
         // Se riceve "Annuale - €360.00", estrapola solo "ANNUALE"
@@ -264,6 +265,7 @@ public class UtenteDAOMySQL implements UtenteDAO {
      * * @return {@code true} se il rinnovo è stato innescato con successo.
      */
     
+    @Override
     public boolean tentaRinnovoSilenzioso(String email) {
     	   
     	    String query = "SELECT a.RinnovoAutomatico, a.Livello " +

@@ -47,4 +47,26 @@ public interface ClienteDAO {
      */
 
     public void deleteCliente(String codiceFiscale);
+
+    /**
+     * Recupera gli abbonamenti scaduti che hanno il rinnovo automatico attivo.
+     * @return la lista degli abbonamenti da rinnovare (vuota se non ce ne sono).
+     */
+
+    public java.util.List<it.unipv.poingsfw.domain.Abbonamento> getAbbonamentiInScadenzaConRinnovo();
+
+    /**
+     * Imposta una nuova data di scadenza per l'abbonamento indicato.
+     * @param idAbbonamento identificativo dell'abbonamento.
+     * @param nuovaData     nuova data di scadenza.
+     */
+
+    public void aggiornaScadenzaAbbonamento(int idAbbonamento, java.util.Date nuovaData);
+
+    /**
+     * Disattiva il rinnovo automatico dell'abbonamento indicato.
+     * @param idAbbonamento identificativo dell'abbonamento.
+     */
+
+    public void disattivaRinnovoAutomatico(int idAbbonamento);
 }

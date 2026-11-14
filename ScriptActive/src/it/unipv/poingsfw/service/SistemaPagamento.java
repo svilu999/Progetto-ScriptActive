@@ -1,4 +1,6 @@
-package it.unipv.poingsfw.controller;
+package it.unipv.poingsfw.service;
+
+import java.util.logging.Logger;
 
 /**
  * La classe {@code SistemaPagamento} funge da <b>Mock Object</b> (oggetto simulato) per 
@@ -16,6 +18,8 @@ package it.unipv.poingsfw.controller;
 
 public class SistemaPagamento {
 
+    private static final Logger LOG = Logger.getLogger(SistemaPagamento.class.getName());
+
     public SistemaPagamento() {
     }
     
@@ -32,15 +36,14 @@ public class SistemaPagamento {
      */
 
     public boolean autorizzaTransazione(String iban, double importo) {
-        System.out.println("[SISTEMA ESTERNO BANCA] Ricevuta richiesta di addebito di €" + importo);
-        System.out.println("[SISTEMA ESTERNO BANCA] Verifica in corso sull'IBAN: " + iban);
+        LOG.info("[SISTEMA ESTERNO BANCA] Ricevuta richiesta di addebito di €" + importo);
         
         if (iban != null && iban.toUpperCase().contains("ERRORE")) {
-            System.out.println("[SISTEMA ESTERNO BANCA] Errore: Transazione RIFIUTATA.");
+            LOG.warning("[SISTEMA ESTERNO BANCA] Transazione RIFIUTATA.");
             return false;
         }
         
-        System.out.println("[SISTEMA ESTERNO BANCA] Stato: Transazione AUTORIZZATA con successo.");
+        LOG.info("[SISTEMA ESTERNO BANCA] Transazione AUTORIZZATA con successo.");
         return true;
     }
 
@@ -53,7 +56,6 @@ public class SistemaPagamento {
      */
     
     public void registraAddebitoPeriodico(String iban, double importo) {
-        System.out.println("[SISTEMA ESTERNO BANCA] Attivazione mandato di addebito diretto (SDD).");
-        System.out.println("[SISTEMA ESTERNO BANCA] Verranno addebitati €" + importo + " periodicamente sull'IBAN: " + iban);
+        LOG.info("[SISTEMA ESTERNO BANCA] Attivato mandato di addebito diretto (SDD) di €" + importo + ".");
     }
 }

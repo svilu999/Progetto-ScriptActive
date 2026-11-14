@@ -190,22 +190,26 @@ INSERT INTO Cliente (ID_Cliente, ID_Sede) VALUES
 -- ==============================================================================
 -- 7. POPOLAMENTO: INSERIMENTO ABBONAMENTI
 -- ==============================================================================
+-- Le scadenze sono relative alla data in cui lo script viene eseguito, cosi' i clienti
+-- di esempio hanno sempre un abbonamento valido e possono accedere.
 INSERT INTO Abbonamento (Tipo, Livello, DataScadenza, RinnovoAutomatico, ID_Cliente)
-VALUES ('PREMIUM', 'ANNUALE', '2026-12-31', TRUE, 3);
+VALUES ('PREMIUM', 'ANNUALE', DATE_ADD(CURDATE(), INTERVAL 1 YEAR), TRUE, 3);
 
 INSERT INTO Abbonamento (Tipo, Livello, DataScadenza, RinnovoAutomatico, ID_Cliente)
-VALUES ('BASE', 'MENSILE', '2026-07-31', FALSE, 4);
+VALUES ('BASE', 'MENSILE', DATE_ADD(CURDATE(), INTERVAL 1 MONTH), FALSE, 4);
 
 -- ==============================================================================
 -- 8. POPOLAMENTO: INSERIMENTO CORSI
 -- ==============================================================================
+-- Le date sono relative alla data in cui lo script viene eseguito: il palinsesto mostra
+-- solo i corsi futuri, quindi con date fisse i corsi di esempio sparirebbero col tempo.
 INSERT INTO Corso (Nome, DataOra, CapienzaMassima, PostiDisponibili, Stato, ID_Sede, ID_Trainer, ID_Direttore)
 VALUES
-('Corso di Funzionale', '2026-07-01 18:00:00', 15, 15, 'Pianificato', 1, 2, 1),
-('Corso di Sala Pesi', '2026-07-02 10:00:00', 20, 20, 'Pianificato', 1, 2, 1),
-('Corso di Cross Training', '2026-07-01 18:00:00', 12, 12, 'Pianificato', 1, 12, 1),
-('Corso di Pilates', '2026-07-03 17:00:00', 20, 20, 'Pianificato', 2, 13, 1),
-('Corso di Zumba', '2026-07-04 19:00:00', 18, 18, 'Pianificato', 2, 10, 1);
+('Corso di Funzionale', TIMESTAMP(DATE_ADD(CURDATE(), INTERVAL 7 DAY), '18:00:00'), 15, 15, 'Pianificato', 1, 2, 1),
+('Corso di Sala Pesi', TIMESTAMP(DATE_ADD(CURDATE(), INTERVAL 8 DAY), '10:00:00'), 20, 20, 'Pianificato', 1, 2, 1),
+('Corso di Cross Training', TIMESTAMP(DATE_ADD(CURDATE(), INTERVAL 7 DAY), '18:00:00'), 12, 12, 'Pianificato', 1, 12, 1),
+('Corso di Pilates', TIMESTAMP(DATE_ADD(CURDATE(), INTERVAL 9 DAY), '17:00:00'), 20, 20, 'Pianificato', 2, 13, 1),
+('Corso di Zumba', TIMESTAMP(DATE_ADD(CURDATE(), INTERVAL 10 DAY), '19:00:00'), 18, 18, 'Pianificato', 2, 10, 1);
 
 -- ==============================================================================
 -- 9. POPOLAMENTO: STORICO ALLENAMENTI

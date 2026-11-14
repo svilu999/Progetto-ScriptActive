@@ -1,4 +1,6 @@
-package it.unipv.poingsfw.controller;
+package it.unipv.poingsfw.service;
+
+import java.util.logging.Logger;
 
 import it.unipv.poingsfw.exceptions.PagamentoFallitoException;
 
@@ -6,45 +8,25 @@ import it.unipv.poingsfw.exceptions.PagamentoFallitoException;
  * La classe {@code GestorePagamenti} funge da <b>Mock Object</b> (oggetto simulato) 
  * per l'integrazione con un sistema bancario esterno (Payment Gateway).
  * <p>
- * Sviluppata all'interno del livello <b>Controller</b> dell'architettura <b>MVC</b>, 
- * questa classe astrae la logica di transazione finanziaria. In un ambiente di produzione 
+ * Implementa la porta {@link ServizioPagamenti} e astrae la logica di transazione finanziaria. In un ambiente di produzione 
  * reale comunicherebbe tramite API con una banca, ma in questo contesto di sviluppo 
  * e collaudo (Testing) espone un comportamento deterministico e simulato, permettendo 
  * di validare i flussi di successo e di errore senza effettuare transazioni monetarie reali.
  * </p>
  * <p>
  * <b>Scelte Architetturali:</b><br>
- * Utilizza il pattern <b>Singleton</b> per simulare un unico punto di accesso globale 
- * al servizio di pagamento, ottimizzando le risorse di rete (fittizie) del sistema.
+ * Non è un Singleton: l'istanza viene creata una sola volta nel <i>Composition Root</i>
+ * e passata via costruttore a chi ne ha bisogno. Chi la usa conosce solo l'interfaccia
+ * {@link ServizioPagamenti}, quindi nei test può essere sostituita da un oggetto fittizio.
  * </p>
  * * @author Arianna Padula
  * @version 1.0
  */
 
-public class GestorePagamenti {
-    
-    private static GestorePagamenti istanza;
-    
-    /**
-     * Costruttore privato della classe, necessario per applicare il pattern Singleton.
-     * Impedisce l'istanziazione diretta dall'esterno.
-     */
-    
-    private GestorePagamenti() {
-    }
-    
-    /**
-     * Punto di accesso globale all'istanza unica della classe (Pattern Singleton).
-     * @return L'unica istanza attiva di {@code GestorePagamenti}.
-     */
-    
-    public static GestorePagamenti getIstanza() {
-        if (istanza == null) {
-            istanza = new GestorePagamenti();
-        }
-        return istanza;
-    }
-    
+public class GestorePagamenti implements ServizioPagamenti {
+
+    private static final Logger LOG = Logger.getLogger(GestorePagamenti.class.getName());
+
     /**
      * Simula l'elaborazione di una transazione bancaria (Addebito).
      * <p>
@@ -61,8 +43,9 @@ public class GestorePagamenti {
      * @throws PagamentoFallitoException   Se l'IBAN contiene la stringa "ERRORE" o il saldo è fittiziamente insufficiente.
      */
     
+    @Override
     public boolean elaboraPagamento(String ibanCliente, double importo) throws PagamentoFallitoException {
-        System.out.println("[BANCA SIMULATA] Ricevuta richiesta di addebito di €" + importo + " sull'IBAN: " + ibanCliente);
+        LOG.info("[BANCA SIMULATA] Ricevuta richiesta di addebito di €" + importo);
         
      // Controllo fittizio per innescare i Flussi Alternativi nei Test
         
@@ -70,7 +53,7 @@ public class GestorePagamenti {
             throw new PagamentoFallitoException("Transazione Rifiutata: Credito insufficienti sul conto corrente.");
         }
         
-        System.out.println("[BANCA SIMULATA] Transazione autorizzata con successo!");
+        LOG.info("[BANCA SIMULATA] Transazione autorizzata con successo.");
         return true;
     }
 }

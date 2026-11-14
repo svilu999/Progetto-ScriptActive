@@ -1,4 +1,4 @@
-package it.unipv.poingsfw.test.unit;
+package it.unipv.poingsfw.test.integration;
 
 import java.util.List;
 
@@ -24,7 +24,7 @@ import it.unipv.poingsfw.domain.Corso;
  * @see CorsoDAO
  * @see Corso
  */
-public class PalinsestoCorsiTest {
+public class PalinsestoCorsiIntegrationTest {
 
     /**
      * Entry-point principale per l'esecuzione dello Smoke Test di integrazione.

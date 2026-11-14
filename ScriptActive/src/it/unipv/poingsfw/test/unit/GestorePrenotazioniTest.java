@@ -1,115 +1,134 @@
 package it.unipv.poingsfw.test.unit;
 
-import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.sql.Connection;
-import java.sql.Statement;
 import java.time.LocalDateTime;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import it.unipv.poingsfw.controller.GestorePrenotazioni;
 import it.unipv.poingsfw.domain.Cliente;
 import it.unipv.poingsfw.domain.Corso;
 import it.unipv.poingsfw.exceptions.CorsoAlCompletoException;
 import it.unipv.poingsfw.exceptions.PrenotazioneGiaEffettuataException;
-import it.unipv.poingsfw.util.DatabaseManager;
+import it.unipv.poingsfw.exceptions.PrenotazioneInesistenteException;
+import it.unipv.poingsfw.test.fake.CorsoDAOInMemoria;
+import it.unipv.poingsfw.test.fake.PrenotazioneDAOInMemoria;
 
+/**
+ * Test di unità del {@link GestorePrenotazioni}: iscrizione, lista d'attesa e
+ * avanzamento automatico della coda.
+ * <p>
+ * I DAO sono sostituiti da implementazioni in memoria: i test non richiedono il
+ * database. La verifica contro MySQL reale è nella suite
+ * {@code test.integration.GestorePrenotazioniIntegrationTest}.
+ * </p>
+ */
 class GestorePrenotazioniTest {
 
+    private static final String CONFERMATA = "Confermata";
+    private static final String IN_LISTA_ATTESA = "InListaAttesa";
+
+    private PrenotazioneDAOInMemoria prenotazioneDAO;
+    private CorsoDAOInMemoria corsoDAO;
     private GestorePrenotazioni gestore;
 
+    private Cliente mario;
+    private Cliente lorenzo;
 
     @BeforeEach
     void setUp() {
-        resetDatabase();
-        gestore = new GestorePrenotazioni();
+        prenotazioneDAO = new PrenotazioneDAOInMemoria();
+        corsoDAO = new CorsoDAOInMemoria();
+        gestore = new GestorePrenotazioni(prenotazioneDAO, corsoDAO);
+
+        mario = new Cliente("Mario", "Rossi", "mario.rossi@email.it", "RSSMRA80A01H501Z");
+        mario.setId(3);
+        lorenzo = new Cliente("Lorenzo", "Varano", "lorenzo@studenti.unipv.it", "VRNLRN99M21F205W");
+        lorenzo.setId(4);
     }
 
-
-    @AfterEach
-    void tearDown() {
-        resetDatabase();
+    private Corso creaCorso(String id, int posti) {
+        return new Corso(id, "Corso " + id, LocalDateTime.now().plusDays(1), posti, null);
     }
 
     @Test
     void testPrenotazioneSuccesso() throws Exception {
-        Cliente c = new Cliente("Mario", "Rossi", "mario.rossi@email.it", "RSSMRA80A01H501Z");
-        c.setId(3); 
-        Corso corso = new Corso("1", "Corso Funzionale", LocalDateTime.now(), 15, null);
-        
-        assertDoesNotThrow(() -> gestore.prenotaCorso(c, corso));
+        Corso corso = creaCorso("1", 15);
+
+        gestore.prenotaCorso(mario, corso);
+
+        assertEquals(CONFERMATA, prenotazioneDAO.getStato("3", "1"));
+        assertEquals(14, corso.getPostiDisponibili(), "La prenotazione deve occupare un posto");
+        assertEquals(1, corsoDAO.getAggiornamentiPosti(), "La nuova disponibilità deve essere resa persistente");
     }
 
     @Test
     void testEccezioneDoppiaPrenotazione() throws Exception {
-        Cliente c = new Cliente("Mario", "Rossi", "mario.rossi@email.it", "RSSMRA80A01H501Z");
-        c.setId(3); 
-        Corso corso = new Corso("1", "Corso Funzionale", LocalDateTime.now(), 15, null);
+        Corso corso = creaCorso("1", 15);
+        gestore.prenotaCorso(mario, corso);
 
+        assertThrows(PrenotazioneGiaEffettuataException.class, () -> gestore.prenotaCorso(mario, corso));
+        assertEquals(14, corso.getPostiDisponibili(), "Il secondo tentativo non deve occupare altri posti");
+    }
 
-        gestore.prenotaCorso(c, corso);
+    @Test
+    void testCorsoPieno_InserimentoInListaDAttesa() throws Exception {
+        Corso corso = creaCorso("5", 1);
+        gestore.prenotaCorso(mario, corso);
 
+        assertThrows(CorsoAlCompletoException.class, () -> gestore.prenotaCorso(lorenzo, corso));
 
-        assertThrows(PrenotazioneGiaEffettuataException.class, () -> {
-            gestore.prenotaCorso(c, corso);
-        });
+        assertEquals(IN_LISTA_ATTESA, prenotazioneDAO.getStato("4", "5"));
+        assertEquals(0, corso.getPostiDisponibili());
     }
 
     @Test
     void testListaAttesaESwap() throws Exception {
-        Corso corsoZumba = new Corso("5", "Zumba", LocalDateTime.now(), 18, null);
+        Corso corso = creaCorso("5", 1);
+        gestore.prenotaCorso(mario, corso);
+        assertThrows(CorsoAlCompletoException.class, () -> gestore.prenotaCorso(lorenzo, corso));
 
-        corsoZumba.setPostiDisponibili(1); 
-        
-        Cliente cMario = new Cliente("Mario", "Rossi", "mario.rossi@email.it", "RSSMRA80A01H501Z");
-        cMario.setId(3); 
-        
-        Cliente cLorenzo = new Cliente("Lorenzo", "Varano", "lorenzo@studenti.unipv.it", "VRNLRN99M21F205W");
-        cLorenzo.setId(4); 
+        gestore.annullaPrenotazione(mario, corso);
 
-
-        assertDoesNotThrow(() -> gestore.prenotaCorso(cMario, corsoZumba));
-
-
-        assertThrows(CorsoAlCompletoException.class, () -> {
-            gestore.prenotaCorso(cLorenzo, corsoZumba);
-        });
-
-
-        assertDoesNotThrow(() -> gestore.annullaPrenotazione(cMario, corsoZumba));
+        assertNull(prenotazioneDAO.getStato("3", "5"), "La prenotazione annullata deve essere rimossa");
+        assertEquals(CONFERMATA, prenotazioneDAO.getStato("4", "5"),
+                "Il primo cliente in lista d'attesa deve essere promosso");
+        assertEquals(0, corso.getPostiDisponibili(), "Il posto liberato è stato subito riassegnato");
     }
 
+    @Test
+    void testAnnullamentoSenzaListaDAttesa_LiberaUnPosto() throws Exception {
+        Corso corso = creaCorso("1", 15);
+        gestore.prenotaCorso(mario, corso);
 
-    private void resetDatabase() {
-        try {
+        gestore.annullaPrenotazione(mario, corso);
 
-            Connection conn = DatabaseManager.getInstance().getConnection();
-            Statement stmt = conn.createStatement();
+        assertFalse(prenotazioneDAO.esistePrenotazione("3", "1"));
+        assertEquals(15, corso.getPostiDisponibili());
+    }
 
+    @Test
+    void testAnnullamentoPrenotazioneInesistente_LanciaEccezione() {
+        Corso corso = creaCorso("1", 15);
 
-            stmt.execute("SET SQL_SAFE_UPDATES = 0");
-            stmt.execute("SET FOREIGN_KEY_CHECKS = 0");
+        assertThrows(PrenotazioneInesistenteException.class, () -> gestore.annullaPrenotazione(mario, corso));
+    }
 
+    @Test
+    void testErroreDiPersistenza_NonOccupaIlPosto() {
+        Corso corso = creaCorso("1", 15);
+        prenotazioneDAO.setInserimentoFallisce(true);
 
-            stmt.execute("DELETE FROM Prenotazione");
-            stmt.execute("ALTER TABLE Prenotazione AUTO_INCREMENT = 1");
+        Exception errore = assertThrows(Exception.class, () -> gestore.prenotaCorso(mario, corso));
 
-
-            stmt.execute("UPDATE Corso SET PostiDisponibili = 1 WHERE ID_Corso = 5");
-            stmt.execute("UPDATE Corso SET PostiDisponibili = 15 WHERE ID_Corso = 1");
-
-
-            stmt.execute("SET FOREIGN_KEY_CHECKS = 1");
-            stmt.execute("SET SQL_SAFE_UPDATES = 1");
-
-            stmt.close();
-            conn.close();
-            
-        } catch (Exception e) {
-            System.err.println("Errore durante il reset del Database per il test: " + e.getMessage());
-        }
-    
+        assertFalse(errore instanceof CorsoAlCompletoException);
+        assertEquals(15, corso.getPostiDisponibili());
+        assertTrue(corsoDAO.findAll().isEmpty());
     }
 }

@@ -1,24 +1,21 @@
 package it.unipv.poingsfw.controller;
 
 import java.util.List;
+import java.util.Objects;
 
+import it.unipv.poingsfw.controller.vista.VistaStoricoAllenamenti;
 import it.unipv.poingsfw.dao.SessioneDAO;
-import it.unipv.poingsfw.database.SessioneDAOMySQL;
 import it.unipv.poingsfw.domain.Cliente;
-import it.unipv.poingsfw.domain.Corso;
 import it.unipv.poingsfw.domain.DatiFormPojo;
 import it.unipv.poingsfw.domain.SessioneAllenamento;
 import it.unipv.poingsfw.exceptions.DatiAllenamentoNonValidiException;
 import it.unipv.poingsfw.exceptions.SalvataggioFallitoException;
 import it.unipv.poingsfw.exceptions.SchedaVuotaException;
 import it.unipv.poingsfw.exceptions.UtenteNonPremiumException;
-import it.unipv.poingsfw.view.DashboardClienteView;
-import it.unipv.poingsfw.view.PalinsestoCorsiView;
-import it.unipv.poingsfw.view.StoricoAllenamentiView;
 
 /**
  * <p>
- * Agisce come intermediario direzionale tra la logica di presentazione ({@link StoricoAllenamentiView}) e 
+ * Agisce come intermediario direzionale tra la logica di presentazione ({@link VistaStoricoAllenamenti}) e 
  * il livello di accesso ai dati ({@link SessioneDAO}). Assorbe la logica di business e il coordinamento 
  * dell'applicazione, intercettando gli eventi dell'interfaccia utente (tramite il Modello di delega degli eventi)
  * per tradurli in operazioni sul Modello di dominio e successive transizioni di stato della Vista.
@@ -30,101 +27,64 @@ import it.unipv.poingsfw.view.StoricoAllenamentiView;
  * valida i parametri quantitativi in input (precondizioni dell'UC4) e coordina il consolidamento del tracciato 
  * storico richiamando il livello di persistenza.
  * </p>
+ * <p>
+ * <b>Dipendenze:</b> il controller conosce solo astrazioni — la vista
+ * ({@link VistaStoricoAllenamenti}), la persistenza ({@link SessioneDAO}) e la navigazione
+ * ({@link Navigatore}) — ricevute dal costruttore. Non istanzia finestre né DAO.
+ * </p>
  * * @author Vilucchi Prina
- * @version 1.2
- * @see it.unipv.poingsfw.view.StoricoAllenamentiView
+ * @version 2.0
+ * @see it.unipv.poingsfw.controller.vista.VistaStoricoAllenamenti
  * @see it.unipv.poingsfw.dao.SessioneDAO
  */
 public class StoricoAllenamentiController {
     
-    private StoricoAllenamentiView view;
-    private SessioneDAO dao;
+    private final VistaStoricoAllenamenti view;
+    private final SessioneDAO dao;
+    private final Navigatore navigatore;
     private Cliente clienteLoggato; 
 
     /**
      * Costruttore della classe {@code StoricoAllenamentiController}.
      * <p>
-     * Esegue la <i>Dependency Injection</i> dei componenti architetturali (Vista e DAO). 
-     * Stabilisce il binding bidirezionale iniziale associando questo controller alla vista delegata,
-     * e procede alla registrazione dei listener (Observer) per l'interazione utente.
+     * Esegue la <i>Dependency Injection</i> dei componenti architetturali (Vista, DAO e Navigatore).
+     * Il collegamento inverso (la vista che conosce il proprio controller) è stabilito dal
+     * Composition Root: la vista traduce i gesti dell'utente in chiamate ai metodi pubblici
+     * di questa classe.
      * </p>
      */
-    public StoricoAllenamentiController(StoricoAllenamentiView view, SessioneDAO dao) {
-        this.view = view;
-        this.dao = dao;
-        this.view.setController(this);
-        
-        inizializzaBottoniNavigazione();
+    public StoricoAllenamentiController(VistaStoricoAllenamenti view, SessioneDAO dao, Navigatore navigatore) {
+        this.view = Objects.requireNonNull(view, "La vista non può essere null.");
+        this.dao = Objects.requireNonNull(dao, "Il DAO non può essere null.");
+        this.navigatore = Objects.requireNonNull(navigatore, "Il navigatore non può essere null.");
     }
 
     /**
-     * Coordina la registrazione dei listener (<i>Event Delegation Model</i>) sui componenti della Vista.
+     * Routing all'indietro: chiude l'area allenamenti e torna alla dashboard del cliente.
      * <p>
-     * <b>Risoluzione Information Hiding:</b> Conformemente al principio di basso accoppiamento, il Controller 
-     * non manipola più direttamente i componenti grafici atomici (es. i {@code JButton} che  sono privati), 
-     * ma invoca i metodi pubblici di servizio esposti dalla Vista per iniettare i propri {@link java.awt.event.ActionListener}.
-     * Questo incapsula la struttura dell'interfaccia e separa la "reazione" (Controller) dall'"azione" (View).
+     * Il controller decide la destinazione; la costruzione della schermata è compito del
+     * {@link Navigatore}.
      * </p>
      */
-    private void inizializzaBottoniNavigazione() {
-        
-        /* * Registrazione Listener per il routing all'indietro (Ritorno alla Dashboard principale).
-         * Coordina la chiusura del frame corrente e l'istanziazione/popolamento della Vista precedente.
-         */
-        view.addIndietroListener(e -> {
-            view.dispose(); 
-            
-            DashboardClienteView dashboardView = new DashboardClienteView();
-            dashboardView.impostaDatiCliente(clienteLoggato);
-                        
-            try {
-                // Recupero dipendenze di dominio per il popolamento della Dashboard
-                GestorePrenotazioni gestorePrenotazioni = new GestorePrenotazioni();
-                List<Corso> corsiDelCliente = gestorePrenotazioni.getCorsiPrenotatiDalCliente(clienteLoggato);
-                dashboardView.mostraCorsiPrenotati(corsiDelCliente);
-            } catch (Exception ex) {
-                System.err.println("Errore architetturale nel recupero dei corsi: " + ex.getMessage());
-            }
-            
-            /* *  Information Hiding.
-             * I bottoni della DashboardClienteView sono stati resi privati. 
-             * L'inserimento dei listener avviene tramite metodi setter dedicati esposti dalla Vista.
-             */
-            dashboardView.addAreaPremiumListener(ev -> {
-                dashboardView.dispose();
-                StoricoAllenamentiView premiumView = new StoricoAllenamentiView();
-                SessioneDAO sessioneDAO = new SessioneDAOMySQL();
-                StoricoAllenamentiController clienteController = new StoricoAllenamentiController(premiumView, sessioneDAO);
-                
-                premiumView.setController(clienteController);
-                premiumView.setUtenteCorrente(clienteLoggato); 
-                premiumView.setVisible(true);
-                premiumView.clickAccediStorico(clienteLoggato);
-            });
-            
-            dashboardView.addPrenotaCorsiListener(ev -> {
-                dashboardView.dispose();
-                PalinsestoCorsiView corsiView = new PalinsestoCorsiView(); 
-                corsiView.setClienteLoggato(dashboardView.getUtenteCorrente());
-                corsiView.setVisible(true);
-            });
-            
-            dashboardView.setVisible(true);
-        });
+    public void tornaAllaDashboard() {
+        view.chiudi();
+        if (clienteLoggato != null) {
+            navigatore.apriDashboardCliente(clienteLoggato);
+        } else {
+            navigatore.apriLogin();
+        }
+    }
 
-        /* * Registrazione Listener per il Flusso Alternativo (Upgrade Premium).
-         * Risponde allo Use Case UC4 - Alternative Flow 1: Intercetta l'azione di simulazione 
-         * dell'upgrade qualora il cliente Base tenti l'accesso a funzioni avanzate.
-         */
-        view.addSimulaAccessoListener(e -> {
-            view.dispose(); 
-            System.out.println("Routing verso il Modulo Pagamenti per il Cliente: " + clienteLoggato.getNome());
-            
-            /*
-             * L'integrazione con il modulo di Billing (Payment Gateway) o la logica di 
-             * mutazione del livello di abbonamento nel dominio avverrà in questo blocco,
-             */
-        });
+    /**
+     * Flusso Alternativo 1 dello Use Case UC4 (Upgrade Premium).
+     * <p>
+     * L'integrazione con il modulo di pagamento per il cambio di abbonamento non è ancora
+     * disponibile: il sistema lo comunica all'utente invece di chiudere la schermata.
+     * </p>
+     */
+    public void richiediUpgradePremium() {
+        view.mostraAvviso("L'upgrade a Premium non è ancora disponibile da questa schermata.\n"
+                + "Rivolgiti alla reception della tua sede per cambiare abbonamento.");
     }
 
     /**

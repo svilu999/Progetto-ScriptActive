@@ -4,13 +4,13 @@ import java.util.List;
 import java.util.Objects;
 
 import it.unipv.poingsfw.controller.mapper.GestionePersonaleViewMapper;
+import it.unipv.poingsfw.controller.vista.VistaGestionePersonale;
 import it.unipv.poingsfw.dto.DatiVisualizzazioneTrainer;
 import it.unipv.poingsfw.exceptions.SostitutoNonValidoException;
 import it.unipv.poingsfw.exceptions.TrainerGiaAssuntoException;
 import it.unipv.poingsfw.exceptions.TrainerNonLicenziabileException;
 import it.unipv.poingsfw.exceptions.TrainerNonValidoException;
 import it.unipv.poingsfw.service.ServizioContrattiPersonale;
-import it.unipv.poingsfw.view.GestionePersonaleView;
 
 /**
  * Controller della gestione del personale.
@@ -25,7 +25,7 @@ public final class GestorePersonale {
             "A_LEZIONE"
     };
 
-    private final GestionePersonaleView view;
+    private final VistaGestionePersonale view;
     private final ServizioContrattiPersonale servizioContratti;
 
     /*
@@ -46,7 +46,7 @@ public final class GestorePersonale {
      * @param servizioContratti Service applicativo del caso d'uso
      */
     public GestorePersonale(
-            GestionePersonaleView view,
+            VistaGestionePersonale view,
             ServizioContrattiPersonale servizioContratti) {
 
         this.view = Objects.requireNonNull(
@@ -74,31 +74,12 @@ public final class GestorePersonale {
      * Registra nel Controller tutti gli eventi generati dalla View.
      */
     private void registraListener() {
-        view.getBtnAggiorna().addActionListener(
-                evento -> aggiornaElencoPersonalTrainer()
-        );
-
-        view.getBtnAssumi().addActionListener(
-                evento -> gestisciAssunzione()
-        );
-
-        view.getBtnLicenziaSenzaSostituto().addActionListener(
-                evento -> gestisciLicenziamentoSenzaSostituto()
-        );
-
-        view.getBtnLicenziaConSostituto().addActionListener(
-                evento -> gestisciLicenziamentoConSostituto()
-        );
-
-        view.getBtnCalcolaRetribuzioni().addActionListener(
-                evento -> gestisciCalcoloRetribuzioni()
-        );
-
-        view.getTabellaPT().getSelectionModel().addListSelectionListener(evento -> {
-            if (!evento.getValueIsAdjusting()) {
-                gestisciSelezioneTrainer();
-            }
-        });
+        view.onAggiorna(this::aggiornaElencoPersonalTrainer);
+        view.onAssumi(this::gestisciAssunzione);
+        view.onLicenziaSenzaSostituto(this::gestisciLicenziamentoSenzaSostituto);
+        view.onLicenziaConSostituto(this::gestisciLicenziamentoConSostituto);
+        view.onCalcolaRetribuzioni(this::gestisciCalcoloRetribuzioni);
+        view.onSelezioneTrainer(this::gestisciSelezioneTrainer);
     }
 
     /**

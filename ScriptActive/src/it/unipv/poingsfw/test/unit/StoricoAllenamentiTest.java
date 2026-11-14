@@ -1,97 +1,191 @@
-package it.unipv.poingsfw.test.unit; 
+package it.unipv.poingsfw.test.unit;
 
-import static org.junit.Assert.*; 
-import org.junit.Before; 
-import org.junit.Test; 
-import java.util.ArrayList; 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import it.unipv.poingsfw.controller.StoricoAllenamentiController;
 import it.unipv.poingsfw.dao.SessioneDAO;
-import it.unipv.poingsfw.domain.*;
-import it.unipv.poingsfw.exceptions.*;
-import it.unipv.poingsfw.view.StoricoAllenamentiView; 
+import it.unipv.poingsfw.domain.Cliente;
+import it.unipv.poingsfw.domain.DatiFormPojo;
+import it.unipv.poingsfw.domain.SessioneAllenamento;
+import it.unipv.poingsfw.domain.TipoAbbonamento;
+import it.unipv.poingsfw.exceptions.DatiAllenamentoNonValidiException;
+import it.unipv.poingsfw.exceptions.SalvataggioFallitoException;
+import it.unipv.poingsfw.exceptions.SchedaVuotaException;
+import it.unipv.poingsfw.exceptions.UtenteNonPremiumException;
+import it.unipv.poingsfw.test.fake.NavigatoreFake;
+import it.unipv.poingsfw.test.fake.VistaStoricoAllenamentiFake;
 
 /**
- * Suite di Unit Testing per il controller StoricoAllenamenti.
- * Valida la business logic di UC4: registrazione sessioni e gestione privilegi.
+ * Test di unità dello <b>Use Case UC4: Registrazione e Monitoraggio Prestazioni</b>.
+ * <p>
+ * Il controller è collaudato in isolamento: vista, persistenza e navigazione sono
+ * oggetti fittizi, quindi i test non aprono finestre e non richiedono il database.
+ * </p>
  */
-public class StoricoAllenamentiTest { 
+class StoricoAllenamentiTest {
 
-    private StoricoAllenamentiController controller; 
-    private StoricoAllenamentiView view; 
-    private SessioneDAO testDao; 
-    
-    // Attributi di classe per i dati di test (Setup Condiviso)
+    /** Stub in memoria della persistenza delle sessioni. */
+    private static final class SessioneDAOStub implements SessioneDAO {
+        private final List<SessioneAllenamento> salvate = new ArrayList<>();
+        private boolean esitoOperazioni = true;
+
+        @Override
+        public boolean salvaSessione(SessioneAllenamento sessione) {
+            if (esitoOperazioni) {
+                salvate.add(sessione);
+            }
+            return esitoOperazioni;
+        }
+
+        @Override
+        public boolean eliminaSessioneSpecifica(SessioneAllenamento sessione) {
+            return esitoOperazioni && salvate.remove(sessione);
+        }
+
+        @Override
+        public List<SessioneAllenamento> getStorico(String idCliente) {
+            return new ArrayList<>(salvate);
+        }
+    }
+
+    private StoricoAllenamentiController controller;
+    private VistaStoricoAllenamentiFake view;
+    private SessioneDAOStub dao;
+    private NavigatoreFake navigatore;
+
     private Cliente clientePremium;
     private Cliente clienteBase;
 
-    @Before 
-    public void setUp() { 
-        // 1. Inizializzazione Vista
-        view = new StoricoAllenamentiView(); 
-        
-        // 2. Setup Dati Condivisi (Utenti)
-        clientePremium = new Cliente("Mario", "Rossi", "m@m.it", "CF1", null); 
-        clientePremium.setPremium(true); // Utente autorizzato per l'UC4
-        
-        clienteBase = new Cliente("Luigi", "Base", "l@l.it", "CF2", null); 
-        clienteBase.setPremium(false); // Utente NON autorizzato per l'UC4
-        
-        // 3. Mock manuale (Stub)
-        testDao = new SessioneDAO() { 
-            @Override 
-            public boolean salvaSessione(SessioneAllenamento s) { return true; } 
-            
-            @Override 
-            public boolean eliminaSessioneSpecifica(SessioneAllenamento s) { return true; } 
-            
-            // ECCO LA MODIFICA: int è diventato String
-            @Override 
-            public List<SessioneAllenamento> getStorico(String id) { return new ArrayList<>(); } 
-        }; 
-        
-        // 4. Iniezione delle dipendenze nel Controller
-        controller = new StoricoAllenamentiController(view, testDao); 
+    @BeforeEach
+    void setUp() {
+        view = new VistaStoricoAllenamentiFake();
+        dao = new SessioneDAOStub();
+        navigatore = new NavigatoreFake();
+        controller = new StoricoAllenamentiController(view, dao, navigatore);
+
+        clientePremium = new Cliente("Mario", "Rossi", "m@m.it", "CF1", TipoAbbonamento.PREMIUM);
+        clienteBase = new Cliente("Luigi", "Base", "l@l.it", "CF2", TipoAbbonamento.BASE);
+    }
+
+    private List<DatiFormPojo> unEsercizio(String nome, double carico, int ripetizioni) {
+        List<DatiFormPojo> esercizi = new ArrayList<>();
+        esercizi.add(new DatiFormPojo(nome, carico, ripetizioni));
+        return esercizi;
     }
 
     // --- MAIN SUCCESS SCENARIO ---
-    
-    /**
-     * Verifica il corretto salvataggio di una sessione valida.
-     */
+
     @Test
-    public void testSalvaSessione_Successo() throws Exception { 
-        List<DatiFormPojo> esercizi = new ArrayList<>(); 
-        esercizi.add(new DatiFormPojo("Squat", 50, 10)); // Dati validi (carico >= 0, rep > 0)
-        
-        // Usiamo il clientePremium già preparato nel setUp
-        controller.salvaSessioneCompleta(new java.util.Date(), esercizi, clientePremium); 
-        // Se non viene lanciata alcuna eccezione, il test è superato implicitamente
+    void testSalvaSessione_Successo() throws Exception {
+        controller.salvaSessioneCompleta(new Date(), unEsercizio("Squat", 50, 10), clientePremium);
+
+        assertEquals(1, dao.salvate.size(), "La sessione deve essere affidata al livello di persistenza");
+        assertEquals("CF1", dao.salvate.get(0).getIdCliente());
+        assertEquals(1, view.getAggiornamentiStorico(), "Dopo il salvataggio la vista deve essere aggiornata");
+        assertEquals(1, view.getStoricoMostrato().size());
+    }
+
+    @Test
+    void testGestisciAccesso_UtentePremium() throws Exception {
+        controller.gestisciAccessoSezione(clientePremium);
+
+        assertTrue(view.isModuloInserimentoMostrato(), "L'utente Premium deve vedere il modulo di inserimento");
+        assertEquals(1, view.getAggiornamentiStorico(), "Lo storico deve essere caricato all'accesso");
     }
 
     // --- ECCEZIONI (FLUSSI ALTERNATIVI) ---
 
-    // 1. Test Eccezione: Scheda Vuota 
-    @Test(expected = SchedaVuotaException.class) 
-    public void testSalvaSessione_SchedaVuota() throws Exception { 
-        // Invio di una lista vuota di esercizi
-        controller.salvaSessioneCompleta(new java.util.Date(), new ArrayList<>(), clientePremium); 
-    } 
+    // 1. Scheda vuota
+    @Test
+    void testSalvaSessione_SchedaVuota() {
+        assertThrows(SchedaVuotaException.class,
+                () -> controller.salvaSessioneCompleta(new Date(), new ArrayList<>(), clientePremium));
+        assertTrue(dao.salvate.isEmpty());
+    }
 
-    // 2. Test Eccezione: Carico Negativo (Dati non validi) 
-    @Test(expected = DatiAllenamentoNonValidiException.class) 
-    public void testSalvaSessione_CaricoNegativo() throws Exception { 
-        List<DatiFormPojo> esercizi = new ArrayList<>(); 
-        esercizi.add(new DatiFormPojo("Panca", -10, 10)); // Creiamo un esercizio non valido (carico < 0)
-        
-        controller.salvaSessioneCompleta(new java.util.Date(), esercizi, clientePremium); 
-    } 
+    // 2. Carico negativo (dati non validi)
+    @Test
+    void testSalvaSessione_CaricoNegativo() {
+        assertThrows(DatiAllenamentoNonValidiException.class,
+                () -> controller.salvaSessioneCompleta(new Date(), unEsercizio("Panca", -10, 10), clientePremium));
+        assertTrue(dao.salvate.isEmpty(), "Una sessione non valida non deve raggiungere la persistenza");
+    }
 
-    // 3. Test Eccezione: Utente Non Premium (Accesso negato) 
-    @Test(expected = UtenteNonPremiumException.class) 
-    public void testGestisciAccesso_UtenteNonPremium() throws Exception { 
-        // Usiamo il clienteBase preparato nel setUp (senza privilegi)
-        controller.gestisciAccessoSezione(clienteBase); 
-    } 
+    @Test
+    void testSalvaSessione_RipetizioniNonPositive() {
+        assertThrows(DatiAllenamentoNonValidiException.class,
+                () -> controller.salvaSessioneCompleta(new Date(), unEsercizio("Panca", 40, 0), clientePremium));
+        assertTrue(dao.salvate.isEmpty());
+    }
+
+    // 3. Utente non Premium (accesso negato)
+    @Test
+    void testGestisciAccesso_UtenteNonPremium() {
+        assertThrows(UtenteNonPremiumException.class, () -> controller.gestisciAccessoSezione(clienteBase));
+        assertFalse(view.isModuloInserimentoMostrato());
+    }
+
+    // 4. La persistenza rifiuta il salvataggio
+    @Test
+    void testSalvaSessione_SalvataggioFallito() {
+        dao.esitoOperazioni = false;
+
+        assertThrows(SalvataggioFallitoException.class,
+                () -> controller.salvaSessioneCompleta(new Date(), unEsercizio("Squat", 50, 10), clientePremium));
+        assertEquals(0, view.getAggiornamentiStorico(), "Se il salvataggio fallisce la vista non va aggiornata");
+    }
+
+    // --- ELIMINAZIONE ---
+
+    @Test
+    void testEliminaSessione_Successo() throws Exception {
+        controller.salvaSessioneCompleta(new Date(), unEsercizio("Squat", 50, 10), clientePremium);
+        SessioneAllenamento salvata = dao.salvate.get(0);
+
+        controller.eliminaSessioneSelezionata(salvata, clientePremium);
+
+        assertTrue(dao.salvate.isEmpty());
+        assertTrue(view.getStoricoMostrato().isEmpty(), "Lo storico mostrato deve riflettere l'eliminazione");
+    }
+
+    @Test
+    void testEliminaSessione_Fallita() {
+        dao.esitoOperazioni = false;
+        SessioneAllenamento sessione = new SessioneAllenamento(new Date(), "CF1");
+
+        assertThrows(SalvataggioFallitoException.class,
+                () -> controller.eliminaSessioneSelezionata(sessione, clientePremium));
+    }
+
+    // --- NAVIGAZIONE ---
+
+    @Test
+    void testTornaAllaDashboard_RiapreLaDashboardDelCliente() throws Exception {
+        controller.gestisciAccessoSezione(clientePremium);
+
+        controller.tornaAllaDashboard();
+
+        assertTrue(view.isChiusa());
+        assertEquals(NavigatoreFake.DASHBOARD_CLIENTE, navigatore.getUltimaDestinazione());
+        assertSame(clientePremium, navigatore.getUltimoCliente());
+    }
+
+    @Test
+    void testRichiediUpgradePremium_InformaLUtenteSenzaChiudere() {
+        controller.richiediUpgradePremium();
+
+        assertEquals(1, view.getAvvisi().size());
+        assertFalse(view.isChiusa());
+    }
 }

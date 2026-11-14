@@ -3,7 +3,7 @@ package it.unipv.poingsfw.test.unit;
 import org.junit.Before;
 import org.junit.Test;
 
-import it.unipv.poingsfw.controller.SistemaPagamento;
+import it.unipv.poingsfw.service.SistemaPagamento;
 
 import static org.junit.Assert.*;
 

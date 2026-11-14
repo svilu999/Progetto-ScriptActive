@@ -14,7 +14,23 @@ package it.unipv.poingsfw.domain;
  */
 
 public enum LivelloAbbonamento {
-	MENSILE,
-	SEMESTRALE,
-	ANNUALE
+	MENSILE(1),
+	SEMESTRALE(6),
+	ANNUALE(12);
+
+	private final int mesi;
+
+	LivelloAbbonamento(int mesi) {
+		this.mesi = mesi;
+	}
+
+	/**
+	 * Durata dell'abbonamento espressa in mesi.
+	 * È l'unico punto del sistema in cui questa regola è definita.
+	 *
+	 * @return il numero di mesi di validità del livello
+	 */
+	public int getMesi() {
+		return mesi;
+	}
 }

@@ -28,14 +28,19 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 
+import it.unipv.poingsfw.controller.vista.VistaGestionePersonale;
+
 /**
  * View Swing per la gestione grafica del personale.
  *
  * La classe costruisce e aggiorna esclusivamente i componenti grafici della
  * schermata. Non conosce Controller, Service, DAO, DTO, Strategy o oggetti
- * appartenenti al dominio.
+ * appartenenti al dominio: realizza soltanto il contratto
+ * {@link VistaGestionePersonale}, attraverso il quale il Controller registra
+ * le proprie reazioni e aggiorna la schermata. I componenti Swing (bottoni,
+ * tabella) restano privati.
  */
-public class GestionePersonaleView extends JFrame {
+public class GestionePersonaleView extends JFrame implements VistaGestionePersonale {
 
     private static final String TESTO_ID_AUTOMATICO =
             "Generato automaticamente";
@@ -642,66 +647,76 @@ public class GestionePersonaleView extends JFrame {
     }
 
     /*
-     * Componenti esposti esclusivamente per permettere al Controller
-     * di registrare gli eventi. La View non registra alcun listener.
+     * Registrazione delle reazioni ai gesti dell'utente.
+     *
+     * Il Controller non riceve i componenti Swing: indica soltanto che cosa
+     * eseguire quando l'utente compie un gesto (Information Hiding).
      */
 
-    public JButton getBtnAggiorna() {
-        return btnAggiorna;
+    @Override
+    public void onAggiorna(Runnable azione) {
+        btnAggiorna.addActionListener(evento -> azione.run());
     }
 
-    public JButton getBtnAssumi() {
-        return btnAssumi;
+    @Override
+    public void onAssumi(Runnable azione) {
+        btnAssumi.addActionListener(evento -> azione.run());
     }
 
-    public JButton getBtnLicenziaConSostituto() {
-        return btnLicenziaConSostituto;
+    @Override
+    public void onLicenziaConSostituto(Runnable azione) {
+        btnLicenziaConSostituto.addActionListener(evento -> azione.run());
     }
 
-    public JButton getBtnLicenziaSenzaSostituto() {
-        return btnLicenziaSenzaSostituto;
+    @Override
+    public void onLicenziaSenzaSostituto(Runnable azione) {
+        btnLicenziaSenzaSostituto.addActionListener(evento -> azione.run());
     }
 
-    public JButton getBtnCalcolaRetribuzioni() {
-        return btnCalcolaRetribuzioni;
+    @Override
+    public void onCalcolaRetribuzioni(Runnable azione) {
+        btnCalcolaRetribuzioni.addActionListener(evento -> azione.run());
     }
 
-    /**
-     * Restituisce la tabella esclusivamente come sorgente dell'evento
-     * di selezione.
-     *
-     * Il Controller non deve modificarne modello, righe o colonne.
-     *
-     * @return tabella grafica
-     */
-    public JTable getTabellaPT() {
-        return tabellaPT;
+    @Override
+    public void onSelezioneTrainer(Runnable azione) {
+        tabellaPT.getSelectionModel().addListSelectionListener(evento -> {
+            if (!evento.getValueIsAdjusting()) {
+                azione.run();
+            }
+        });
     }
 
     /*
      * Lettura degli input grafici.
      */
 
+    @Override
     public String getNomeInserito() {
         return txtNome.getText();
     }
 
+    @Override
     public String getCognomeInserito() {
         return txtCognome.getText();
     }
 
+    @Override
     public String getEmailInserita() {
         return txtEmail.getText();
     }
 
+    @Override
     public String getSpecializzazioneInserita() {
         return txtSpecializzazione.getText();
     }
 
+    @Override
     public String getImportoRetribuzioneInserito() {
         return txtImportoRetribuzione.getText();
     }
 
+    @Override
     public String getTipoRetribuzioneSelezionato() {
         Object selezione = comboTipoRetribuzione.getSelectedItem();
 
@@ -712,6 +727,7 @@ public class GestionePersonaleView extends JFrame {
         return selezione.toString();
     }
 
+    @Override
     public String getIdTrainerDaLicenziare() {
         return txtIdDaLicenziare.getText();
     }
@@ -721,6 +737,7 @@ public class GestionePersonaleView extends JFrame {
      *
      * @return indice nel modello grafico, oppure -1
      */
+    @Override
     public int getIndiceTrainerSelezionato() {
         int indiceVista = tabellaPT.getSelectedRow();
 
@@ -737,6 +754,7 @@ public class GestionePersonaleView extends JFrame {
      *
      * @return indice dell'opzione reale, oppure -1
      */
+    @Override
     public int getIndiceSostitutoSelezionato() {
         int indiceCombo = comboSostituto.getSelectedIndex();
         int indiceSostituto = indiceCombo - 1;
@@ -759,6 +777,7 @@ public class GestionePersonaleView extends JFrame {
      *
      * @param righe valori grafici da visualizzare
      */
+    @Override
     public void mostraRigheTrainer(Object[][] righe) {
         modelloTabella.setRowCount(0);
         tabellaPT.clearSelection();
@@ -779,6 +798,7 @@ public class GestionePersonaleView extends JFrame {
      *
      * @param tipiRetribuzione testi da visualizzare
      */
+    @Override
     public void mostraTipiRetribuzione(String[] tipiRetribuzione) {
         comboTipoRetribuzione.removeAllItems();
 
@@ -802,6 +822,7 @@ public class GestionePersonaleView extends JFrame {
      *
      * @param descrizioni testi da visualizzare
      */
+    @Override
     public void mostraSostituti(String[] descrizioni) {
         comboSostituto.removeAllItems();
         comboSostituto.addItem(TESTO_SELEZIONA_SOSTITUTO);
@@ -826,6 +847,7 @@ public class GestionePersonaleView extends JFrame {
      *
      * @param idTrainer testo da visualizzare
      */
+    @Override
     public void mostraIdTrainerDaLicenziare(String idTrainer) {
         txtIdDaLicenziare.setText(
                 idTrainer == null ? "" : idTrainer
@@ -837,6 +859,7 @@ public class GestionePersonaleView extends JFrame {
      *
      * @param messaggio testo da visualizzare
      */
+    @Override
     public void mostraStato(String messaggio) {
         lblStato.setText(
                 messaggio == null ? "" : messaggio
@@ -848,6 +871,7 @@ public class GestionePersonaleView extends JFrame {
      *
      * @param messaggio testo da visualizzare
      */
+    @Override
     public void mostraSuccesso(String messaggio) {
         mostraStato(messaggio);
 
@@ -864,6 +888,7 @@ public class GestionePersonaleView extends JFrame {
      *
      * @param messaggio testo da visualizzare
      */
+    @Override
     public void mostraErrore(String messaggio) {
         mostraStato(messaggio);
 
@@ -880,6 +905,7 @@ public class GestionePersonaleView extends JFrame {
      *
      * @param totale valore da visualizzare
      */
+    @Override
     public void mostraTotaleRetribuzioni(double totale) {
         mostraSuccesso(
                 String.format(
@@ -892,6 +918,7 @@ public class GestionePersonaleView extends JFrame {
     /**
      * Pulisce graficamente il form di assunzione.
      */
+    @Override
     public void pulisciFormAssunzione() {
         txtNome.setText("");
         txtCognome.setText("");
@@ -908,6 +935,7 @@ public class GestionePersonaleView extends JFrame {
     /**
      * Pulisce graficamente il form di licenziamento.
      */
+    @Override
     public void pulisciFormLicenziamento() {
         txtIdDaLicenziare.setText("");
         tabellaPT.clearSelection();

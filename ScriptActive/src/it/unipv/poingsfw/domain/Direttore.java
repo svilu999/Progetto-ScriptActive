@@ -28,8 +28,8 @@ public class Direttore extends Utente {
         this.codiceAutorizzazione = codiceAutorizzazione;
     }
     @Override
-    public void accediAreaRiservata(it.unipv.poingsfw.controller.LoginController router) {
-        router.apriDashboardDirettore(this);
+    public void accediAreaRiservata(InstradatoreUtente router) {
+        router.instradaDirettore(this);
     }
 
     public String getCodiceAutorizzazione() { 

@@ -1,20 +1,17 @@
 package it.unipv.poingsfw.controller;
 
+import java.util.Objects;
+
+import it.unipv.poingsfw.controller.vista.VistaLogin;
 import it.unipv.poingsfw.dao.UtenteDAO;
-import it.unipv.poingsfw.database.SessioneDAOMySQL;
-import it.unipv.poingsfw.database.UtenteDAOMySQL;
 import it.unipv.poingsfw.domain.Cliente;
 import it.unipv.poingsfw.domain.Direttore;
+import it.unipv.poingsfw.domain.InstradatoreUtente;
 import it.unipv.poingsfw.domain.PersonalTrainer;
 import it.unipv.poingsfw.domain.Utente;
 import it.unipv.poingsfw.exceptions.AbbonamentoScadutoException;
 import it.unipv.poingsfw.exceptions.AccountInattivoException;
 import it.unipv.poingsfw.exceptions.CredenzialiErrateException;
-import it.unipv.poingsfw.view.DashboardClienteView;
-import it.unipv.poingsfw.view.DashboardDirettoreView;
-import it.unipv.poingsfw.view.LoginView;
-import it.unipv.poingsfw.view.PalinsestoCorsiView;
-import it.unipv.poingsfw.view.StoricoAllenamentiView;
 
 /**
  * Controller di autenticazione avanzato con gestione del ciclo di vita della sessione.
@@ -27,18 +24,28 @@ import it.unipv.poingsfw.view.StoricoAllenamentiView;
  * trasforma il controllo del flusso in una gestione basata sulle policy, migliorando la 
  * leggibilità e la manutenibilità (Separazione tra "Logica di autenticazione" e "Gestione degli errori").
  * </p>
+ * <p>
+ * <b>Dipendenze:</b> il controller riceve dal costruttore tre astrazioni — la vista
+ * ({@link VistaLogin}), la persistenza ({@link UtenteDAO}) e la navigazione
+ * ({@link Navigatore}) — e non conosce né Swing né MySQL. Dopo l'autenticazione
+ * l'instradamento verso l'area riservata avviene per <i>Double Dispatch</i>:
+ * il controller implementa {@link InstradatoreUtente} e l'entità {@link Utente}
+ * richiama il metodo corrispondente al proprio ruolo.
+ * </p>
  * * @author Vilucchi e Padula
- * @version 2.1
+ * @version 3.0
  */
-public class LoginController {
+public class LoginController implements InstradatoreUtente {
     
-    private LoginView view;
-    private UtenteDAO dao;
+    private final VistaLogin view;
+    private final UtenteDAO dao;
+    private final Navigatore navigatore;
     private Utente utenteLoggato; 
 
-    public LoginController(LoginView view, UtenteDAO dao) {
-        this.view = view;
-        this.dao = dao;
+    public LoginController(VistaLogin view, UtenteDAO dao, Navigatore navigatore) {
+        this.view = Objects.requireNonNull(view, "La vista non può essere null.");
+        this.dao = Objects.requireNonNull(dao, "Il DAO non può essere null.");
+        this.navigatore = Objects.requireNonNull(navigatore, "Il navigatore non può essere null.");
     }
 
     /**
@@ -46,15 +53,14 @@ public class LoginController {
      */
     public void effettuaLogin(String email, String password) {
         
-        if (email.isEmpty() || password.isEmpty()) {
+        if (email == null || password == null || email.isEmpty() || password.isEmpty()) {
             view.mostraErrore("Inserisci sia email che password.");
             return;
         }
 
         try {
             /* 1. Logica di dominio proattiva: Tenta un rinnovo silenzioso prima dell'autenticazione */
-            UtenteDAOMySQL mDao = new UtenteDAOMySQL();
-            boolean sbloccatoInAutomatico = mDao.tentaRinnovoSilenzioso(email);
+            boolean sbloccatoInAutomatico = dao.tentaRinnovoSilenzioso(email);
 
             /* 2. Verifica delle credenziali nel layer di persistenza */
             Utente utente = dao.effettuaLogin(email, password);
@@ -78,7 +84,7 @@ public class LoginController {
             this.utenteLoggato = utente;
 
             /* 4. Transizione di stato della UI */
-            view.dispose();
+            view.chiudi();
 
             /* 5. Trigger Double Dispatch per l'instradamento polimorfico */
             utenteLoggato.accediAreaRiservata(this); 
@@ -86,7 +92,10 @@ public class LoginController {
         } catch (AbbonamentoScadutoException e) {
             /* Gestione del flusso di rinnovo: intercettazione dello stato di dominio "Scaduto" */
             this.utenteLoggato = null;
-            view.mostraPopupRinnovo(email, e.getMessage());
+            if (view.chiediConfermaRinnovo(e.getMessage())) {
+                view.chiudi();
+                navigatore.apriRinnovo(email);
+            }
 
         } catch (CredenzialiErrateException | AccountInattivoException e) {
             /* Gestione unificata degli errori di sicurezza */
@@ -95,49 +104,33 @@ public class LoginController {
         }
     }
 
+    /**
+     * Gestisce la richiesta di un visitatore non ancora iscritto: lascia il login e apre
+     * il modulo di registrazione (UC1).
+     */
+    public void richiediRegistrazione() {
+        view.chiudi();
+        navigatore.apriRegistrazione();
+    }
+
     public Utente getUtenteLoggato() {
         return this.utenteLoggato;
     }
 
-    /* --- Metodi di Dispatch (Routing) --- */
+    /* --- Metodi di Dispatch (Routing): il "dove" è deciso qui, il "come" dal Navigatore --- */
 
-    public void apriDashboardCliente(Cliente clienteLoggato) {
-        DashboardClienteView dashboardView = new DashboardClienteView();
-        dashboardView.impostaDatiCliente(clienteLoggato);
-        
-        try {
-            GestorePrenotazioni gestorePrenotazioni = new GestorePrenotazioni();
-            dashboardView.mostraCorsiPrenotati(gestorePrenotazioni.getCorsiPrenotatiDalCliente(clienteLoggato));
-        } catch (Exception e) {
-            System.err.println("Errore nel recupero corsi: " + e.getMessage());
-        }
-        
-        dashboardView.setVisible(true);
-        
-        dashboardView.addAreaPremiumListener(e -> {
-            dashboardView.dispose();
-            StoricoAllenamentiView premiumView = new StoricoAllenamentiView();
-            StoricoAllenamentiController clienteController = new StoricoAllenamentiController(premiumView, new SessioneDAOMySQL());
-            
-            premiumView.setController(clienteController);
-            premiumView.setUtenteCorrente(clienteLoggato); 
-            premiumView.setVisible(true);
-            premiumView.clickAccediStorico(clienteLoggato);
-        });
-        
-        dashboardView.addPrenotaCorsiListener(e -> {
-            dashboardView.dispose();
-            PalinsestoCorsiView corsiView = new PalinsestoCorsiView(); 
-            corsiView.setClienteLoggato(dashboardView.getUtenteCorrente());
-            corsiView.setVisible(true);
-        });
+    @Override
+    public void instradaCliente(Cliente clienteLoggato) {
+        navigatore.apriDashboardCliente(clienteLoggato);
     }
 
-    public void apriDashboardDirettore(Direttore direttoreLoggato) {
-        new DashboardDirettoreView().setVisible(true);
+    @Override
+    public void instradaDirettore(Direttore direttoreLoggato) {
+        navigatore.apriDashboardDirettore(direttoreLoggato);
     }
 
-    public void apriDashboardTrainer(PersonalTrainer trainerLoggato) {
-        new PalinsestoCorsiView().setVisible(true);
+    @Override
+    public void instradaTrainer(PersonalTrainer trainerLoggato) {
+        navigatore.apriAreaTrainer();
     }
 }
