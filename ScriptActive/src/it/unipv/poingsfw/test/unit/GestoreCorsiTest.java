@@ -89,6 +89,19 @@ class GestoreCorsiTest {
     }
 
     @Test
+    void testNuoviCorsi_RicevonoIdDistintiDallaPersistenza() throws Exception {
+        gestore.organizzaNuovoCorso("Yoga", LocalDateTime.of(2030, 5, 1, 9, 0), 15, TRAINER);
+        gestore.organizzaNuovoCorso("Pilates", LocalDateTime.of(2030, 5, 2, 9, 0), 15, TRAINER);
+        gestore.organizzaNuovoCorso("Zumba", LocalDateTime.of(2030, 5, 3, 9, 0), 15, TRAINER);
+
+        // Il controller non inventa identificativi: li assegna la persistenza, in sequenza
+        assertEquals("1", trovaPerNome("Yoga").getIdCorso());
+        assertEquals("2", trovaPerNome("Pilates").getIdCorso());
+        assertEquals("3", trovaPerNome("Zumba").getIdCorso());
+        assertEquals(3, gestore.getElencoCorsi().size(), "Nessun corso deve sovrascriverne un altro");
+    }
+
+    @Test
     void testStessoOrarioTrainerDiversi_Consentito() throws Exception {
         LocalDateTime orario = LocalDateTime.of(2030, 12, 10, 18, 0);
         gestore.organizzaNuovoCorso("Crossfit", orario, 20, TRAINER);

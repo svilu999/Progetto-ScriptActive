@@ -13,7 +13,6 @@ import it.unipv.poingsfw.service.ServizioSwapCorsi;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.logging.Logger;
 
 /**
@@ -59,15 +58,19 @@ public class GestoreCorsi implements ServizioSwapCorsi {
                     "Errore: Il Trainer " + idPT + " è già occupato in questa fascia oraria.");
         }
 
-        String idCorsoUnivoco = "CRS-" + UUID.randomUUID().toString().substring(0, 5).toUpperCase();
+        /*
+         * Un corso nuovo nasce senza identificativo: lo assegna il livello di persistenza
+         * al salvataggio. Generarlo qui rischierebbe di farlo coincidere con quello di un
+         * corso già esistente, che verrebbe sovrascritto.
+         */
 
         PersonalTrainer ptAssegnato = new PersonalTrainer("NomePT", "CognomePT", "trainer@scriptactive.it", idPT);
-        Corso nuovoCorso = new Corso(idCorsoUnivoco, nome, orario, capienza, ptAssegnato);
+        Corso nuovoCorso = new Corso(null, nome, orario, capienza, ptAssegnato);
 
         try {
             // Proviamo a salvare il corso sul database
             corsoDAO.insert(nuovoCorso);
-            LOG.info("Nuovo corso registrato con ID: " + idCorsoUnivoco);
+            LOG.info("Nuovo corso registrato con ID: " + nuovoCorso.getIdCorso());
             
         } catch (RuntimeException ex) {
             /* * EXCEPTION TRANSLATION:

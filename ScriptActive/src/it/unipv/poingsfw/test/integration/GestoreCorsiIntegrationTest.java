@@ -120,6 +120,40 @@ public class GestoreCorsiIntegrationTest {
     }
 
     // ==========================================
+    // 3b. TEST DI NON REGRESSIONE (Identità dei corsi)
+    // ==========================================
+    /*
+     * In passato il controller generava un codice casuale ("CRS-A1BCD") e il DAO ne
+     * estraeva le sole cifre come ID: quando coincidevano con l'ID di un corso esistente,
+     * quel corso veniva sovrascritto. Il difetto si manifestava a caso, quindi il test
+     * crea molti corsi e verifica che quelli già presenti restino intatti.
+     */
+    @Test
+    public void testNuoviCorsi_NonSovrascrivonoICorsiEsistenti() throws Exception {
+        java.util.Map<String, String> nomiPrima = new java.util.HashMap<>();
+        for (Corso c : gestore.getElencoCorsi()) {
+            nomiPrima.put(c.getIdCorso(), c.getNome());
+        }
+        assertFalse(nomiPrima.isEmpty(), "Il database di test deve contenere i corsi di esempio.");
+
+        int nuoviCorsi = 60;
+        LocalDateTime primoOrario = LocalDateTime.of(2031, 3, 1, 7, 0);
+        for (int i = 0; i < nuoviCorsi; i++) {
+            gestore.organizzaNuovoCorso("Yoga Mattutino", primoOrario.plusDays(i), 15, "PT-10");
+        }
+
+        List<Corso> dopo = gestore.getElencoCorsi();
+        assertEquals(nomiPrima.size() + nuoviCorsi, dopo.size(),
+                "Ogni nuovo corso deve aggiungersi a quelli esistenti, non sostituirne uno.");
+        for (Corso c : dopo) {
+            if (nomiPrima.containsKey(c.getIdCorso())) {
+                assertEquals(nomiPrima.get(c.getIdCorso()), c.getNome(),
+                        "Il corso " + c.getIdCorso() + " esisteva già e non deve essere stato modificato.");
+            }
+        }
+    }
+
+    // ==========================================
     // 4. TEST CICLO DI VITA (Annullamento Corso)
     // ==========================================
     @Test

@@ -103,6 +103,14 @@ public class Corso implements Subject {
         return idCorso;
     }
 
+    /**
+     * Assegna l'identificativo al corso. Un corso appena creato non ne ha uno
+     * ({@code null}): lo riceve dal livello di persistenza al primo salvataggio.
+     */
+    public void setIdCorso(String idCorso) {
+        this.idCorso = idCorso;
+    }
+
     public String getNome() {
         return nome;
     }

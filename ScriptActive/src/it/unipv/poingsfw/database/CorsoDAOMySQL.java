@@ -206,7 +206,7 @@ public class CorsoDAOMySQL implements CorsoDAO {
         int idSede = recuperaOCreaSedePredefinita(conn);
         int idDirettore = recuperaOCreaDirettorePredefinito(conn);
 
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS)) {
             if (idCorso == null) {
                 stmt.setNull(1, Types.INTEGER);
             } else {
@@ -223,6 +223,18 @@ public class CorsoDAOMySQL implements CorsoDAO {
             stmt.setInt(9, idDirettore);
 
             stmt.executeUpdate();
+
+            /*
+             * Se l'ID non era specificato lo ha generato il database (AUTO_INCREMENT):
+             * lo riportiamo sull'oggetto di dominio, che da questo momento ha un'identità.
+             */
+            if (idCorso == null) {
+                try (ResultSet chiavi = stmt.getGeneratedKeys()) {
+                    if (chiavi.next()) {
+                        c.setIdCorso(String.valueOf(chiavi.getInt(1)));
+                    }
+                }
+            }
         }
     }
 
