@@ -29,6 +29,12 @@ patterns are implemented by hand, because they were the subject of the course.
 The analysis documents (vision, requirements, use cases, domain model, class, sequence and ER
 diagrams) are in [`ScriptActive/Documenti`](ScriptActive/Documenti), in Italian.
 
+The class and sequence diagrams match the current code. The class diagram is generated from the
+sources by
+[`GeneraDiagrammaClassi.java`](ScriptActive/Documenti/07.%20Diagramma%20delle%20Classi/GeneraDiagrammaClassi.java),
+so it can be regenerated after any change. The PDF documents (vision, requirements, use cases,
+presentation) are the ones submitted for the exam.
+
 ## Architecture
 
 The code is layered according to **MVC**, with persistence isolated behind the **DAO** pattern.
@@ -208,8 +214,8 @@ This is a teaching prototype. The following were not addressed:
   payment system; upgrading from Basic to Premium is not implemented.
 - **Background auto-renewal.** `GestoreRinnovi` is implemented and tested but is not started by
   `Main`.
-- **UML documentation.** The diagrams in `Documenti` describe the version submitted for the exam
-  and do not include the classes introduced by the revision.
+- **Sequence diagrams.** They are written by hand and must be updated if the flows they
+  describe change.
 
 ## Glossary
 

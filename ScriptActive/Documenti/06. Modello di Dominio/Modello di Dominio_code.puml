@@ -102,6 +102,7 @@ enum LivelloAbbonamento {
 
 enum StatoCorso {
   ATTIVO
+  CANCELLATO
   COMPLETO
 }
 

@@ -1,177 +1,157 @@
-1. Scenario Principale di Successo: Creazione Corso
-@startuml
+' ============================================================
+' UC3 - Organizzazione del Palinsesto Corsi
+' Ogni blocco genera l'immagine omonima in "Visualizzazioni".
+' ============================================================
+
+' 1. Scenario Principale di Successo: Creazione Corso
+@startuml DSequenzaUC3Main
 skinparam monochrome false
 skinparam packageStyle rectangle
 skinparam sequenceMessageAlign center
 
-
 title UC3 - Main Success Scenario: Creazione Corso
-
-
 autonumber
+
 actor "Direttore" as D
-participant "PalinsestoCorsiView\n<<Boundary>>" as V
+participant "DashboardDirettoreView\n<<Boundary>>" as V
 participant "GestoreCorsi\n<<Controller>>" as C
 participant "nuovoCorso: Corso\n<<Entity>>" as E
 participant "dao: CorsoDAO\n<<Interface>>" as DAO
-
+database "scriptactive_db" as DB
 
 D -> V : inserisce dati corso (nome, orario, capienza, idPT)
 activate V
 
-
-V -> C : getInstance()
-note right: Pattern Singleton
-
+note right of V
+  Dependency Injection: la View riceve
+  il Controller dal costruttore
+end note
+V -> V : converte capienza e data/ora
 
 V -> C : organizzaNuovoCorso(nome, orario, capienza, idPT)
 activate C
 
+C -> C : convalidaTrainer(idPT)
 
 C -> DAO : findAll()
 activate DAO
 DAO --> C : List<Corso> (palinsesto attuale)
 deactivate DAO
 
-
 C -> C : controllaSovrapposizioni(idPT, orario)
-activate C
 note right: Usa corsoAssegnatoAlTrainer()\nper isolare i numeri dell'ID.\nRestituisce false.
-deactivate C
-
 
 create E
-C -> E : <<create>> Corso(nome, orario, capienza, idPT)
-activate E
-E --> C : istanza corso
-deactivate E
-
+C -> E : <<create>> Corso(null, nome, orario, capienza, ptAssegnato)
+note right of E
+  Il corso nasce senza identificativo:
+  lo assegna la persistenza
+end note
 
 C -> DAO : insert(nuovoCorso)
 activate DAO
 note right: Dependency Inversion\ne Pure Fabrication
+DAO -> DB : INSERT (ID generato con AUTO_INCREMENT)
+activate DB
+DB --> DAO : idGenerato
+deactivate DB
+DAO -> E : setIdCorso(idGenerato)
 DAO --> C : ok (salvataggio confermato)
 deactivate DAO
 
-
 C --> V : successo
 deactivate C
-V --> D : mostra corso creato e aggiorna calendario
+
+V --> D : mostra conferma "Corso creato con successo!"
 deactivate V
-
-
 @enduml
 
 
-2. Flusso di Cancellazione e Risoluzione "Open Issue"
-@startuml
+' 2. Flusso di Cancellazione
+@startuml DSequenzaUC3Alt1
 skinparam monochrome false
 skinparam packageStyle rectangle
 skinparam sequenceMessageAlign center
 
-
 title UC3 - Flusso di Cancellazione (con Pattern Observer)
-
-
 autonumber
+
 actor "Direttore" as D
-participant "PalinsestoCorsiView\n<<Boundary>>" as V
+participant "DashboardDirettoreView\n<<Boundary>>" as V
 participant "GestoreCorsi\n<<Controller>>" as C
 participant "dao: CorsoDAO\n<<Interface>>" as DAO
 participant "c: Corso\n<<Entity/Subject>>" as E
 participant "iscritto: Cliente\n<<Observer>>" as O
 
-
-D -> V : seleziona corso e clicca "Cancella"
+D -> V : inserisce l'ID del corso e clicca "Annulla Corso"
 activate V
-
-
-V -> C : getInstance()
-note right: Pattern Singleton
-
 
 V -> C : annullaCorso(idCorso)
 activate C
-
 
 C -> DAO : findById(idCorso)
 activate DAO
 DAO --> C : restituisce istanza 'c'
 deactivate DAO
 
-
 C -> E : setStato(StatoCorso.CANCELLATO)
 activate E
+
 E -> E : notifyObservers()
 activate E
+
 loop per ogni Observer nella lista "iscritti"
-    E -> O : update()
+    E -> O : update(messaggio)
     note right: Pattern Observer:\nDisaccoppia la logica di notifica\ndallo stato del Corso
     activate O
     O --> E : ricevuto
     deactivate O
 end
 deactivate E
+
 E --> C : stato aggiornato
 deactivate E
 
-
-C -> DAO : delete(idCorso)
+C -> DAO : insert(c)
 activate DAO
-note right: Dependency Inversion\n(Il DAO effettuerà un\nSoft Delete/Annullamento logico)
-DAO --> C : ok (rimozione confermata)
+note right: Il corso esiste già: il DAO aggiorna\nil record (annullamento logico,\nil corso non viene eliminato)
+DAO --> C : ok (stato salvato)
 deactivate DAO
 
-
-C --> V : confermata cancellazione
+C --> V : annullamento confermato
 deactivate C
-V --> D : aggiorna UI rimuovendo il corso
+
+V --> D : mostra conferma "Corso annullato con successo!"
 deactivate V
-
-
 @enduml
 
 
-3. Flusso Alternativo 1: Trainer non valido
-@startuml
+' 3. Flusso Alternativo: Trainer non valido
+@startuml DSequenzaUC3Alt2
 skinparam monochrome false
 skinparam packageStyle rectangle
 skinparam sequenceMessageAlign center
 
-
-title UC3 - Flusso Alternativo 1: Trainer Non Valido (Exception Translation)
-
-
+title UC3 - Flusso Alternativo: Trainer Non Valido (Exception Translation)
 autonumber
+
 actor "Direttore" as D
-participant "PalinsestoCorsiView\n<<Boundary>>" as V
+participant "DashboardDirettoreView\n<<Boundary>>" as V
 participant "GestoreCorsi\n<<Controller>>" as C
 participant "nuovoCorso: Corso\n<<Entity>>" as E
 participant "dao: CorsoDAO\n<<Interface>>" as DAO
 
-
 D -> V : inserisce dati (idPT inesistente nel database)
 activate V
-
-
-V -> C : getInstance()
-note right: Pattern Singleton
-
 
 V -> C : organizzaNuovoCorso(nome, orario, capienza, idPT_inesistente)
 activate C
 
-
 C -> C : convalidaTrainer(idPT)
-note right: Supera il controllo base\n(la stringa non è nulla)
-
+note right: Supera il controllo base\n(la stringa non è vuota)
 
 create E
-C -> E : <<create>> Corso(...)
-activate E
-E --> C : istanza corso
-deactivate E
-
+C -> E : <<create>> Corso(null, nome, orario, capienza, ptAssegnato)
 
 C -> DAO : insert(nuovoCorso)
 activate DAO
@@ -179,17 +159,12 @@ DAO --> C : <<throws>> RuntimeException
 note right: Violazione Integrità Referenziale\n(Foreign Key fallita su MySQL)
 deactivate DAO
 
-
-C -> C : transizione eccezione (Exception Translation)
-note right: Il Controller cattura l'eccezione nativa (SQL)\ne la converte per disaccoppiare la View dal DB
-
+C -> C : traduzione dell'eccezione (Exception Translation)
+note right: Il Controller cattura l'eccezione tecnica\ne la converte in una di dominio,\nper disaccoppiare la View dal DB
 
 C --> V : <<throws>> TrainerNonValidoException
 deactivate C
 
-
-V --> D : mostra popup errore ("Il Trainer non esiste nel sistema")
+V --> D : mostra popup errore ("Il Personal Trainer non esiste nel sistema")
 deactivate V
-
-
 @enduml

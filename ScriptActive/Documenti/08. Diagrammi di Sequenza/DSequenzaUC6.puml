@@ -1,4 +1,9 @@
-@startuml
+' ============================================================
+' UC6 - Autenticazione
+' Ogni blocco genera l'immagine omonima in "Visualizzazioni".
+' ============================================================
+
+@startuml DSequenzaUC6Main
 skinparam style strictuml
 skinparam sequenceMessageAlign center
 
@@ -7,70 +12,96 @@ title UC6 - Autenticazione (Main Success Scenario)
 actor "Attore\n(Cliente/PT/Direttore)" as U
 participant "LoginView\n<<Boundary>>" as V
 participant "LoginController\n<<Controller>>" as Ctrl
-participant "dao: LoginDAO\n<<DAO>>" as DAO
+participant "dao: UtenteDAO\n<<Interface>>" as DAO
 database "db: Database" as DB
 participant "utente: Utente\n<<Entity/Polymorphic>>" as Entity
-participant "DashboardView\n<<Boundary>>" as DashV
+participant "navigatore: Navigatore\n<<Interface>>" as Nav
+participant "Area riservata\n<<Boundary>>" as DashV
 
 autonumber
 
-U -> V: 1-3. Inserisce credenziali e clicca "Accedi"
+U -> V: inserisce credenziali e clicca "Accedi"
 activate V
 
 V -> Ctrl: effettuaLogin(email, password)
 activate Ctrl
 
-Ctrl -> DAO: 4. verificaCredenziali(email, pwd)
+Ctrl -> DAO: tentaRinnovoSilenzioso(email)
+activate DAO
+DAO --> Ctrl: false (abbonamento non scaduto)
+deactivate DAO
+
+Ctrl -> DAO: effettuaLogin(email, password)
 activate DAO
 
-DAO -> DB: SELECT (Verifica sicura nel DB)
+DAO -> DB: SELECT (verifica delle credenziali)
 activate DB
 DB --> DAO: ResultSet
 deactivate DB
 
 note right of DAO
-  5-6. Conferma validità e
+  Conferma la validità e
   identifica il ruolo
 end note
 DAO -> Entity **: istanziazione in base al ruolo
 
-DAO --> Ctrl: restituisce l'entità 'utente'
+DAO --> Ctrl: utente
 deactivate DAO
 
-Ctrl -> V: dispose() (Chiude il login)
+Ctrl -> Entity: puoAccedereAlSistema()
+activate Entity
+Entity --> Ctrl: true
+deactivate Entity
+
+note right of Ctrl
+  Il Controller conosce la vista solo
+  tramite l'interfaccia VistaLogin
+end note
+Ctrl -> V: chiudi()
 deactivate V
 
 note right of Ctrl
-  7. Reindirizzamento
-  tramite Double Dispatch
+  Double Dispatch: il Controller si passa
+  come InstradatoreUtente (interfaccia del dominio)
 end note
 Ctrl -> Entity: accediAreaRiservata(this)
 activate Entity
 
-Entity -> Ctrl: apriDashboardSpecifica(this)
+Entity -> Ctrl: instradaCliente(this)\n(oppure instradaDirettore / instradaTrainer)
 deactivate Entity
 
-Ctrl -> DashV **: new Dashboard...()
-Ctrl -> DashV: impostaDati()
-Ctrl -> DashV: setVisible(true)
-activate DashV
+Ctrl -> Nav: apriDashboardCliente(cliente)\n(oppure apriDashboardDirettore / apriAreaTrainer)
+activate Nav
 
-DashV --> U: Mostra Area Riservata
+note right of Nav
+  NavigatoreSwing crea la finestra e il suo
+  Controller e li collega: il LoginController
+  non istanzia alcuna View
+end note
+Nav -> DashV **: crea e mostra
+activate DashV
+deactivate Nav
+
+DashV --> U: mostra l'area riservata
 deactivate DashV
 deactivate Ctrl
 
 @enduml
-@startuml
+
+
+@startuml DSequenzaUC6Alt
 skinparam style strictuml
 skinparam sequenceMessageAlign center
 
-title UC6 - Autenticazione (Gestione Flussi Alternativi e Rifiuti)
+title UC6 - Autenticazione (Flussi Alternativi e Rinnovo dell'Abbonamento)
 
 actor "Utente" as U
 participant "LoginView\n<<Boundary>>" as V
 participant "LoginController\n<<Controller>>" as Ctrl
-participant "mDao: UtenteDAO\n<<DAO>>" as MDAO
-participant "dao: LoginDAO\n<<DAO>>" as DAO
+participant "dao: UtenteDAO\n<<Interface>>" as DAO
+participant "navigatore: Navigatore\n<<Interface>>" as Nav
+participant "RinnovoView\n<<Boundary>>" as RV
+participant "RinnovoController\n<<Controller>>" as RC
 
 autonumber
 
@@ -82,17 +113,16 @@ activate Ctrl
 
 alt Flusso Alt 3: Campi obbligatori mancanti
     note right of Ctrl: Controllo sintattico
-    Ctrl -> V: mostraErrore("Inserisci sia email che password")
-    V --> U: evidenzia campi e mostra errore
-    
-else Dati compilati
-    Ctrl -> MDAO **: new UtenteDAOMySQL()
-    Ctrl -> MDAO: tentaRinnovoSilenzioso(email)
-    activate MDAO
-    MDAO --> Ctrl: sbloccatoInAutomatico
-    deactivate MDAO
+    Ctrl -> V: mostraErrore("Inserisci sia email che password.")
+    V --> U: mostra l'errore
 
-    Ctrl -> DAO: verificaCredenziali(email, password)
+else Dati compilati
+    Ctrl -> DAO: tentaRinnovoSilenzioso(email)
+    activate DAO
+    DAO --> Ctrl: sbloccatoInAutomatico
+    deactivate DAO
+
+    Ctrl -> DAO: effettuaLogin(email, password)
     activate DAO
     DAO --> Ctrl: utente (o null se non trovato)
     deactivate DAO
@@ -100,22 +130,41 @@ else Dati compilati
     alt Flusso Alt 1: Credenziali Errate
         note right of Ctrl: utente == null
         Ctrl -> Ctrl: throw CredenzialiErrateException
-        Ctrl -> V: mostraErrore("Email o password errate")
-        V --> U: mostra errore e permette di riprovare
-        
+        Ctrl -> V: mostraErrore("Email o password errate.")
+        V --> U: mostra l'errore e permette di riprovare
+
     else Flusso Alt 2: Account Disattivato/Sospeso
         note right of Ctrl: !utente.isAccountAbilitato()
         Ctrl -> Ctrl: throw AccountInattivoException
-        Ctrl -> V: mostraErrore("Accesso negato: account sospeso")
-        V --> U: mostra avviso ("Contattare la direzione")
-        
+        Ctrl -> V: mostraErrore("Accesso negato: account sospeso.")
+        V --> U: mostra l'avviso
+
     else Flusso Speciale: Abbonamento Scaduto
-        note right of Ctrl: utente instanceof Cliente && !sbloccato
+        note right of Ctrl: utente instanceof Cliente && !sbloccatoInAutomatico
         Ctrl -> Ctrl: throw AbbonamentoScadutoException
-        Ctrl -> V: mostraPopupRinnovo(email, msg)
-        V --> U: propone upgrade/rinnovo
-        
-    
+        Ctrl -> V: chiediConfermaRinnovo(messaggio)
+        V --> U: propone il rinnovo
+        U -> V: conferma
+        V --> Ctrl: true
+        Ctrl -> V: chiudi()
+        Ctrl -> Nav: apriRinnovo(email)
+        activate Nav
+        Nav -> RV **: crea e mostra
+        Nav -> RC **: new RinnovoController(view, dao, navigatore, email)
+        deactivate Nav
+
+        U -> RV: sceglie il piano e clicca "Paga e Attiva"
+        RV -> RC: confermaRinnovo(livello)
+        activate RC
+        RC -> DAO: eseguiRinnovo(email, livello.getMesi(), livello.name())
+        activate DAO
+        DAO --> RC
+        deactivate DAO
+        RC -> RV: mostraRinnovoCompletato(livello)
+        RC -> RV: chiudi()
+        RC -> Nav: apriLogin()
+        deactivate RC
+        note right of Nav: L'utente può ora autenticarsi
     end
 end
 

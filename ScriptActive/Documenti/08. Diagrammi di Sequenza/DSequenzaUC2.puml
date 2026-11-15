@@ -1,7 +1,11 @@
-@startuml DiagrammaSequenzaMain
+' ============================================================
+' UC2 - Prenotazione dei Corsi
+' Ogni blocco genera l'immagine omonima in "Visualizzazioni".
+' ============================================================
+
+@startuml DSequenzaUC2Main
 skinparam maxMessageSize 200
 skinparam monochrome false
-skinparam linetype ortho
 
 title UC2 - Flusso di Prenotazione (Successo e Lista d'Attesa)
 
@@ -11,7 +15,11 @@ control "gestore : GestorePrenotazioni" as Controller
 database "corsoDAO : CorsoDAO" as CDAO
 database "prenotazioneDAO : PrenotazioneDAO" as PDAO
 entity "corso : Corso" as Corso
-entity "cliente : Cliente" as Cliente
+
+note over View, Controller
+  La View riceve il Controller dal costruttore;
+  il Controller riceve i DAO dal costruttore
+end note
 
 C -> View : cliccaPrenota(corso)
 activate View
@@ -20,14 +28,15 @@ View -> Controller : prenotaCorso(cliente, corso)
 activate Controller
 
 ' Controllo doppia prenotazione
-Controller -> PDAO : esistePrenotazione(cliente.getId(), corso.getId())
+Controller -> PDAO : esistePrenotazione(cliente.getId(), corso.getIdCorso())
 activate PDAO
 PDAO --> Controller : esiste (boolean)
 deactivate PDAO
 
 alt esiste == true
     Controller --> View : throws PrenotazioneGiaEffettuataException
-    View --> C : mostraMessaggio("Errore: Sei già iscritto o in attesa per questo corso!")
+    View --> C : mostraMessaggio("Sei già registrato a questo corso (o sei già in lista d'attesa)!")
+
 else esiste == false
 
     ' Controllo posti disponibili
@@ -38,29 +47,31 @@ else esiste == false
 
     alt posti > 0
         ' Iscrizione normale confermata
-        Controller -> PDAO : inserisciPrenotazione(cliente.getId(), corso.getId(), "Confermata")
+        Controller -> PDAO : inserisciPrenotazione(cliente.getId(), corso.getIdCorso(), "Confermata")
         activate PDAO
+        PDAO --> Controller : true
         deactivate PDAO
-        
+
         Controller -> Corso : setPostiDisponibili(posti - 1)
         activate Corso
         deactivate Corso
 
-        Controller -> CDAO : update(corso)
+        Controller -> CDAO : updatePostiDisponibili(corso)
         activate CDAO
         deactivate CDAO
 
         Controller --> View : void (successo)
-        View --> C : mostraMessaggio("Prenotazione confermata!")
+        View --> C : mostraMessaggio("Prenotazione effettuata con successo")
 
     else posti == 0
         ' Inserimento in Lista d'attesa
-        Controller -> PDAO : inserisciPrenotazione(cliente.getId(), corso.getId(), "InListaAttesa")
+        Controller -> PDAO : inserisciPrenotazione(cliente.getId(), corso.getIdCorso(), "InListaAttesa")
         activate PDAO
+        PDAO --> Controller : true
         deactivate PDAO
-        
+
         Controller --> View : throws CorsoAlCompletoException
-        View --> C : mostraPopupGiallo("Corso pieno, inserito in Lista d'Attesa")
+        View --> C : mostraAvviso("Il corso è pieno. Sei stato inserito in LISTA D'ATTESA!")
     end
 end
 
@@ -68,7 +79,8 @@ deactivate Controller
 deactivate View
 @enduml
 
-@startuml DiagrammaSequenzaAlt
+
+@startuml DSequenzaUC2Alt
 skinparam maxMessageSize 200
 skinparam monochrome false
 
@@ -80,7 +92,6 @@ control "gestore : GestorePrenotazioni" as Controller
 database "prenotazioneDAO : PrenotazioneDAO" as PDAO
 database "corsoDAO : CorsoDAO" as CDAO
 entity "corso : Corso" as Corso
-entity "cliente : Cliente" as Cliente
 
 C -> View : cliccaAnnulla(corso)
 activate View
@@ -88,40 +99,55 @@ activate View
 View -> Controller : annullaPrenotazione(cliente, corso)
 activate Controller
 
-' 1. Eliminazione prenotazione dell'utente attuale
-Controller -> PDAO : eliminaPrenotazione(cliente.getId(), corso.getId())
+' 0. Verifica che la prenotazione esista
+Controller -> PDAO : esistePrenotazione(cliente.getId(), corso.getIdCorso())
 activate PDAO
+PDAO --> Controller : esiste (boolean)
 deactivate PDAO
 
-' 2. Controllo scorrimento coda (Swap Automatico)
-Controller -> PDAO : getPrimoInAttesa(corso.getId())
-activate PDAO
-PDAO --> Controller : utenteInAttesa
-deactivate PDAO
+alt esiste == false
+    Controller --> View : throws PrenotazioneInesistenteException
+    View --> C : mostraMessaggio("Impossibile disiscriversi: non sei prenotato a questo corso!")
 
-alt utenteInAttesa != null
-    ' Promuove il primo in attesa senza toccare i posti totali
-    Controller -> PDAO : aggiornaStatoPrenotazione(utenteInAttesa.getId(), corso.getId(), "Confermata")
+else esiste == true
+
+    ' 1. Eliminazione prenotazione dell'utente attuale
+    Controller -> PDAO : eliminaPrenotazione(cliente.getId(), corso.getIdCorso())
     activate PDAO
+    PDAO --> Controller : true
     deactivate PDAO
-else utenteInAttesa == null
-    ' Nessuno in attesa: libera fisicamente un posto nel corso
-    Controller -> Corso : getPostiDisponibili()
-    activate Corso
-    Corso --> Controller : posti
-    deactivate Corso
-    
-    Controller -> Corso : setPostiDisponibili(posti + 1)
-    activate Corso
-    deactivate Corso
-    
-    Controller -> CDAO : update(corso)
-    activate CDAO
-    deactivate CDAO
-end
 
-Controller --> View : void (successo)
-View --> C : mostraMessaggio("Disiscrizione effettuata con successo")
+    ' 2. Controllo scorrimento coda (Swap Automatico)
+    Controller -> PDAO : getPrimoInListaAttesa(corso.getIdCorso())
+    activate PDAO
+    PDAO --> Controller : idPrimoInAttesa
+    deactivate PDAO
+
+    alt idPrimoInAttesa != null
+        ' Promuove il primo in attesa senza toccare i posti totali
+        Controller -> PDAO : aggiornaStatoPrenotazione(idPrimoInAttesa, corso.getIdCorso(), "Confermata")
+        activate PDAO
+        deactivate PDAO
+
+    else idPrimoInAttesa == null
+        ' Nessuno in attesa: libera un posto nel corso
+        Controller -> Corso : getPostiDisponibili()
+        activate Corso
+        Corso --> Controller : posti
+        deactivate Corso
+
+        Controller -> Corso : setPostiDisponibili(posti + 1)
+        activate Corso
+        deactivate Corso
+
+        Controller -> CDAO : updatePostiDisponibili(corso)
+        activate CDAO
+        deactivate CDAO
+    end
+
+    Controller --> View : void (successo)
+    View --> C : mostraMessaggio("Prenotazione annullata con successo")
+end
 
 deactivate Controller
 deactivate View

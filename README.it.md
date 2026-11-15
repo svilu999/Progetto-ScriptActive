@@ -25,6 +25,12 @@ realizzati a mano, perché erano l'oggetto del corso.
 L'analisi (visione, requisiti, casi d'uso, modello di dominio, diagrammi di classe, di sequenza ed ER)
 è nella cartella [`ScriptActive/Documenti`](ScriptActive/Documenti).
 
+I diagrammi delle classi e di sequenza sono allineati al codice attuale. Quello delle classi è
+generato dai sorgenti con lo script
+[`GeneraDiagrammaClassi.java`](ScriptActive/Documenti/07.%20Diagramma%20delle%20Classi/GeneraDiagrammaClassi.java),
+quindi si può rigenerare dopo ogni modifica. I documenti PDF (visione, requisiti, casi d'uso,
+presentazione) sono quelli della consegna.
+
 ## Architettura
 
 Il codice è organizzato a livelli secondo **MVC**, con un livello di persistenza isolato dal pattern **DAO**.
@@ -205,5 +211,5 @@ Il progetto è un prototipo didattico. Questi aspetti non sono stati affrontati:
   sistema di pagamento; l'upgrade da Base a Premium non è implementato.
 - **Rinnovi automatici in background.** `GestoreRinnovi` è implementato e testato ma non viene
   avviato da `Main`.
-- **Documentazione UML.** I diagrammi in `Documenti` descrivono la versione consegnata all'esame
-  e non riportano le classi introdotte con la revisione.
+- **Diagrammi di sequenza.** Sono scritti a mano: vanno aggiornati se cambiano i flussi che
+  descrivono.

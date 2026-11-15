@@ -1,0 +1,629 @@
+@startuml
+title Diagramma delle Classi di Test
+top to bottom direction
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+hide circle
+
+package "test.unit" {
+class ArchitetturaTest {
+  - {static} {readOnly} PACCHETTO_BASE : String
+  - {static} {readOnly} RADICE : Path
+  --
+  - violazioni(pacchetto : String, prefissiVietati : String...) : List<String>
+  - verifica(regola : String, violazioni : List<String>) : void
+  ~ ilDominioNonDipendeDaAltriStrati() : void
+  ~ iControllerNonConosconoViewConcreteNeImplementazioniDiPersistenza() : void
+  ~ iServiziNonDipendonoDaInterfacciaUtenteControllerOImplementazioniDiPersistenza() : void
+  ~ leViewNonAccedonoAllaPersistenza() : void
+  ~ leInterfacceDaoSonoIndipendentiDallImplementazione() : void
+}
+
+class AutenticazioneTest {
+  - controller : LoginController
+  - view : VistaLoginFake
+  - dao : UtenteDAOFake
+  - navigatore : NavigatoreFake
+  --
+  ~ setUp() : void
+  - creaCliente(mesiAllaScadenza : int) : Cliente
+  ~ testEffettuaLogin_Successo() : void
+  ~ testEffettuaLogin_DirettoreInstradatoAllaSuaDashboard() : void
+  ~ testEffettuaLogin_TrainerInstradatoAllaSuaArea() : void
+  ~ testEffettuaLogin_CredenzialiErrate() : void
+  ~ testEffettuaLogin_AccountDisabilitato() : void
+  ~ testEffettuaLogin_CampiVuoti() : void
+  ~ testEffettuaLogin_AbbonamentoScaduto_UtenteAccettaIlRinnovo() : void
+  ~ testEffettuaLogin_AbbonamentoScaduto_UtenteRifiutaIlRinnovo() : void
+  ~ testEffettuaLogin_AbbonamentoScaduto_SbloccatoDalRinnovoAutomatico() : void
+  ~ testRichiediRegistrazione_ApreIlModuloDiRegistrazione() : void
+}
+
+class DashboardClienteTest {
+  - view : VistaDashboardClienteFake
+  - navigatore : NavigatoreFake
+  - cliente : Cliente
+  - corsoPrenotato : Corso
+  --
+  ~ setUp() : void
+  - creaController(prenotazioneDAO : PrenotazioneDAOInMemoria) : DashboardClienteController
+  ~ testInizializza_MostraClienteECorsiPrenotati() : void
+  ~ testInizializza_ErroreDiPersistenza_MostraUnMessaggio() : void
+  ~ testApriAreaPremium() : void
+  ~ testApriPalinsesto() : void
+}
+
+class GestoreContrattiPersonaleTest {
+  - trainerDAO : PersonalTrainerDAOFake
+  - direttoreDAO : DirettoreDAOFake
+  - servizioSwap : ServizioSwapCorsiFake
+  - servizioRetribuzioni : ServizioRetribuzioniFake
+  - servizioContratti : GestoreContrattiPersonale
+  --
+  ~ setUp() : void
+  ~ assumiPersonalTrainerConDatiValidiSalvaIlTrainer() : void
+  ~ assumiPersonalTrainerALezioneSalvaIlCompenso() : void
+  ~ assumiPersonalTrainerConEmailDuplicataGeneraEccezione() : void
+  ~ assumiPersonalTrainerConEmailNonValidaGeneraEccezione() : void
+  ~ licenziaSenzaSostitutoDisattivaIlTrainer() : void
+  ~ licenziaSenzaSostitutoConCorsiAttiviGeneraEccezione() : void
+  ~ licenziaConSostitutoCompatibileEsegueLoSwap() : void
+  ~ licenziaConSostitutoIncompatibileGeneraEccezione() : void
+  ~ getSostitutiCompatibiliFiltraCorrettamente() : void
+  ~ calcolaRetribuzioniDelegaAlServizioRetribuzioni() : void
+  - creaTrainer(idTrainer : int, nome : String, cognome : String, email : String, specializzazione : String, attivo : boolean, statoContratto : String) : DatiPersonalTrainer
+}
+
+class GestoreContrattiPersonaleTest_DirettoreDAOFake {
+  + trovaIdDirettoreDisponibile() : Integer
+}
+
+class GestoreContrattiPersonaleTest_PersonalTrainerDAOFake {
+  - {readOnly} trainer : List<DatiPersonalTrainer>
+  - trainerSalvato : DatiPersonalTrainer
+  - idTrainerDisattivato : Integer
+  --
+  + salva(datiTrainer : DatiPersonalTrainer) : void
+  + trovaPerId(idTrainer : Integer) : DatiPersonalTrainer
+  + trovaPerEmail(email : String) : DatiPersonalTrainer
+  + disattiva(idTrainer : Integer) : void
+  + aggiorna(datiTrainer : DatiPersonalTrainer) : void
+  + trovaTutti() : List<DatiPersonalTrainer>
+  ~ aggiungiTrainer(datiTrainer : DatiPersonalTrainer) : void
+  ~ getTrainerSalvato() : DatiPersonalTrainer
+  ~ getIdTrainerDisattivato() : Integer
+}
+
+class GestoreContrattiPersonaleTest_ServizioRetribuzioniFake {
+  - totale : double
+  - calcoloRichiesto : boolean
+  --
+  + calcolaTotaleRetribuzioniMensili() : double
+  ~ setTotale(totale : double) : void
+  ~ isCalcoloRichiesto() : boolean
+}
+
+class GestoreContrattiPersonaleTest_ServizioSwapCorsiFake {
+  - corsiAttiviOFuturi : boolean
+  - swapEseguito : boolean
+  - idTrainerDaSostituire : String
+  - idTrainerSostituto : String
+  --
+  + haCorsiAttiviOFuturi(idTrainer : String) : boolean
+  + haCorsiImminenti(idTrainer : String) : boolean
+  + sostituisciTrainerNeiCorsi(idTrainerDaSostituire : String, idTrainerSostituto : String) : int
+  ~ setCorsiAttiviOFuturi(corsiAttiviOFuturi : boolean) : void
+  ~ isSwapEseguito() : boolean
+  ~ getIdTrainerDaSostituire() : String
+  ~ getIdTrainerSostituto() : String
+}
+
+class GestoreCorsiTest {
+  - {static} {readOnly} TRAINER : String
+  - {static} {readOnly} ALTRO_TRAINER : String
+  - corsoDAO : CorsoDAOInMemoria
+  - gestore : GestoreCorsi
+  --
+  ~ setUp() : void
+  - trovaPerNome(nome : String) : Corso
+  ~ testOrganizzaNuovoCorso_Successo() : void
+  ~ testSovrapposizioneOrario_LanciaEccezione() : void
+  ~ testNuoviCorsi_RicevonoIdDistintiDallaPersistenza() : void
+  ~ testStessoOrarioTrainerDiversi_Consentito() : void
+  ~ testOrganizzaNuovoCorso_TrainerInesistente_LanciaEccezione() : void
+  ~ testOrganizzaNuovoCorso_IdTrainerVuoto_LanciaEccezione() : void
+  ~ testAnnullaCorso_Successo() : void
+  ~ testAnnullaCorso_Inesistente_LanciaEccezione() : void
+  ~ testHaCorsiAttiviOFuturi() : void
+  ~ testSostituisciTrainerNeiCorsi() : void
+  ~ testSostituisciTrainer_SostitutoUgualeAlTitolare_LanciaEccezione() : void
+  ~ testSostituisciTrainer_SostitutoGiaImpegnato_LanciaEccezione() : void
+  ~ testGetElencoCorsi_RestituisceTuttiICorsi() : void
+}
+
+class GestorePrenotazioniTest {
+  - {static} {readOnly} CONFERMATA : String
+  - {static} {readOnly} IN_LISTA_ATTESA : String
+  - prenotazioneDAO : PrenotazioneDAOInMemoria
+  - corsoDAO : CorsoDAOInMemoria
+  - gestore : GestorePrenotazioni
+  - mario : Cliente
+  - lorenzo : Cliente
+  --
+  ~ setUp() : void
+  - creaCorso(id : String, posti : int) : Corso
+  ~ testPrenotazioneSuccesso() : void
+  ~ testEccezioneDoppiaPrenotazione() : void
+  ~ testCorsoPieno_InserimentoInListaDAttesa() : void
+  ~ testListaAttesaESwap() : void
+  ~ testAnnullamentoSenzaListaDAttesa_LiberaUnPosto() : void
+  ~ testAnnullamentoPrenotazioneInesistente_LanciaEccezione() : void
+  ~ testErroreDiPersistenza_NonOccupaIlPosto() : void
+}
+
+class RegistrazioneTest {
+  - {static} {readOnly} IBAN_VALIDO : String
+  - {static} {readOnly} IBAN_RESPINTO : String
+  - {static} {readOnly} CF : String
+  - clienteDAO : ClienteDAOInMemoria
+  - sedeDAO : SedeDAOInMemoria
+  - addebiti : List<Double>
+  - gestoreRegistrazione : GestoreRegistrazione
+  - sedeDiTest : Sede
+  --
+  ~ setUp() : void
+  - registra(password : String, codiceFiscale : String, tipo : TipoAbbonamento, livello : LivelloAbbonamento, iban : String) : void
+  ~ testRegistrazioneConSuccesso() : void
+  ~ testRegistrazionePremiumAnnuale_ApplicaIlSupplemento() : void
+  ~ testRegistrazioneFallitaPerPagamentoRespinto() : void
+  ~ testRegistrazioneFallitaPerUtenteDuplicato() : void
+  ~ testRegistrazioneFallitaPerPasswordTroppoCorta() : void
+  ~ testRegistrazioneFallitaPerIbanNonValido() : void
+  ~ testRegistrazioneFallitaPerCampiMancanti() : void
+  ~ testRegistrazioneFallitaPerSedeMancante() : void
+  ~ testRegistrazioneFallitaPerErroreDiSalvataggio() : void
+  ~ testGetSediDisponibili_RestituisceLeSediDellaPersistenza() : void
+}
+
+class RinnovoTest {
+  - {static} {readOnly} EMAIL : String
+  - view : VistaRinnovoFake
+  - utenteDAO : UtenteDAOFake
+  - navigatore : NavigatoreFake
+  - controller : RinnovoController
+  --
+  ~ setUp() : void
+  ~ testConfermaRinnovo_AggiornaLAbbonamentoETornaAlLogin() : void
+  ~ testConfermaRinnovo_SenzaPianoSelezionato_MostraErrore() : void
+  ~ testConfermaRinnovo_ErroreDiPersistenza_RestaSullaSchermata() : void
+  ~ testAnnulla_TornaAlLoginSenzaRinnovare() : void
+  - creaAbbonamentoScaduto(id : int, livello : LivelloAbbonamento, iban : String, scadenza : Date) : Abbonamento
+  ~ testElaboraRinnovi_ProlungaGliAbbonamentiPagatiEDisattivaGliAltri() : void
+  ~ testTariffario() : void
+}
+
+class SistemaPagamentoTest {
+  - sistemaPagamento : SistemaPagamento
+  --
+  + setUp() : void
+  + testAutorizzaTransazioneValida() : void
+  + testAutorizzaTransazioneConErrore() : void
+}
+
+class StoricoAllenamentiTest {
+  - controller : StoricoAllenamentiController
+  - view : VistaStoricoAllenamentiFake
+  - dao : SessioneDAOStub
+  - navigatore : NavigatoreFake
+  - clientePremium : Cliente
+  - clienteBase : Cliente
+  --
+  ~ setUp() : void
+  - unEsercizio(nome : String, carico : double, ripetizioni : int) : List<DatiFormPojo>
+  ~ testSalvaSessione_Successo() : void
+  ~ testGestisciAccesso_UtentePremium() : void
+  ~ testSalvaSessione_SchedaVuota() : void
+  ~ testSalvaSessione_CaricoNegativo() : void
+  ~ testSalvaSessione_RipetizioniNonPositive() : void
+  ~ testGestisciAccesso_UtenteNonPremium() : void
+  ~ testSalvaSessione_SalvataggioFallito() : void
+  ~ testEliminaSessione_Successo() : void
+  ~ testEliminaSessione_Fallita() : void
+  ~ testTornaAllaDashboard_RiapreLaDashboardDelCliente() : void
+  ~ testRichiediUpgradePremium_InformaLUtenteSenzaChiudere() : void
+}
+
+class StoricoAllenamentiTest_SessioneDAOStub {
+  - {readOnly} salvate : List<SessioneAllenamento>
+  - esitoOperazioni : boolean
+  --
+  + salvaSessione(sessione : SessioneAllenamento) : boolean
+  + eliminaSessioneSpecifica(sessione : SessioneAllenamento) : boolean
+  + getStorico(idCliente : String) : List<SessioneAllenamento>
+}
+}
+
+package "test.integration" {
+class GestoreCorsiIntegrationTest {
+  - gestore : GestoreCorsi
+  --
+  + setUp() : void
+  + tearDown() : void
+  + testOrganizzaNuovoCorso_Successo() : void
+  + testSovrapposizioneOrario_LanciaEccezione() : void
+  + testOrganizzaNuovoCorso_TrainerInesistente_LanciaEccezione() : void
+  + testNuoviCorsi_NonSovrascrivonoICorsiEsistenti() : void
+  + testAnnullaCorso_Successo() : void
+}
+
+class GestorePrenotazioniIntegrationTest {
+  - gestore : GestorePrenotazioni
+  --
+  ~ setUp() : void
+  ~ tearDown() : void
+  ~ testPrenotazioneSuccesso() : void
+  ~ testEccezioneDoppiaPrenotazione() : void
+  ~ testListaAttesaESwap() : void
+  - resetDatabase() : void
+}
+
+class PalinsestoCorsiIntegrationTest {
+  + {static} main(args : String[]) : void
+}
+
+class RegistrazioneIntegrationTest {
+  - gestoreRegistrazione : GestoreRegistrazione
+  - sedeDiTest : Sede
+  --
+  + setUp() : void
+  + testRegistrazioneConSuccesso() : void
+  + testRegistrazioneFallitaPerPagamentoRespinto() : void
+  + testRegistrazioneFallitaPerUtenteDuplicato() : void
+}
+}
+
+package "test.system" {
+class AutenticazioneSystemTest {
+  - controller : LoginController
+  - view : VistaLoginFake
+  - navigatore : NavigatoreFake
+  --
+  + setUp() : void
+  + testLoginSuccesso() : void
+  + testLoginFallito_CredenzialiErrate() : void
+}
+
+class RegistrazioniPrestazioniSystemTest {
+  - controller : StoricoAllenamentiController
+  - view : VistaStoricoAllenamentiFake
+  --
+  + setUp() : void
+  + testMainSuccessScenario_AccessoPremiumConsentito() : void
+  + testAlternativeFlow1_UtenteBaseBloccato() : void
+}
+}
+
+package "test.fake" {
+class ClienteDAOInMemoria {
+  - {readOnly} clienti : Map<String,Cliente>
+  - {readOnly} abbonamentiDaRinnovare : List<Abbonamento>
+  - {readOnly} scadenzeAggiornate : Map<Integer,Date>
+  - {readOnly} rinnoviDisattivati : List<Integer>
+  - inserimentoFallisce : boolean
+  --
+  + setInserimentoFallisce(inserimentoFallisce : boolean) : void
+  + aggiungiAbbonamentoDaRinnovare(abbonamento : Abbonamento) : void
+  + getNumeroClienti() : int
+  + getScadenzeAggiornate() : Map<Integer,Date>
+  + getRinnoviDisattivati() : List<Integer>
+  + inserisciCliente(c : Cliente) : boolean
+  + getClienteByCF(codiceFiscale : String) : Cliente
+  + updateCliente(c : Cliente) : void
+  + deleteCliente(codiceFiscale : String) : void
+  + getAbbonamentiInScadenzaConRinnovo() : List<Abbonamento>
+  + aggiornaScadenzaAbbonamento(idAbbonamento : int, nuovaData : Date) : void
+  + disattivaRinnovoAutomatico(idAbbonamento : int) : void
+}
+
+class CorsoDAOInMemoria {
+  - {readOnly} corsi : Map<String,Corso>
+  - {readOnly} idTrainerEsistenti : Set<String>
+  - aggiornamentiPosti : int
+  - prossimoId : int
+  --
+  + CorsoDAOInMemoria()
+  + CorsoDAOInMemoria(idTrainerEsistenti : Set<String>)
+  + getAggiornamentiPosti() : int
+  + insert(c : Corso) : void
+  + delete(idCorso : String) : void
+  + findById(idCorso : String) : Corso
+  + findAll() : List<Corso>
+  + getPalinsesto() : List<Corso>
+  + updatePostiDisponibili(c : Corso) : void
+}
+
+class NavigatoreFake {
+  + {static} {readOnly} LOGIN : String
+  + {static} {readOnly} REGISTRAZIONE : String
+  + {static} {readOnly} RINNOVO : String
+  + {static} {readOnly} DASHBOARD_CLIENTE : String
+  + {static} {readOnly} DASHBOARD_DIRETTORE : String
+  + {static} {readOnly} PALINSESTO_CLIENTE : String
+  + {static} {readOnly} PALINSESTO_CONSULTAZIONE : String
+  + {static} {readOnly} AREA_TRAINER : String
+  + {static} {readOnly} STORICO_ALLENAMENTI : String
+  + {static} {readOnly} GESTIONE_PERSONALE : String
+  - {readOnly} destinazioni : List<String>
+  - emailRinnovo : String
+  - ultimoCliente : Cliente
+  --
+  + getDestinazioni() : List<String>
+  + getUltimaDestinazione() : String
+  + getEmailRinnovo() : String
+  + getUltimoCliente() : Cliente
+  + apriLogin() : void
+  + apriRegistrazione() : void
+  + apriRinnovo(email : String) : void
+  + apriDashboardCliente(cliente : Cliente) : void
+  + apriDashboardDirettore(direttore : Direttore) : void
+  + apriPalinsestoCliente(cliente : Cliente) : void
+  + apriPalinsestoConsultazione() : void
+  + apriAreaTrainer() : void
+  + apriStoricoAllenamenti(cliente : Cliente) : void
+  + apriGestionePersonale() : void
+}
+
+class PrenotazioneDAOInMemoria {
+  - {static} {readOnly} STATO_CONFERMATA : String
+  - {static} {readOnly} STATO_LISTA_ATTESA : String
+  - {readOnly} righe : List<Riga>
+  - inserimentoFallisce : boolean
+  --
+  + setInserimentoFallisce(inserimentoFallisce : boolean) : void
+  + getStato(idCliente : String, idCorso : String) : String
+  - trova(idCliente : String, idCorso : String) : Riga
+  + esistePrenotazione(idCliente : String, idCorso : String) : boolean
+  + inserisciPrenotazione(idCliente : String, idCorso : String) : boolean
+  + inserisciPrenotazione(idCliente : String, idCorso : String, stato : String) : boolean
+  + eliminaPrenotazione(idCliente : String, idCorso : String) : boolean
+  + getPrimoInListaAttesa(idCorso : String) : String
+  + aggiornaStatoPrenotazione(idCliente : String, idCorso : String, nuovoStato : String) : boolean
+  + getCorsiPerCliente(idCliente : String) : List<Corso>
+}
+
+class PrenotazioneDAOInMemoria_Riga {
+  - {readOnly} idCliente : String
+  - {readOnly} idCorso : String
+  - stato : String
+  --
+  - Riga(idCliente : String, idCorso : String, stato : String)
+}
+
+class SedeDAOInMemoria {
+  - {readOnly} sedi : List<Sede>
+  --
+  + aggiungiSede(nomeSede : String) : void
+  + getTutteLeSedi() : List<Sede>
+}
+
+class UtenteDAOFake {
+  - {readOnly} rinnovi : List<Rinnovo>
+  - utenteDaRestituire : Utente
+  - esitoRinnovoSilenzioso : boolean
+  - erroreInRinnovo : boolean
+  --
+  + setUtenteDaRestituire(utenteDaRestituire : Utente) : void
+  + setEsitoRinnovoSilenzioso(esitoRinnovoSilenzioso : boolean) : void
+  + setErroreInRinnovo(erroreInRinnovo : boolean) : void
+  + getRinnovi() : List<Rinnovo>
+  + effettuaLogin(email : String, password : String) : Utente
+  + registraCliente(cf : String, nome : String, cognome : String, email : String, passwordHash : String) : void
+  + eseguiRinnovo(email : String, mesiAggiuntivi : int, nuovoPiano : String) : void
+  + tentaRinnovoSilenzioso(email : String) : boolean
+}
+
+class UtenteDAOFake_Rinnovo <<record>> {
+  - {readOnly} email : String
+  - {readOnly} mesi : int
+  - {readOnly} piano : String
+}
+
+class VistaDashboardClienteFake {
+  - {readOnly} errori : List<String>
+  - clienteMostrato : Cliente
+  - corsiMostrati : List<Corso>
+  - chiusa : boolean
+  --
+  + getErrori() : List<String>
+  + getClienteMostrato() : Cliente
+  + getCorsiMostrati() : List<Corso>
+  + isChiusa() : boolean
+  + impostaDatiCliente(cliente : Cliente) : void
+  + mostraCorsiPrenotati(corsi : List<Corso>) : void
+  + mostraErrore(messaggio : String) : void
+  + chiudi() : void
+}
+
+class VistaLoginFake {
+  - {readOnly} errori : List<String>
+  - rispostaRinnovo : boolean
+  - messaggioRinnovo : String
+  - chiusa : boolean
+  --
+  + setRispostaRinnovo(rispostaRinnovo : boolean) : void
+  + getErrori() : List<String>
+  + getMessaggioRinnovo() : String
+  + isChiusa() : boolean
+  + mostraErrore(messaggio : String) : void
+  + chiediConfermaRinnovo(messaggio : String) : boolean
+  + chiudi() : void
+}
+
+class VistaRinnovoFake {
+  - {readOnly} errori : List<String>
+  - livelloConfermato : LivelloAbbonamento
+  - chiusa : boolean
+  --
+  + getErrori() : List<String>
+  + getLivelloConfermato() : LivelloAbbonamento
+  + isChiusa() : boolean
+  + mostraRinnovoCompletato(livello : LivelloAbbonamento) : void
+  + mostraErrore(messaggio : String) : void
+  + chiudi() : void
+}
+
+class VistaStoricoAllenamentiFake {
+  - {readOnly} avvisi : List<String>
+  - storicoMostrato : List<SessioneAllenamento>
+  - aggiornamentiStorico : int
+  - moduloInserimentoMostrato : boolean
+  - chiusa : boolean
+  --
+  + getAvvisi() : List<String>
+  + getStoricoMostrato() : List<SessioneAllenamento>
+  + getAggiornamentiStorico() : int
+  + isModuloInserimentoMostrato() : boolean
+  + isChiusa() : boolean
+  + mostraModuloInserimento() : void
+  + mostraStorico(storico : List<SessioneAllenamento>) : void
+  + mostraAvviso(messaggio : String) : void
+  + chiudi() : void
+}
+}
+
+package "controller" #EEEEEE {
+class GestoreCorsi
+class GestorePrenotazioni
+class GestoreRegistrazione
+class LoginController
+interface Navigatore
+class RinnovoController
+class StoricoAllenamentiController
+}
+
+package "controller.vista" #EEEEEE {
+interface VistaDashboardCliente
+interface VistaLogin
+interface VistaRinnovo
+interface VistaStoricoAllenamenti
+}
+
+package "dao" #EEEEEE {
+interface ClienteDAO
+interface CorsoDAO
+interface DirettoreDAO
+interface PersonalTrainerDAO
+interface PrenotazioneDAO
+interface SedeDAO
+interface SessioneDAO
+interface UtenteDAO
+}
+
+package "domain" #EEEEEE {
+class Abbonamento
+class Cliente
+class Corso
+enum LivelloAbbonamento
+class Sede
+class SessioneAllenamento
+class Utente
+}
+
+package "dto" #EEEEEE {
+class DatiPersonalTrainer
+}
+
+package "exceptions" #EEEEEE {
+class SostitutoNonValidoException
+}
+
+package "service" #EEEEEE {
+class GestoreContrattiPersonale
+interface ServizioRetribuzioni
+interface ServizioSwapCorsi
+class SistemaPagamento
+}
+
+hide empty members
+
+package "java.lang" {
+class Exception {
+}
+}
+
+AutenticazioneSystemTest "1" --> "1" LoginController : controller
+AutenticazioneSystemTest "1" --> "1" NavigatoreFake : navigatore
+AutenticazioneSystemTest "1" --> "1" VistaLoginFake : view
+AutenticazioneTest "1" --> "1" LoginController : controller
+AutenticazioneTest "1" --> "1" NavigatoreFake : navigatore
+AutenticazioneTest "1" --> "1" UtenteDAOFake : dao
+AutenticazioneTest "1" --> "1" VistaLoginFake : view
+ClienteDAO <|.. ClienteDAOInMemoria
+ClienteDAOInMemoria "1" --> "0..*" Abbonamento : abbonamentiDaRinnovare
+ClienteDAOInMemoria "1" --> "0..*" Cliente : clienti
+CorsoDAO <|.. CorsoDAOInMemoria
+CorsoDAOInMemoria "1" --> "0..*" Corso : corsi
+DashboardClienteTest "1" --> "1" Cliente : cliente
+DashboardClienteTest "1" --> "1" Corso : corsoPrenotato
+DashboardClienteTest "1" --> "1" NavigatoreFake : navigatore
+DashboardClienteTest "1" --> "1" VistaDashboardClienteFake : view
+DirettoreDAO <|.. GestoreContrattiPersonaleTest_DirettoreDAOFake
+GestoreContrattiPersonaleTest "1" *-- "1" GestoreContrattiPersonaleTest_DirettoreDAOFake : inner
+GestoreContrattiPersonaleTest "1" *-- "1" GestoreContrattiPersonaleTest_PersonalTrainerDAOFake : inner
+GestoreContrattiPersonaleTest "1" *-- "1" GestoreContrattiPersonaleTest_ServizioRetribuzioniFake : inner
+GestoreContrattiPersonaleTest "1" *-- "1" GestoreContrattiPersonaleTest_ServizioSwapCorsiFake : inner
+GestoreContrattiPersonaleTest "1" --> "1" GestoreContrattiPersonale : servizioContratti
+GestoreContrattiPersonaleTest_PersonalTrainerDAOFake "1" --> "0..*" DatiPersonalTrainer : trainer
+GestoreContrattiPersonaleTest_PersonalTrainerDAOFake "1" --> "1" DatiPersonalTrainer : trainerSalvato
+GestoreContrattiPersonaleTest_ServizioSwapCorsiFake ..> SostitutoNonValidoException : throws
+GestoreCorsiIntegrationTest "1" --> "1" GestoreCorsi : gestore
+GestoreCorsiTest "1" --> "1" CorsoDAOInMemoria : corsoDAO
+GestoreCorsiTest "1" --> "1" GestoreCorsi : gestore
+GestorePrenotazioniIntegrationTest "1" --> "1" GestorePrenotazioni : gestore
+GestorePrenotazioniTest "1" --> "1" Cliente : lorenzo
+GestorePrenotazioniTest "1" --> "1" Cliente : mario
+GestorePrenotazioniTest "1" --> "1" CorsoDAOInMemoria : corsoDAO
+GestorePrenotazioniTest "1" --> "1" GestorePrenotazioni : gestore
+GestorePrenotazioniTest "1" --> "1" PrenotazioneDAOInMemoria : prenotazioneDAO
+Navigatore <|.. NavigatoreFake
+NavigatoreFake "1" --> "1" Cliente : ultimoCliente
+PersonalTrainerDAO <|.. GestoreContrattiPersonaleTest_PersonalTrainerDAOFake
+PrenotazioneDAO <|.. PrenotazioneDAOInMemoria
+PrenotazioneDAOInMemoria "1" *-- "1" PrenotazioneDAOInMemoria_Riga : inner
+RegistrazioneIntegrationTest "1" --> "1" GestoreRegistrazione : gestoreRegistrazione
+RegistrazioneIntegrationTest "1" --> "1" Sede : sedeDiTest
+RegistrazioneTest "1" --> "1" ClienteDAOInMemoria : clienteDAO
+RegistrazioneTest "1" --> "1" GestoreRegistrazione : gestoreRegistrazione
+RegistrazioneTest "1" --> "1" Sede : sedeDiTest
+RegistrazioneTest "1" --> "1" SedeDAOInMemoria : sedeDAO
+RegistrazioniPrestazioniSystemTest "1" --> "1" StoricoAllenamentiController : controller
+RegistrazioniPrestazioniSystemTest "1" --> "1" VistaStoricoAllenamentiFake : view
+RinnovoTest "1" --> "1" NavigatoreFake : navigatore
+RinnovoTest "1" --> "1" RinnovoController : controller
+RinnovoTest "1" --> "1" UtenteDAOFake : utenteDAO
+RinnovoTest "1" --> "1" VistaRinnovoFake : view
+SedeDAO <|.. SedeDAOInMemoria
+SedeDAOInMemoria "1" --> "0..*" Sede : sedi
+ServizioRetribuzioni <|.. GestoreContrattiPersonaleTest_ServizioRetribuzioniFake
+ServizioSwapCorsi <|.. GestoreContrattiPersonaleTest_ServizioSwapCorsiFake
+SessioneDAO <|.. StoricoAllenamentiTest_SessioneDAOStub
+SistemaPagamentoTest "1" --> "1" SistemaPagamento : sistemaPagamento
+StoricoAllenamentiTest "1" *-- "1" StoricoAllenamentiTest_SessioneDAOStub : inner
+StoricoAllenamentiTest "1" --> "1" Cliente : clienteBase
+StoricoAllenamentiTest "1" --> "1" Cliente : clientePremium
+StoricoAllenamentiTest "1" --> "1" NavigatoreFake : navigatore
+StoricoAllenamentiTest "1" --> "1" StoricoAllenamentiController : controller
+StoricoAllenamentiTest "1" --> "1" VistaStoricoAllenamentiFake : view
+StoricoAllenamentiTest_SessioneDAOStub "1" --> "0..*" SessioneAllenamento : salvate
+UtenteDAO <|.. UtenteDAOFake
+UtenteDAOFake "1" *-- "1" UtenteDAOFake_Rinnovo : inner
+UtenteDAOFake "1" --> "1" Utente : utenteDaRestituire
+VistaDashboardCliente <|.. VistaDashboardClienteFake
+VistaDashboardClienteFake "1" --> "0..*" Corso : corsiMostrati
+VistaDashboardClienteFake "1" --> "1" Cliente : clienteMostrato
+VistaLogin <|.. VistaLoginFake
+VistaRinnovo <|.. VistaRinnovoFake
+VistaRinnovoFake "1" --> "1" LivelloAbbonamento : livelloConfermato
+VistaStoricoAllenamenti <|.. VistaStoricoAllenamentiFake
+VistaStoricoAllenamentiFake "1" --> "0..*" SessioneAllenamento : storicoMostrato
+@enduml
